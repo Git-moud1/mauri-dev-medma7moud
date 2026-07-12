@@ -1,0 +1,119 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1600" height="1000" viewBox="0 0 1600 1000" font-family="-apple-system, 'SF Pro Display', 'Segoe UI', Roboto, system-ui, sans-serif" role="img" aria-label="AURA — Storefront">
+  <defs>
+    <linearGradient id="e1-hero" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#F6F1E9"/><stop offset="1" stop-color="#ECE4D6"/></linearGradient>
+    <radialGradient id="e1-plat" cx="0.5" cy="0.42" r="0.6"><stop offset="0" stop-color="#FBF7F0"/><stop offset="1" stop-color="#E4D8C4"/></radialGradient>
+    <filter id="e1-card" x="-20%" y="-20%" width="140%" height="150%"><feDropShadow dx="0" dy="10" stdDeviation="18" flood-color="#1a1a2a" flood-opacity="0.07"/></filter>
+    <filter id="e1-heroImg" x="-30%" y="-30%" width="160%" height="160%"><feDropShadow dx="0" dy="24" stdDeviation="30" flood-color="#5a4a2a" flood-opacity="0.28"/></filter>
+    <clipPath id="e1-c1"><rect x="64" y="540" width="350" height="230" rx="16"/></clipPath>
+    <clipPath id="e1-c2"><rect x="438" y="540" width="350" height="230" rx="16"/></clipPath>
+    <clipPath id="e1-c3"><rect x="812" y="540" width="350" height="230" rx="16"/></clipPath>
+    <clipPath id="e1-c4"><rect x="1186" y="540" width="350" height="230" rx="16"/></clipPath>
+  </defs>
+
+  <rect width="1600" height="1000" fill="#FFFFFF"/>
+
+  <!-- ===== top bar ===== -->
+  <rect x="0" y="0" width="1600" height="72" fill="#FFFFFF"/>
+  <rect x="0" y="72" width="1600" height="1" fill="#ECECEF"/>
+  <text x="64" y="47" font-size="27" font-weight="800" fill="#17171C" letter-spacing="6">AURA</text>
+  <g font-size="15" font-weight="600" fill="#3A3A42">
+    <text x="360" y="46">New Arrivals</text>
+    <text x="500" y="46">Watches</text>
+    <text x="606" y="46">Eyewear</text>
+    <text x="706" y="46">Bags</text>
+    <text x="792" y="46" fill="#E5484D" font-weight="700">Sale</text>
+  </g>
+  <!-- search -->
+  <g transform="translate(1352,24)"><circle cx="11" cy="11" r="9" fill="none" stroke="#3A3A42" stroke-width="2"/><path d="M18 18l6 6" stroke="#3A3A42" stroke-width="2" stroke-linecap="round"/></g>
+  <!-- account -->
+  <g transform="translate(1416,24)" fill="none" stroke="#3A3A42" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="8" r="5"/><path d="M2 24a10 10 0 0 1 20 0"/></g>
+  <!-- cart -->
+  <g transform="translate(1476,24)" fill="none" stroke="#17171C" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 3h4l3 15h12l3-11H8"/><circle cx="10" cy="24" r="1.6" fill="#17171C"/><circle cx="20" cy="24" r="1.6" fill="#17171C"/></g>
+  <circle cx="1502" cy="22" r="9" fill="#17171C"/><text x="1502" y="26" font-size="11" font-weight="800" fill="#fff" text-anchor="middle">3</text>
+
+  <!-- ===== hero ===== -->
+  <rect x="0" y="72" width="1600" height="392" fill="url(#e1-hero)"/>
+  <text x="100" y="172" font-size="14" font-weight="800" fill="#B0894B" letter-spacing="3">NEW · THE AUTUMN EDIT</text>
+  <text x="98" y="238" font-size="62" font-weight="800" fill="#17171C" letter-spacing="-1">Timeless essentials,</text>
+  <text x="98" y="304" font-size="62" font-weight="800" fill="#17171C" letter-spacing="-1">crafted to last.</text>
+  <text x="100" y="348" font-size="18" fill="#57575F">Watches, eyewear and leather goods — curated for the everyday.</text>
+  <rect x="100" y="378" width="230" height="56" rx="28" fill="#17171C"/>
+  <text x="152" y="413" font-size="16" font-weight="700" fill="#fff">Shop the collection</text>
+  <path d="M290 405l8 6-8 6" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+  <text x="360" y="413" font-size="16" font-weight="700" fill="#17171C" text-decoration="underline">Explore watches</text>
+  <!-- hero product -->
+  <circle cx="1230" cy="268" r="180" fill="url(#e1-plat)"/>
+  <g filter="url(#e1-heroImg)"><image href="__PH_ec_hero__" x="1070" y="108" width="320" height="320" preserveAspectRatio="xMidYMid meet"/></g>
+  <rect x="1420" y="150" width="118" height="118" rx="59" fill="#17171C"/>
+  <text x="1479" y="205" font-size="14" font-weight="600" fill="#C9B896" text-anchor="middle">from</text>
+  <text x="1479" y="228" font-size="20" font-weight="800" fill="#fff" text-anchor="middle">$89</text>
+
+  <!-- ===== best sellers ===== -->
+  <text x="64" y="512" font-size="28" font-weight="800" fill="#17171C">Best sellers</text>
+  <text x="1536" y="512" font-size="15" font-weight="700" fill="#17171C" text-anchor="end">View all →</text>
+
+  <!-- card 1 -->
+  <g filter="url(#e1-card)"><rect x="64" y="540" width="350" height="360" rx="16" fill="#fff"/></g>
+  <rect x="64" y="540" width="350" height="230" rx="16" fill="#F7F7F9"/>
+  <image href="__PH_ec_p1__" x="84" y="550" width="310" height="210" preserveAspectRatio="xMidYMid meet" clip-path="url(#e1-c1)"/>
+  <rect x="84" y="560" width="64" height="26" rx="13" fill="#17171C"/><text x="116" y="577" font-size="11" font-weight="800" fill="#fff" text-anchor="middle" letter-spacing="0.5">NEW</text>
+  <text x="84" y="798" font-size="12" font-weight="700" fill="#B0894B" letter-spacing="1">LONGINES</text>
+  <text x="84" y="822" font-size="17" font-weight="800" fill="#17171C">Master Collection</text>
+  <g transform="translate(84,836)"><path d="M7 0l2.1 4.3 4.7.7-3.4 3.3.8 4.7L7 10.9 2.8 13l.8-4.7L.2 5l4.7-.7z" fill="#E8A93B"/></g>
+  <text x="104" y="849" font-size="13" font-weight="700" fill="#17171C">3.9</text>
+  <text x="128" y="849" font-size="13" fill="#9A9AA2">(214)</text>
+  <text x="84" y="882" font-size="20" font-weight="800" fill="#17171C">$1,499.99</text>
+  <circle cx="378" cy="866" r="18" fill="#17171C"/><path d="M378 858v16M370 866h16" stroke="#fff" stroke-width="2.4" stroke-linecap="round"/>
+
+  <!-- card 2 -->
+  <g filter="url(#e1-card)"><rect x="438" y="540" width="350" height="360" rx="16" fill="#fff"/></g>
+  <rect x="438" y="540" width="350" height="230" rx="16" fill="#F7F7F9"/>
+  <image href="__PH_ec_p2__" x="458" y="550" width="310" height="210" preserveAspectRatio="xMidYMid meet" clip-path="url(#e1-c2)"/>
+  <text x="458" y="798" font-size="12" font-weight="700" fill="#B0894B" letter-spacing="1">AURA EYEWEAR</text>
+  <text x="458" y="822" font-size="17" font-weight="800" fill="#17171C">Black Sun Glasses</text>
+  <g transform="translate(458,836)"><path d="M7 0l2.1 4.3 4.7.7-3.4 3.3.8 4.7L7 10.9 2.8 13l.8-4.7L.2 5l4.7-.7z" fill="#E8A93B"/></g>
+  <text x="478" y="849" font-size="13" font-weight="700" fill="#17171C">4.4</text>
+  <text x="502" y="849" font-size="13" fill="#9A9AA2">(96)</text>
+  <text x="458" y="882" font-size="20" font-weight="800" fill="#17171C">$29.99</text>
+  <circle cx="752" cy="866" r="18" fill="#17171C"/><path d="M752 858v16M744 866h16" stroke="#fff" stroke-width="2.4" stroke-linecap="round"/>
+
+  <!-- card 3 -->
+  <g filter="url(#e1-card)"><rect x="812" y="540" width="350" height="360" rx="16" fill="#fff"/></g>
+  <rect x="812" y="540" width="350" height="230" rx="16" fill="#F7F7F9"/>
+  <image href="__PH_ec_p3__" x="832" y="550" width="310" height="210" preserveAspectRatio="xMidYMid meet" clip-path="url(#e1-c3)"/>
+  <rect x="832" y="560" width="70" height="26" rx="13" fill="#E5484D"/><text x="867" y="577" font-size="11" font-weight="800" fill="#fff" text-anchor="middle" letter-spacing="0.5">-18%</text>
+  <text x="832" y="798" font-size="12" font-weight="700" fill="#B0894B" letter-spacing="1">NIKE</text>
+  <text x="832" y="822" font-size="17" font-weight="800" fill="#17171C">Air Jordan 1 Retro</text>
+  <g transform="translate(832,836)"><path d="M7 0l2.1 4.3 4.7.7-3.4 3.3.8 4.7L7 10.9 2.8 13l.8-4.7L.2 5l4.7-.7z" fill="#E8A93B"/></g>
+  <text x="852" y="849" font-size="13" font-weight="700" fill="#17171C">4.8</text>
+  <text x="876" y="849" font-size="13" fill="#9A9AA2">(1,203)</text>
+  <text x="832" y="882" font-size="20" font-weight="800" fill="#17171C">$149.99</text>
+  <text x="946" y="882" font-size="14" fill="#A6A6AE" text-decoration="line-through">$182.99</text>
+  <circle cx="1126" cy="866" r="18" fill="#17171C"/><path d="M1126 858v16M1118 866h16" stroke="#fff" stroke-width="2.4" stroke-linecap="round"/>
+
+  <!-- card 4 -->
+  <g filter="url(#e1-card)"><rect x="1186" y="540" width="350" height="360" rx="16" fill="#fff"/></g>
+  <rect x="1186" y="540" width="350" height="230" rx="16" fill="#F7F7F9"/>
+  <image href="__PH_ec_p4__" x="1206" y="550" width="310" height="210" preserveAspectRatio="xMidYMid meet" clip-path="url(#e1-c4)"/>
+  <text x="1206" y="798" font-size="12" font-weight="700" fill="#B0894B" letter-spacing="1">HESHE</text>
+  <text x="1206" y="822" font-size="17" font-weight="800" fill="#17171C">Leather Tote Bag</text>
+  <g transform="translate(1206,836)"><path d="M7 0l2.1 4.3 4.7.7-3.4 3.3.8 4.7L7 10.9 2.8 13l.8-4.7L.2 5l4.7-.7z" fill="#E8A93B"/></g>
+  <text x="1226" y="849" font-size="13" font-weight="700" fill="#17171C">4.9</text>
+  <text x="1250" y="849" font-size="13" fill="#9A9AA2">(342)</text>
+  <text x="1206" y="882" font-size="20" font-weight="800" fill="#17171C">$129.99</text>
+  <circle cx="1500" cy="866" r="18" fill="#17171C"/><path d="M1500 858v16M1492 866h16" stroke="#fff" stroke-width="2.4" stroke-linecap="round"/>
+
+  <!-- ===== trust bar ===== -->
+  <rect x="0" y="928" width="1600" height="72" fill="#FAFAFB"/>
+  <rect x="0" y="928" width="1600" height="1" fill="#ECECEF"/>
+  <g font-size="15" font-weight="700" fill="#3A3A42">
+    <g transform="translate(180,948)" fill="none" stroke="#B0894B" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 4h13v11H2zM15 8h6l3 3v4h-9z"/><circle cx="7" cy="17" r="2.2"/><circle cx="19" cy="17" r="2.2"/></g>
+    <text x="220" y="972">Free worldwide shipping over $75</text>
+    <g transform="translate(620,948)" fill="none" stroke="#B0894B" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a10 10 0 1 1 3 7"/><path d="M6 12H2v-4"/></g>
+    <text x="660" y="972">30-day easy returns</text>
+    <g transform="translate(980,948)" fill="none" stroke="#B0894B" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M13 2 3 6v6c0 6 4 9 10 11 6-2 10-5 10-11V6z"/><path d="M9 12l3 3 5-6"/></g>
+    <text x="1020" y="972">Secure checkout</text>
+    <g transform="translate(1300,948)" fill="none" stroke="#B0894B" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M13 2a11 11 0 1 0 0 22 11 11 0 0 0 0-22z"/><path d="M13 7v6l4 2"/></g>
+    <text x="1340" y="972">24/7 concierge support</text>
+  </g>
+</svg>

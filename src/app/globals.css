@@ -1,0 +1,163 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/*
+  DESIGN SYSTEM — "Mauri-Dev · electric violet → cyan"
+  Accent is a violet→indigo→cyan brand gradient sampled from the Mauri-Dev logo.
+  Tokens are space-separated RGB channels so Tailwind's <alpha-value> works
+  (e.g. text-fg/70). Light & dark are designed as separate palettes, not
+  inverted values. NOTE: the accent tokens are still named `--gold` / `gold`
+  for backwards-compatibility with existing utility classes — they now resolve
+  to the brand violet, and `--brand-1/2/3` drive the multi-stop gradient.
+*/
+@layer base {
+  :root {
+    /* Light theme — cool neutral surfaces */
+    --bg: 248 249 252;
+    --surface: 255 255 255;
+    --surface-2: 241 243 249;
+    --border: 224 227 236;
+    --fg: 24 24 33;
+    --muted: 88 92 110;
+    --gold: 109 40 217; /* #6D28D9 violet-700 — WCAG-safe accent on light */
+    --gold-soft: 124 58 237; /* #7C3AED */
+    --brand-1: 124 58 237; /* #7C3AED violet */
+    --brand-2: 67 56 202; /* #4338CA indigo */
+    --brand-3: 14 116 144; /* #0E7490 cyan-700 (contrast-safe on light) */
+  }
+
+  :root.dark {
+    /* Dark theme (OLED) — near-black with electric accents */
+    --bg: 8 8 12;
+    --surface: 18 18 27;
+    --surface-2: 26 26 38;
+    --border: 42 42 58;
+    --fg: 240 241 248;
+    --muted: 158 160 178;
+    --gold: 167 139 250; /* #A78BFA violet-400 — vivid accent on dark */
+    --gold-soft: 56 211 238; /* #38D3EE cyan */
+    --brand-1: 168 85 247; /* #A855F7 violet */
+    --brand-2: 91 124 250; /* #5B7CFA blue */
+    --brand-3: 56 211 238; /* #38D3EE cyan */
+  }
+
+  * {
+    border-color: rgb(var(--border));
+  }
+
+  html {
+    scroll-behavior: smooth;
+    -webkit-text-size-adjust: 100%;
+  }
+
+  body {
+    background-color: rgb(var(--bg));
+    color: rgb(var(--fg));
+    font-family: var(--font-sans), var(--font-arabic), system-ui, sans-serif;
+    /* Smooth theme transition without janking transforms */
+    transition: background-color 0.4s ease, color 0.4s ease;
+    -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
+  }
+
+  /* Arabic uses the Arabic display face for headings too */
+  html[lang='ar'] .font-display,
+  html[lang='ar'] body {
+    font-family: var(--font-arabic), sans-serif;
+  }
+
+  /* Respect reduced motion globally */
+  @media (prefers-reduced-motion: reduce) {
+    html {
+      scroll-behavior: auto;
+    }
+    *,
+    *::before,
+    *::after {
+      animation-duration: 0.001ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.001ms !important;
+    }
+  }
+
+  ::selection {
+    background: rgb(var(--gold) / 0.28);
+    color: rgb(var(--fg));
+  }
+
+  :focus-visible {
+    outline: 2px solid rgb(var(--gold));
+    outline-offset: 3px;
+    border-radius: 4px;
+  }
+}
+
+@layer components {
+  .container-x {
+    @apply mx-auto w-full max-w-7xl px-5 sm:px-8 lg:px-12;
+  }
+
+  .section-label {
+    @apply inline-flex items-center gap-2 text-xs font-medium uppercase tracking-[0.22em] text-gold;
+  }
+
+  .gold-text {
+    background: linear-gradient(
+      100deg,
+      rgb(var(--brand-1)) 0%,
+      rgb(var(--brand-2)) 50%,
+      rgb(var(--brand-3)) 100%
+    );
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+  }
+
+  .glass {
+    background: rgb(var(--surface) / 0.7);
+    backdrop-filter: blur(14px) saturate(140%);
+    -webkit-backdrop-filter: blur(14px) saturate(140%);
+    border: 1px solid rgb(var(--border) / 0.8);
+  }
+
+  .btn {
+    @apply inline-flex items-center justify-center gap-2 rounded-full px-6 py-3 text-sm font-semibold
+      transition-all duration-200 focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-60;
+  }
+
+  /* Primary CTA — fixed violet→indigo gradient (dark enough for WCAG-safe
+     white text in both light and dark themes). */
+  .btn-gold {
+    @apply btn text-white shadow-gold;
+    background-image: linear-gradient(135deg, #7c3aed 0%, #4f46e5 50%, #4338ca 100%);
+  }
+  .btn-gold:hover {
+    filter: brightness(1.08);
+    transform: translateY(-1px);
+  }
+
+  .btn-outline {
+    @apply btn border border-border bg-transparent text-fg hover:border-gold hover:text-gold;
+  }
+
+  .card-hover {
+    @apply transition-all duration-300;
+  }
+}
+
+@layer utilities {
+  /* Hide scrollbar for horizontal strips while keeping scroll */
+  .no-scrollbar::-webkit-scrollbar {
+    display: none;
+  }
+  .no-scrollbar {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+
+  .grain {
+    background-image: radial-gradient(rgb(var(--gold) / 0.04) 1px, transparent 1px);
+    background-size: 22px 22px;
+  }
+}

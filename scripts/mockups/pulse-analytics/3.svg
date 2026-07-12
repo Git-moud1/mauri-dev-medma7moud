@@ -1,0 +1,154 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1600" height="1000" viewBox="0 0 1600 1000" font-family="-apple-system, 'SF Pro Display', 'Segoe UI', Roboto, system-ui, sans-serif" role="img" aria-label="Pulse Analytics — Customers">
+  <defs>
+    <linearGradient id="p3-logo" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#8B7CF6"/><stop offset="1" stop-color="#34D6C6"/></linearGradient>
+  </defs>
+
+  <rect width="1600" height="1000" fill="#0B0B12"/>
+
+  <!-- ===== sidebar ===== -->
+  <rect x="0" y="0" width="240" height="1000" fill="#12121A"/>
+  <rect x="240" y="0" width="1" height="1000" fill="#20202B"/>
+  <rect x="28" y="30" width="30" height="30" rx="9" fill="url(#p3-logo)"/>
+  <path d="M35 45h4l3-7 4 12 3-6h5" fill="none" stroke="#0B0B12" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/>
+  <text x="68" y="51" font-size="19" font-weight="800" fill="#ECECF4">Pulse</text>
+  <text x="28" y="104" font-size="11" font-weight="700" fill="#54546A" letter-spacing="1.5">GENERAL</text>
+  <g font-size="15" font-weight="600" fill="#8C8C9E">
+    <g transform="translate(40,131)" fill="none" stroke="#8C8C9E" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="0" y="0" width="8" height="8" rx="2"/><rect x="12" y="0" width="8" height="8" rx="2"/><rect x="0" y="12" width="8" height="8" rx="2"/><rect x="12" y="12" width="8" height="8" rx="2"/></g>
+    <text x="76" y="146">Overview</text>
+    <g transform="translate(40,188)" fill="none" stroke="#8C8C9E" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 19V9M8 19V3M15 19v-7"/></g>
+    <text x="76" y="203">Analytics</text>
+  </g>
+  <rect x="16" y="230" width="208" height="44" rx="11" fill="#20202C"/>
+  <rect x="16" y="230" width="3.5" height="44" rx="2" fill="#8B7CF6"/>
+  <g transform="translate(40,242)" fill="none" stroke="#8B7CF6" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="8" cy="6" r="4.5"/><path d="M0 20a8 8 0 0 1 16 0"/></g>
+  <text x="76" y="257" font-size="15" font-weight="700" fill="#ECECF4">Customers</text>
+  <g font-size="15" font-weight="600" fill="#8C8C9E">
+    <g transform="translate(40,292)" fill="none" stroke="#8C8C9E" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 1v16M4 6l5-5 5 5M2 20h14"/></g>
+    <text x="76" y="307">Revenue</text>
+    <g transform="translate(40,344)" fill="none" stroke="#8C8C9E" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 2h16l-6 8v7l-4 2v-9z"/></g>
+    <text x="76" y="359">Funnels</text>
+    <g transform="translate(40,396)" fill="none" stroke="#8C8C9E" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="8" cy="8" r="7"/><circle cx="8" cy="8" r="2.5"/></g>
+    <text x="76" y="411">Integrations</text>
+  </g>
+  <rect x="16" y="900" width="208" height="60" rx="14" fill="#1A1A24"/>
+  <circle cx="46" cy="930" r="18" fill="url(#p3-logo)"/><text x="46" y="936" font-size="14" font-weight="800" fill="#0B0B12" text-anchor="middle">B</text>
+  <text x="74" y="925" font-size="14" font-weight="700" fill="#ECECF4">Bay Cheikh</text>
+  <text x="74" y="944" font-size="12" fill="#7A7A8C">Pro workspace</text>
+
+  <!-- ===== topbar ===== -->
+  <text x="272" y="58" font-size="26" font-weight="800" fill="#ECECF4">Customers</text>
+  <text x="272" y="86" font-size="14" fill="#8C8C9E">2,481 total · 1,940 active · 214 trials</text>
+  <rect x="1330" y="34" width="222" height="46" rx="12" fill="#8B7CF6"/>
+  <path d="M1356 57v-14M1349 50h14" stroke="#0B0B12" stroke-width="2.4" stroke-linecap="round"/>
+  <text x="1450" y="63" font-size="15" font-weight="700" fill="#0B0B12" text-anchor="middle">Add customer</text>
+
+  <!-- ===== filter bar ===== -->
+  <rect x="272" y="112" width="360" height="46" rx="12" fill="#16161E" stroke="#262631"/>
+  <g transform="translate(292,127)"><circle cx="9" cy="9" r="8" fill="none" stroke="#8C8C9E" stroke-width="2"/><path d="M15 15l5 5" stroke="#8C8C9E" stroke-width="2" stroke-linecap="round"/></g>
+  <text x="322" y="141" font-size="14" fill="#8C8C9E">Search customers…</text>
+  <!-- filter chips -->
+  <rect x="652" y="112" width="70" height="46" rx="12" fill="#8B7CF6"/><text x="687" y="141" font-size="14" font-weight="700" fill="#0B0B12" text-anchor="middle">All</text>
+  <rect x="732" y="112" width="92" height="46" rx="12" fill="#16161E" stroke="#262631"/><text x="778" y="141" font-size="14" font-weight="600" fill="#C4C4D2" text-anchor="middle">Active</text>
+  <rect x="834" y="112" width="86" height="46" rx="12" fill="#16161E" stroke="#262631"/><text x="877" y="141" font-size="14" font-weight="600" fill="#C4C4D2" text-anchor="middle">Trial</text>
+  <rect x="930" y="112" width="104" height="46" rx="12" fill="#16161E" stroke="#262631"/><text x="982" y="141" font-size="14" font-weight="600" fill="#C4C4D2" text-anchor="middle">Churned</text>
+  <!-- right: filter + export -->
+  <rect x="1362" y="112" width="94" height="46" rx="12" fill="#16161E" stroke="#262631"/>
+  <g transform="translate(1380,128)" fill="none" stroke="#C4C4D2" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M0 1h16l-6 7v7l-4-2v-5z"/></g>
+  <text x="1424" y="141" font-size="14" font-weight="600" fill="#C4C4D2" text-anchor="middle">Filter</text>
+  <rect x="1466" y="112" width="86" height="46" rx="12" fill="#16161E" stroke="#262631"/><text x="1509" y="141" font-size="14" font-weight="600" fill="#C4C4D2" text-anchor="middle">Export</text>
+
+  <!-- ===== table ===== -->
+  <rect x="272" y="180" width="1280" height="762" rx="16" fill="#16161E" stroke="#20202B"/>
+  <!-- header -->
+  <g font-size="12" font-weight="700" fill="#6A6A7C" letter-spacing="0.5">
+    <text x="320" y="222">CUSTOMER</text><text x="820" y="222">PLAN</text><text x="1010" y="222">MRR</text><text x="1160" y="222">STATUS</text><text x="1360" y="222">LAST SEEN</text>
+  </g>
+  <rect x="296" y="238" width="1232" height="1" fill="#20202B"/>
+  <rect x="296" y="238" width="18" height="18" rx="4" fill="none" stroke="#3A3A48" stroke-width="1.5" opacity="0"/>
+
+  <!-- rows -->
+  <g font-size="14">
+    <!-- 1 -->
+    <circle cx="316" cy="290" r="20" fill="#6D28D9"/><text x="316" y="296" font-size="13" font-weight="800" fill="#fff" text-anchor="middle">AS</text>
+    <text x="348" y="286" font-weight="700" fill="#ECECF4">Amina Sy</text><text x="348" y="306" font-size="12.5" fill="#8C8C9E">amina@novacorp.io</text>
+    <rect x="820" y="278" width="58" height="26" rx="8" fill="#241E3E"/><text x="849" y="295" font-size="12" font-weight="700" fill="#A78BFA" text-anchor="middle">Pro</text>
+    <text x="1010" y="295" font-weight="700" fill="#ECECF4">$99</text>
+    <circle cx="1166" cy="290" r="4" fill="#34D399"/><text x="1180" y="295" fill="#34D399" font-weight="600">Active</text>
+    <text x="1360" y="295" fill="#8C8C9E">2h ago</text>
+    <g transform="translate(1516,285)" fill="#5A5A6A"><circle cx="0" cy="0" r="2"/><circle cx="0" cy="6" r="2"/><circle cx="0" cy="12" r="2"/></g>
+    <rect x="296" y="330" width="1232" height="1" fill="#1C1C26"/>
+    <!-- 2 -->
+    <circle cx="316" cy="368" r="20" fill="#0E7490"/><text x="316" y="374" font-size="13" font-weight="800" fill="#fff" text-anchor="middle">YS</text>
+    <text x="348" y="364" font-weight="700" fill="#ECECF4">Yahya Ould Sidi</text><text x="348" y="384" font-size="12.5" fill="#8C8C9E">yahya@atlas.mr</text>
+    <rect x="820" y="356" width="64" height="26" rx="8" fill="#123536"/><text x="852" y="373" font-size="12" font-weight="700" fill="#34D6C6" text-anchor="middle">Team</text>
+    <text x="1010" y="373" font-weight="700" fill="#ECECF4">$299</text>
+    <circle cx="1166" cy="368" r="4" fill="#34D399"/><text x="1180" y="373" fill="#34D399" font-weight="600">Active</text>
+    <text x="1360" y="373" fill="#8C8C9E">5h ago</text>
+    <g transform="translate(1516,363)" fill="#5A5A6A"><circle cx="0" cy="0" r="2"/><circle cx="0" cy="6" r="2"/><circle cx="0" cy="12" r="2"/></g>
+    <rect x="296" y="408" width="1232" height="1" fill="#1C1C26"/>
+    <!-- 3 -->
+    <circle cx="316" cy="446" r="20" fill="#B0894B"/><text x="316" y="452" font-size="13" font-weight="800" fill="#fff" text-anchor="middle">FB</text>
+    <text x="348" y="442" font-weight="700" fill="#ECECF4">Fatimata Ba</text><text x="348" y="462" font-size="12.5" fill="#8C8C9E">fatimata.ba@gmail.com</text>
+    <rect x="820" y="434" width="58" height="26" rx="8" fill="#22222C"/><text x="849" y="451" font-size="12" font-weight="700" fill="#9A9AAA" text-anchor="middle">Free</text>
+    <text x="1010" y="451" font-weight="700" fill="#8C8C9E">$0</text>
+    <circle cx="1166" cy="446" r="4" fill="#F5B84B"/><text x="1180" y="451" fill="#F5B84B" font-weight="600">Trial</text>
+    <text x="1360" y="451" fill="#8C8C9E">1d ago</text>
+    <g transform="translate(1516,441)" fill="#5A5A6A"><circle cx="0" cy="0" r="2"/><circle cx="0" cy="6" r="2"/><circle cx="0" cy="12" r="2"/></g>
+    <rect x="296" y="486" width="1232" height="1" fill="#1C1C26"/>
+    <!-- 4 -->
+    <circle cx="316" cy="524" r="20" fill="#2563EB"/><text x="316" y="530" font-size="13" font-weight="800" fill="#fff" text-anchor="middle">SM</text>
+    <text x="348" y="520" font-weight="700" fill="#ECECF4">Sidi Mohamed</text><text x="348" y="540" font-size="12.5" fill="#8C8C9E">sidi@deltalabs.co</text>
+    <rect x="820" y="512" width="58" height="26" rx="8" fill="#241E3E"/><text x="849" y="529" font-size="12" font-weight="700" fill="#A78BFA" text-anchor="middle">Pro</text>
+    <text x="1010" y="529" font-weight="700" fill="#ECECF4">$99</text>
+    <circle cx="1166" cy="524" r="4" fill="#34D399"/><text x="1180" y="529" fill="#34D399" font-weight="600">Active</text>
+    <text x="1360" y="529" fill="#8C8C9E">Yesterday</text>
+    <g transform="translate(1516,519)" fill="#5A5A6A"><circle cx="0" cy="0" r="2"/><circle cx="0" cy="6" r="2"/><circle cx="0" cy="12" r="2"/></g>
+    <rect x="296" y="564" width="1232" height="1" fill="#1C1C26"/>
+    <!-- 5 -->
+    <circle cx="316" cy="602" r="20" fill="#DB2777"/><text x="316" y="608" font-size="13" font-weight="800" fill="#fff" text-anchor="middle">MV</text>
+    <text x="348" y="598" font-weight="700" fill="#ECECF4">Mariem Vall</text><text x="348" y="618" font-size="12.5" fill="#8C8C9E">mariem@zephyr.app</text>
+    <rect x="820" y="590" width="64" height="26" rx="8" fill="#123536"/><text x="852" y="607" font-size="12" font-weight="700" fill="#34D6C6" text-anchor="middle">Team</text>
+    <text x="1010" y="607" font-weight="700" fill="#ECECF4">$299</text>
+    <circle cx="1166" cy="602" r="4" fill="#FB7185"/><text x="1180" y="607" fill="#FB7185" font-weight="600">Past due</text>
+    <text x="1360" y="607" fill="#8C8C9E">Jul 9</text>
+    <g transform="translate(1516,597)" fill="#5A5A6A"><circle cx="0" cy="0" r="2"/><circle cx="0" cy="6" r="2"/><circle cx="0" cy="12" r="2"/></g>
+    <rect x="296" y="642" width="1232" height="1" fill="#1C1C26"/>
+    <!-- 6 -->
+    <circle cx="316" cy="680" r="20" fill="#7C3AED"/><text x="316" y="686" font-size="13" font-weight="800" fill="#fff" text-anchor="middle">CA</text>
+    <text x="348" y="676" font-weight="700" fill="#ECECF4">Cheikh Ahmed</text><text x="348" y="696" font-size="12.5" fill="#8C8C9E">cheikh@brightsend.com</text>
+    <rect x="820" y="668" width="58" height="26" rx="8" fill="#241E3E"/><text x="849" y="685" font-size="12" font-weight="700" fill="#A78BFA" text-anchor="middle">Pro</text>
+    <text x="1010" y="685" font-weight="700" fill="#ECECF4">$99</text>
+    <circle cx="1166" cy="680" r="4" fill="#34D399"/><text x="1180" y="685" fill="#34D399" font-weight="600">Active</text>
+    <text x="1360" y="685" fill="#8C8C9E">Jul 8</text>
+    <g transform="translate(1516,675)" fill="#5A5A6A"><circle cx="0" cy="0" r="2"/><circle cx="0" cy="6" r="2"/><circle cx="0" cy="12" r="2"/></g>
+    <rect x="296" y="720" width="1232" height="1" fill="#1C1C26"/>
+    <!-- 7 -->
+    <circle cx="316" cy="758" r="20" fill="#059669"/><text x="316" y="764" font-size="13" font-weight="800" fill="#fff" text-anchor="middle">LD</text>
+    <text x="348" y="754" font-weight="700" fill="#ECECF4">Leïla Diallo</text><text x="348" y="774" font-size="12.5" fill="#8C8C9E">leila@meridian.io</text>
+    <rect x="820" y="746" width="58" height="26" rx="8" fill="#22222C"/><text x="849" y="763" font-size="12" font-weight="700" fill="#9A9AAA" text-anchor="middle">Free</text>
+    <text x="1010" y="763" font-weight="700" fill="#8C8C9E">$0</text>
+    <circle cx="1166" cy="758" r="4" fill="#8C8C9E"/><text x="1180" y="763" fill="#9A9AAA" font-weight="600">Churned</text>
+    <text x="1360" y="763" fill="#8C8C9E">Jul 2</text>
+    <g transform="translate(1516,753)" fill="#5A5A6A"><circle cx="0" cy="0" r="2"/><circle cx="0" cy="6" r="2"/><circle cx="0" cy="12" r="2"/></g>
+    <rect x="296" y="798" width="1232" height="1" fill="#1C1C26"/>
+    <!-- 8 -->
+    <circle cx="316" cy="836" r="20" fill="#EA580C"/><text x="316" y="842" font-size="13" font-weight="800" fill="#fff" text-anchor="middle">OT</text>
+    <text x="348" y="832" font-weight="700" fill="#ECECF4">Omar Traoré</text><text x="348" y="852" font-size="12.5" fill="#8C8C9E">omar@kairos.dev</text>
+    <rect x="820" y="824" width="64" height="26" rx="8" fill="#123536"/><text x="852" y="841" font-size="12" font-weight="700" fill="#34D6C6" text-anchor="middle">Team</text>
+    <text x="1010" y="841" font-weight="700" fill="#ECECF4">$299</text>
+    <circle cx="1166" cy="836" r="4" fill="#34D399"/><text x="1180" y="841" fill="#34D399" font-weight="600">Active</text>
+    <text x="1360" y="841" fill="#8C8C9E">Jul 1</text>
+    <g transform="translate(1516,831)" fill="#5A5A6A"><circle cx="0" cy="0" r="2"/><circle cx="0" cy="6" r="2"/><circle cx="0" cy="12" r="2"/></g>
+  </g>
+
+  <!-- pagination -->
+  <rect x="296" y="878" width="1232" height="1" fill="#20202B"/>
+  <text x="296" y="914" font-size="13" fill="#8C8C9E">Showing 1–8 of 2,481</text>
+  <g font-size="13" font-weight="700">
+    <rect x="1330" y="898" width="40" height="34" rx="9" fill="#16161E" stroke="#262631"/><path d="M1354 908l-6 7 6 7" fill="none" stroke="#8C8C9E" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+    <rect x="1378" y="898" width="34" height="34" rx="9" fill="#8B7CF6"/><text x="1395" y="920" fill="#0B0B12" text-anchor="middle">1</text>
+    <rect x="1420" y="898" width="34" height="34" rx="9" fill="#16161E" stroke="#262631"/><text x="1437" y="920" fill="#C4C4D2" text-anchor="middle">2</text>
+    <rect x="1462" y="898" width="34" height="34" rx="9" fill="#16161E" stroke="#262631"/><text x="1479" y="920" fill="#C4C4D2" text-anchor="middle">3</text>
+    <rect x="1504" y="898" width="40" height="34" rx="9" fill="#16161E" stroke="#262631"/><path d="M1520 908l6 7-6 7" fill="none" stroke="#8C8C9E" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+  </g>
+</svg>

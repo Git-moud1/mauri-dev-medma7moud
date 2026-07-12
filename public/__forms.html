@@ -1,0 +1,19 @@
+<!--
+  Netlify Forms detection file.
+  Netlify scans deployed static HTML at build time to register forms. Because the
+  live form is rendered by React (client-side), Netlify can't see it — so we declare
+  an identical hidden static form here. The React form then POSTs to Netlify using
+  these exact field names. Keep the `name` and field names in sync with ContactForm.tsx.
+-->
+<!DOCTYPE html>
+<html>
+  <head><meta charset="utf-8" /></head>
+  <body>
+    <form name="contact" netlify netlify-honeypot="bot-field" hidden>
+      <input type="text" name="name" />
+      <input type="email" name="email" />
+      <input type="text" name="subject" />
+      <textarea name="message"></textarea>
+    </form>
+  </body>
+</html>
