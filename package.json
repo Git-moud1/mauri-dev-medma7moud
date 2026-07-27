@@ -9,7 +9,8 @@
     "prebuild": "node scripts/gen-blur.mjs",
     "build": "next build",
     "start": "next start",
-    "lint": "next lint"
+    "lint": "next lint",
+    "test:e2e": "playwright test"
   },
   "dependencies": {
     "framer-motion": "^11.3.24",
@@ -19,6 +20,7 @@
     "sharp": "^0.35.3"
   },
   "devDependencies": {
+    "@playwright/test": "^1.62.0",
     "@types/node": "^20.14.15",
     "@types/react": "^18.3.3",
     "@types/react-dom": "^18.3.0",
