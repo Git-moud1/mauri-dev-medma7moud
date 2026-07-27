@@ -5,18 +5,11 @@ import { useRouter } from 'next/navigation';
 import { LOCALE_META, type Locale } from './config';
 import { LOCALE_COOKIE } from './locale';
 import { dictionaries, type Dictionary } from './dictionaries';
+import { getT, type TKey } from './server';
 
-/** Dot-path keys into the dictionary, e.g. "hero.stats.years". */
-type Primitive = string;
-type PathInto<T> = T extends Primitive
-  ? ''
-  : {
-      [K in keyof T & string]: T[K] extends Primitive
-        ? K
-        : `${K}.${PathInto<T[K]>}`;
-    }[keyof T & string];
-
-export type TKey = PathInto<Dictionary>;
+/** Dot-path keys into the dictionary, e.g. "hero.stats.years". Defined in
+ * ./server so server sections and client islands share one key type. */
+export type { TKey };
 
 interface I18nContextValue {
   locale: Locale;
@@ -28,18 +21,6 @@ interface I18nContextValue {
 }
 
 const I18nContext = createContext<I18nContextValue | null>(null);
-
-function resolve(dict: Dictionary, key: string): string {
-  const value = key
-    .split('.')
-    .reduce<unknown>((acc, part) => (acc as Record<string, unknown>)?.[part], dict);
-  return typeof value === 'string' ? value : key;
-}
-
-function interpolate(str: string, vars?: Record<string, string | number>): string {
-  if (!vars) return str;
-  return str.replace(/\{(\w+)\}/g, (_, k) => String(vars[k] ?? `{${k}}`));
-}
 
 /**
  * The active locale is resolved on the server from the `[locale]` route segment
@@ -65,11 +46,9 @@ export function I18nProvider({
     [router],
   );
 
-  const t = useCallback(
-    (key: TKey, vars?: Record<string, string | number>) =>
-      interpolate(resolve(dict, key), vars),
-    [dict],
-  );
+  // Same resolver the server sections use, so a string renders identically on
+  // either side of the boundary.
+  const t = useMemo(() => getT(locale), [locale]);
 
   const value = useMemo<I18nContextValue>(
     () => ({ locale, dir: LOCALE_META[locale].dir, setLocale, t, dict }),

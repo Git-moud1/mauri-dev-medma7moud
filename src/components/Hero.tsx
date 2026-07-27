@@ -1,12 +1,23 @@
-'use client';
-
-import { motion } from 'motion/react';
-import { useI18n } from '@/i18n/I18nProvider';
+import { getT } from '@/i18n/server';
+import { dirFor } from '@/i18n/locale';
+import type { Locale } from '@/i18n/config';
 import { SITE, whatsappLink } from '@/lib/site';
 import { ArrowRightIcon, WhatsAppIcon, CodeIcon, SmartphoneIcon } from './Icons';
 
-export function Hero() {
-  const { t, dir } = useI18n();
+/**
+ * Above-the-fold hero — fully server-rendered, no client JS.
+ *
+ * The staggered `motion` entrance this used to have was deliberately dropped:
+ * it started the h1 (the LCP element) at opacity 0 and only revealed it once
+ * the animation library had loaded and hydrated, which is exactly the cost this
+ * plan is trying to remove. Keeping a client island purely for that would also
+ * be throwaway work — the Prism Stack hero replaces this markup wholesale in a
+ * later plan. Ambient blur/grain layers and the pulsing status dot are CSS and
+ * are untouched.
+ */
+export function Hero({ locale }: { locale: Locale }) {
+  const t = getT(locale);
+  const dir = dirFor(locale);
 
   const stats = [
     { value: `${SITE.yearsExperience}+`, label: t('hero.stats.years') },
@@ -25,46 +36,25 @@ export function Hero() {
 
       <div className="container-x">
         <div className="mx-auto max-w-4xl text-center">
-          <motion.span
-            initial={{ opacity: 0, y: 12 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5 }}
-            className="glass inline-flex items-center gap-2 rounded-full px-4 py-1.5 text-xs font-medium text-fg"
-          >
+          <span className="glass inline-flex items-center gap-2 rounded-full px-4 py-1.5 text-xs font-medium text-fg">
             <span className="relative flex h-2 w-2">
               <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-green-500 opacity-70" />
               <span className="relative inline-flex h-2 w-2 rounded-full bg-green-500" />
             </span>
             {t('hero.badge')}
-          </motion.span>
+          </span>
 
-          <motion.h1
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6, delay: 0.05 }}
-            className="mt-6 font-display text-4xl font-bold leading-[1.1] tracking-tight sm:text-6xl lg:text-7xl"
-          >
-            {t('hero.titleLine1')}{' '}
-            <span className="gold-text">{t('hero.titleHighlight')}</span>
+          <h1 className="mt-6 font-display text-4xl font-bold leading-[1.1] tracking-tight sm:text-6xl lg:text-7xl">
+            {t('hero.titleLine1')} <span className="gold-text">{t('hero.titleHighlight')}</span>
             <br />
             {t('hero.titleLine2')}
-          </motion.h1>
+          </h1>
 
-          <motion.p
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6, delay: 0.15 }}
-            className="mx-auto mt-6 max-w-2xl text-base leading-relaxed text-muted sm:text-lg"
-          >
+          <p className="mx-auto mt-6 max-w-2xl text-base leading-relaxed text-muted sm:text-lg">
             {t('hero.subtitle')}
-          </motion.p>
+          </p>
 
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6, delay: 0.25 }}
-            className="mt-9 flex flex-col items-center justify-center gap-3 sm:flex-row"
-          >
+          <div className="mt-9 flex flex-col items-center justify-center gap-3 sm:flex-row">
             <a href="#projects" className="btn-gold w-full sm:w-auto">
               {t('hero.ctaWork')}
               <ArrowRightIcon className={`h-4 w-4 ${dir === 'rtl' ? 'rotate-180' : ''}`} />
@@ -78,15 +68,10 @@ export function Hero() {
               <WhatsAppIcon className="h-4 w-4" />
               {t('hero.ctaWhatsapp')}
             </a>
-          </motion.div>
+          </div>
 
           {/* Web + App emphasis chips */}
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ duration: 0.6, delay: 0.35 }}
-            className="mt-8 flex items-center justify-center gap-3 text-sm text-muted"
-          >
+          <div className="mt-8 flex items-center justify-center gap-3 text-sm text-muted">
             <span className="inline-flex items-center gap-1.5">
               <CodeIcon className="h-4 w-4 text-gold" /> Web Apps
             </span>
@@ -94,25 +79,18 @@ export function Hero() {
             <span className="inline-flex items-center gap-1.5">
               <SmartphoneIcon className="h-4 w-4 text-gold" /> Mobile Apps
             </span>
-          </motion.div>
+          </div>
         </div>
 
         {/* Stats */}
-        <motion.div
-          initial={{ opacity: 0, y: 24 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.6, delay: 0.45 }}
-          className="mx-auto mt-16 grid max-w-2xl grid-cols-3 divide-x divide-border rtl:divide-x-reverse"
-        >
+        <div className="mx-auto mt-16 grid max-w-2xl grid-cols-3 divide-x divide-border rtl:divide-x-reverse">
           {stats.map((s) => (
             <div key={s.label} className="px-2 text-center">
-              <div className="font-display text-3xl font-bold gold-text sm:text-4xl">
-                {s.value}
-              </div>
+              <div className="font-display text-3xl font-bold gold-text sm:text-4xl">{s.value}</div>
               <div className="mt-1 text-xs text-muted sm:text-sm">{s.label}</div>
             </div>
           ))}
-        </motion.div>
+        </div>
       </div>
     </section>
   );

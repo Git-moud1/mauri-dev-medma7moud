@@ -1,12 +1,11 @@
-'use client';
-
-import { useI18n } from '@/i18n/I18nProvider';
+import { getT } from '@/i18n/server';
+import type { Locale } from '@/i18n/config';
 import { Reveal } from './Reveal';
 
 const STEPS = ['s1', 's2', 's3', 's4'] as const;
 
-export function Process() {
-  const { t } = useI18n();
+export function Process({ locale }: { locale: Locale }) {
+  const t = getT(locale);
 
   return (
     <section id="process" className="scroll-mt-24 py-20 sm:py-28">

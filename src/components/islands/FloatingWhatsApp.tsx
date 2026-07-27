@@ -3,7 +3,7 @@
 import { motion } from 'motion/react';
 import { useI18n } from '@/i18n/I18nProvider';
 import { whatsappLink } from '@/lib/site';
-import { WhatsAppIcon } from './Icons';
+import { WhatsAppIcon } from '../Icons';
 
 const PREFILL = "Hi Mauri-Dev, I saw your portfolio and I'd like to discuss a project.";
 

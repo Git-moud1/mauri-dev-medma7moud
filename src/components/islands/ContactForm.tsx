@@ -3,7 +3,7 @@
 import { useState, type FormEvent } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { useI18n } from '@/i18n/I18nProvider';
-import { CheckIcon, SendIcon } from './Icons';
+import { CheckIcon, SendIcon } from '../Icons';
 
 type Status = 'idle' | 'sending' | 'success' | 'error';
 type Errors = Partial<Record<'name' | 'email' | 'message', string>>;

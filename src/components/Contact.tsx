@@ -1,13 +1,12 @@
-'use client';
-
-import { useI18n } from '@/i18n/I18nProvider';
+import { getT } from '@/i18n/server';
+import type { Locale } from '@/i18n/config';
 import { SITE, whatsappLink } from '@/lib/site';
 import { Reveal } from './Reveal';
-import { ContactForm } from './ContactForm';
+import { ContactForm } from './islands/ContactForm';
 import { MailIcon, WhatsAppIcon } from './Icons';
 
-export function Contact() {
-  const { t } = useI18n();
+export function Contact({ locale }: { locale: Locale }) {
+  const t = getT(locale);
 
   return (
     <section id="contact" className="scroll-mt-24 py-20 sm:py-28">

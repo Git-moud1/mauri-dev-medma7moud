@@ -1,6 +1,5 @@
-'use client';
-
-import { useI18n } from '@/i18n/I18nProvider';
+import { getT } from '@/i18n/server';
+import type { Locale } from '@/i18n/config';
 import { SKILLS } from '@/lib/site';
 import { Reveal } from './Reveal';
 import { CodeIcon, ServerIcon, SmartphoneIcon } from './Icons';
@@ -25,8 +24,8 @@ function SkillGroup({ title, items }: { title: string; items: readonly string[] 
   );
 }
 
-export function About() {
-  const { t } = useI18n();
+export function About({ locale }: { locale: Locale }) {
+  const t = getT(locale);
 
   const highlights = [
     { icon: CodeIcon, key: 'web' as const },

@@ -1,11 +1,11 @@
-'use client';
-
-import { useI18n } from '@/i18n/I18nProvider';
+import { getT } from '@/i18n/server';
+import type { Locale } from '@/i18n/config';
 import { TECH_STACK } from '@/lib/site';
 
-/** Infinite tech marquee. Duplicated track keeps the loop seamless. */
-export function TechMarquee() {
-  const { t } = useI18n();
+/** Infinite tech marquee. Duplicated track keeps the loop seamless.
+ *  Pure CSS animation, so it needs no client JS at all. */
+export function TechMarquee({ locale }: { locale: Locale }) {
+  const t = getT(locale);
   const items = [...TECH_STACK, ...TECH_STACK];
 
   return (

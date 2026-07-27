@@ -3,7 +3,7 @@
 import { AnimatePresence, motion } from 'motion/react';
 import { useTheme } from '@/theme/ThemeProvider';
 import { useI18n } from '@/i18n/I18nProvider';
-import { MoonIcon, SunIcon } from './Icons';
+import { MoonIcon, SunIcon } from '../Icons';
 
 export function ThemeToggle() {
   const { theme, toggle, ready } = useTheme();

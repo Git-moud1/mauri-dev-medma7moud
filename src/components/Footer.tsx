@@ -1,6 +1,5 @@
-'use client';
-
-import { useI18n } from '@/i18n/I18nProvider';
+import { getT } from '@/i18n/server';
+import type { Locale } from '@/i18n/config';
 import { SITE, whatsappLink } from '@/lib/site';
 import { MailIcon, WhatsAppIcon } from './Icons';
 import { Logo } from './Logo';
@@ -12,8 +11,11 @@ const NAV = [
   { id: 'contact', key: 'nav.contact' },
 ] as const;
 
-export function Footer() {
-  const { t } = useI18n();
+export function Footer({ locale }: { locale: Locale }) {
+  const t = getT(locale);
+  // Server-rendered, so this is the build date. The stale-year problem is B6,
+  // owned by Task 14 — but the hydration-mismatch half of it is gone already:
+  // the footer no longer runs on the client at all.
   const year = new Date().getFullYear();
 
   return (

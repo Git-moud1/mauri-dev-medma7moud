@@ -4,7 +4,7 @@ import { useEffect, useRef, useState } from 'react';
 import { AnimatePresence, motion } from 'motion/react';
 import { useI18n } from '@/i18n/I18nProvider';
 import { LOCALES, LOCALE_META, type Locale } from '@/i18n/config';
-import { GlobeIcon } from './Icons';
+import { GlobeIcon } from '../Icons';
 
 export function LanguageSwitcher() {
   const { locale, setLocale, t, dir } = useI18n();
