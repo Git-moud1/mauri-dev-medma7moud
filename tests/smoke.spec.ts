@@ -56,3 +56,28 @@ test('no console errors on load', async ({ page }) => {
   await page.waitForLoadState('networkidle');
   expect(errors).toEqual([]);
 });
+
+test('root redirects to a locale route', async ({ page }) => {
+  const response = await page.goto('/');
+  expect(response?.url()).toMatch(/\/(ar|en|fr)$/);
+});
+
+test.describe('localized routes', () => {
+  for (const [locale, dir] of [
+    ['ar', 'rtl'],
+    ['en', 'ltr'],
+    ['fr', 'ltr'],
+  ] as const) {
+    test(`/${locale} renders with lang=${locale} dir=${dir}`, async ({ page }) => {
+      await page.goto(`/${locale}`);
+      await expect(page.locator('html')).toHaveAttribute('lang', locale);
+      await expect(page.locator('html')).toHaveAttribute('dir', dir);
+      await expect(page.locator('h1')).toHaveCount(1);
+    });
+  }
+});
+
+test('an unsupported locale segment 404s', async ({ page }) => {
+  const response = await page.goto('/de');
+  expect(response?.status()).toBe(404);
+});

@@ -1,4 +1,6 @@
-import { DocumentMeta } from '@/components/DocumentMeta';
+import { notFound } from 'next/navigation';
+import { isLocale } from '@/i18n/locale';
+import { Providers } from '@/app/providers';
 import { Header } from '@/components/Header';
 import { Hero } from '@/components/Hero';
 import { TechMarquee } from '@/components/TechMarquee';
@@ -9,10 +11,12 @@ import { Contact } from '@/components/Contact';
 import { Footer } from '@/components/Footer';
 import { FloatingWhatsApp } from '@/components/WhatsApp';
 
-export default function Home() {
+export default async function Home(props: { params: Promise<{ locale: string }> }) {
+  const { locale } = await props.params;
+  if (!isLocale(locale)) notFound();
+
   return (
-    <>
-      <DocumentMeta />
+    <Providers locale={locale}>
       <Header />
       <main>
         <Hero />
@@ -24,6 +28,6 @@ export default function Home() {
       </main>
       <Footer />
       <FloatingWhatsApp />
-    </>
+    </Providers>
   );
 }

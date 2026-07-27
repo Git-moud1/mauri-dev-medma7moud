@@ -12,5 +12,4 @@ export const LOCALE_META: Record<
   fr: { label: 'FR', native: 'Français', dir: 'ltr', htmlLang: 'fr' },
 };
 
-export const STORAGE_KEY_LOCALE = 'bc-locale';
 export const STORAGE_KEY_THEME = 'bc-theme';

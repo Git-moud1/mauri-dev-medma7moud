@@ -1,3 +1,11 @@
+/**
+ * The one place the canonical origin is defined. metadataBase, canonical URLs,
+ * hreflang alternates, OG image URLs, sitemap.ts and robots.ts all derive from
+ * this. Switching to a custom domain is a one-line env change.
+ */
+export const SITE_URL =
+  process.env.NEXT_PUBLIC_SITE_URL ?? 'https://medmoudsite.netlify.app';
+
 /** Central place for the developer's real contact details & links. */
 export const SITE = {
   name: 'Mauri-Dev',

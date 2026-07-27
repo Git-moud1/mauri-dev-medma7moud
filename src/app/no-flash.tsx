@@ -1,7 +1,12 @@
 /**
- * Inline script injected before hydration to set the theme (dark class) and
- * language (lang/dir) from localStorage — prevents a flash of the wrong theme
- * or wrong text direction on first paint.
+ * Inline script injected before hydration to set the theme (dark class) from
+ * localStorage — prevents a flash of the wrong theme on first paint.
+ *
+ * lang and dir are NOT set here any more: they are server-rendered per route by
+ * the [locale] layout. Leaving the old localStorage-driven override in place
+ * would clobber the server value on every non-Arabic route.
+ *
+ * The one-time localStorage -> cookie locale migration lands in Task 7.
  */
 export function NoFlashScript() {
   const code = `(function(){try{
@@ -10,11 +15,6 @@ export function NoFlashScript() {
     var r=document.documentElement;
     if(t==='dark'){r.classList.add('dark');}
     r.style.colorScheme=t;
-    var l=localStorage.getItem('bc-locale');
-    var locales=['ar','en','fr'];
-    if(locales.indexOf(l)===-1){l='ar';}
-    r.setAttribute('lang',l);
-    r.setAttribute('dir', l==='ar'?'rtl':'ltr');
   }catch(e){}})();`;
   return <script dangerouslySetInnerHTML={{ __html: code }} />;
 }

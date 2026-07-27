@@ -1,20 +1,9 @@
 'use client';
 
-import {
-  createContext,
-  useCallback,
-  useContext,
-  useEffect,
-  useMemo,
-  useState,
-} from 'react';
-import {
-  DEFAULT_LOCALE,
-  LOCALES,
-  LOCALE_META,
-  STORAGE_KEY_LOCALE,
-  type Locale,
-} from './config';
+import { createContext, useCallback, useContext, useMemo } from 'react';
+import { useRouter } from 'next/navigation';
+import { LOCALE_META, type Locale } from './config';
+import { LOCALE_COOKIE } from './locale';
 import { dictionaries, type Dictionary } from './dictionaries';
 
 /** Dot-path keys into the dictionary, e.g. "hero.stats.years". */
@@ -36,7 +25,6 @@ interface I18nContextValue {
   /** Translate a dot-path key, with optional {placeholder} interpolation. */
   t: (key: TKey, vars?: Record<string, string | number>) => string;
   dict: Dictionary;
-  ready: boolean;
 }
 
 const I18nContext = createContext<I18nContextValue | null>(null);
@@ -53,44 +41,29 @@ function interpolate(str: string, vars?: Record<string, string | number>): strin
   return str.replace(/\{(\w+)\}/g, (_, k) => String(vars[k] ?? `{${k}}`));
 }
 
-function applyDocument(locale: Locale) {
-  const { dir, htmlLang } = LOCALE_META[locale];
-  const html = document.documentElement;
-  html.setAttribute('lang', htmlLang);
-  html.setAttribute('dir', dir);
-}
-
-export function I18nProvider({ children }: { children: React.ReactNode }) {
-  const [locale, setLocaleState] = useState<Locale>(DEFAULT_LOCALE);
-  const [ready, setReady] = useState(false);
-
-  // Hydrate from localStorage on mount (client-only).
-  useEffect(() => {
-    let stored: string | null = null;
-    try {
-      stored = localStorage.getItem(STORAGE_KEY_LOCALE);
-    } catch {
-      /* storage unavailable */
-    }
-    const next = (LOCALES as readonly string[]).includes(stored ?? '')
-      ? (stored as Locale)
-      : DEFAULT_LOCALE;
-    setLocaleState(next);
-    applyDocument(next);
-    setReady(true);
-  }, []);
-
-  const setLocale = useCallback((l: Locale) => {
-    setLocaleState(l);
-    applyDocument(l);
-    try {
-      localStorage.setItem(STORAGE_KEY_LOCALE, l);
-    } catch {
-      /* ignore */
-    }
-  }, []);
-
+/**
+ * The active locale is resolved on the server from the `[locale]` route segment
+ * and handed down as a prop, so the first client render already has the right
+ * dictionary — no localStorage hydration pass, and therefore no content flash.
+ */
+export function I18nProvider({
+  locale,
+  children,
+}: {
+  locale: Locale;
+  children: React.ReactNode;
+}) {
+  const router = useRouter();
   const dict = dictionaries[locale];
+
+  const setLocale = useCallback(
+    (next: Locale) => {
+      // 1 year, lax so the redirect on / can read it.
+      document.cookie = `${LOCALE_COOKIE}=${next};path=/;max-age=31536000;samesite=lax`;
+      router.push(`/${next}`);
+    },
+    [router],
+  );
 
   const t = useCallback(
     (key: TKey, vars?: Record<string, string | number>) =>
@@ -99,8 +72,8 @@ export function I18nProvider({ children }: { children: React.ReactNode }) {
   );
 
   const value = useMemo<I18nContextValue>(
-    () => ({ locale, dir: LOCALE_META[locale].dir, setLocale, t, dict, ready }),
-    [locale, setLocale, t, dict, ready],
+    () => ({ locale, dir: LOCALE_META[locale].dir, setLocale, t, dict }),
+    [locale, setLocale, t, dict],
   );
 
   return <I18nContext.Provider value={value}>{children}</I18nContext.Provider>;
