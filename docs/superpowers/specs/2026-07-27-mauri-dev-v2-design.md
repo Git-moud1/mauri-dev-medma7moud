@@ -107,6 +107,7 @@ proxy.ts                  # / → best-match locale; guards /admin/*
 - `proxy.ts` redirects `/` using the `bc-locale` cookie first, then `Accept-Language`, falling back to `ar`.
 - **`proxy.ts` runs on the Node.js runtime only — the `edge` runtime is not supported in Next 16 proxy and cannot be configured.** This is a benefit here: proxy is never bundled as a Netlify Edge Function, which removes the Edge bundling failure mode the brief flagged.
 - Locale persistence moves from `localStorage` to a cookie so the proxy can read it. The theme stays in `localStorage`.
+- **One-time migration shim.** `no-flash.tsx` reads a legacy `bc-locale` value from `localStorage`, writes it to the cookie, and removes the key — all before first paint, wrapped in the existing `try`/`catch`. Existing visitors keep their saved language across the deploy with nothing visible happening. The shim is idempotent (a no-op once the key is gone) and is scheduled for removal in a later release, noted in `MIGRATION.md`.
 - `DocumentMeta.tsx` is deleted; metadata becomes fully server-rendered per locale.
 - `I18nProvider` is retained only as a thin client context for the few islands that need `t()`; the dictionary for the active locale is passed down from the server, so only one dictionary ships per page.
 - Anchor navigation is unchanged. Language switching becomes `router.push` against a prefetched, statically prerendered route.
@@ -177,7 +178,7 @@ The brief's phase numbering contains a dependency inversion: Phase 5's localized
 | 1 | Next 16 + React 19 + `motion`; codemod, async request APIs, `middleware`→`proxy`, drop webpack config, declare `images.qualities`, delete `dangerouslyAllowSVG` | 1 | B15 |
 | 2 | `/[locale]` routes, `proxy.ts` locale redirect, delete `DocumentMeta` | 5 (structural) | B11, B14 |
 | 3 | Perf: server components + islands, per-locale fonts, `LazyMotion`, deferred below-fold content | 2 | B10 |
-| 4 | Security headers, toolchain (`noUncheckedIndexedAccess`, flat ESLint + `typescript-eslint` strict + `jsx-a11y`, Prettier), all remaining bug fixes | 6 | B1–B9, B12, B16–B19 |
+| 4 | Security headers, toolchain (`noUncheckedIndexedAccess`, flat ESLint + `typescript-eslint` strict + `jsx-a11y`, Prettier), all remaining bug fixes. **Lands whole — not partially.** | 6 | B1–B9, B12, B16–B19 |
 | 5 | Admin: auth → `ContentStore` → CRUD + reorder → uploads → admin UX | 3 | — |
 | 6 | SEO: canonical + hreflang + `x-default`, OG images per locale, JSON-LD, sitemap/robots, GSC verification, localized `alt` text, copy rewrite in all three dictionaries | 5 (rest) | B13 |
 | 7 | Hero — Prism Stack | 4 | — |
@@ -238,6 +239,6 @@ Done means:
 
 These are not blocking the plan; each is raised at the point it is reached.
 
-1. **Netlify Forms on Next 16.** If it proves unreliable, the owner chooses between staying and moving to a server action + transactional email. Not decided unilaterally.
-2. **Custom domain.** `medmoudsite.netlify.app` is canonical today. `NEXT_PUBLIC_SITE_URL` drives it so a future custom domain needs no code change.
-3. **Project catalog content.** The seven existing projects carry over unchanged. Nothing is deleted without asking.
+1. **Netlify Forms on Next 16.** Verified empirically, not assumed: the form is submitted on a real Netlify deploy preview and the result checked in Netlify → Forms → contact. Evidence (submission visible or the exact failure) is reported to the owner **before** any replacement is proposed. If it does fail, the owner chooses between staying and moving to a server action + transactional email. Not decided unilaterally.
+2. **Custom domain.** `medmoudsite.netlify.app` is canonical today; a custom domain is likely later. The canonical origin therefore lives in exactly one place — `NEXT_PUBLIC_SITE_URL`, read once into a single exported constant in `src/lib/site.ts` — and `metadataBase`, canonical URLs, `hreflang` alternates, OG image URLs, `sitemap.ts`, and `robots.ts` all derive from that constant. Switching domains is a one-line env change with no code edit. No hardcoded origin is permitted anywhere else; step 4's lint pass checks for stray literals.
+3. **Project catalog content.** The seven existing projects carry over unchanged. **No catalog entry is ever deleted or rewritten without asking the owner first** — this includes titles, descriptions, and per-locale copy. The Phase 6 marketing-copy rewrite covers the dictionaries (`src/i18n/dictionaries/**`), not `src/data/projects.ts`; any proposed change to project copy is raised as a question, not applied.
