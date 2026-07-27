@@ -81,3 +81,24 @@ test('an unsupported locale segment 404s', async ({ page }) => {
   const response = await page.goto('/de');
   expect(response?.status()).toBe(404);
 });
+
+test('legacy localStorage locale migrates to a cookie and is honoured', async ({
+  page,
+  context,
+}) => {
+  await context.addInitScript(() => {
+    try {
+      window.localStorage.setItem('bc-locale', 'fr');
+    } catch {}
+  });
+  await page.goto('/en'); // prime the origin so the shim runs
+  await page.goto('/'); // now the proxy should read the migrated cookie
+
+  expect(page.url()).toMatch(/\/fr$/);
+
+  const cookies = await context.cookies();
+  expect(cookies.find((c) => c.name === 'bc-locale')?.value).toBe('fr');
+
+  const leftover = await page.evaluate(() => window.localStorage.getItem('bc-locale'));
+  expect(leftover).toBeNull();
+});
