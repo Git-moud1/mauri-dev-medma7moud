@@ -27,10 +27,12 @@ export interface Project {
  * PROJECT DATA
  * ────────────────────────────────────────────────────────────────────────
  * To add/replace a project:
- *   1. Drop images into  public/projects/<id>/  (cover.svg/jpg, 1.jpg, 2.jpg …)
+ *   1. Drop images into  public/projects/<id>/  (cover.jpg, 1.jpg, 2.jpg …)
+ *      Raster only — jpg / jpeg / png / webp. SVG is not served through
+ *      next/image (the `dangerouslyAllowSVG` escape hatch was removed).
  *   2. Update the `cover` and `images` paths below.
  *   3. Translate `title` and `description` for all three languages.
- * Placeholder SVGs are shipped now so the site renders before real images arrive.
+ *   4. Run `npm run gen:blur` so the new images get LQIP placeholders.
  */
 export const projects: Project[] = [
   {

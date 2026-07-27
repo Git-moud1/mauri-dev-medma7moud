@@ -459,6 +459,107 @@ git commit -m "refactor: migrate framer-motion to motion for React 19"
 
 ---
 
+## Task 4b: Make the e2e suite reliable on a cold cache
+
+Added after Task 4 surfaced this. **Must land before anything reaches CI.**
+
+The suite currently passes only on a warm `next/image` optimizer cache. On a cold one, 6 Playwright workers × 2 device projects request ~72 sharp-optimized images simultaneously; the optimizer returns 500s under that load and `page.waitForLoadState('networkidle')` times out at 30 s. A CI runner is cold by definition, so the gate would fail on its first run every time.
+
+**A suite that only passes on a warm cache is not a real gate.** Fix the harness, not the assertions.
+
+**Files:**
+- Create: `tests/global-setup.ts`
+- Modify: `playwright.config.ts`
+
+**Interfaces:**
+- Consumes: Task 1's harness
+- Produces: a suite that passes from a cold `.next` on the first run.
+
+- [ ] **Step 1: Reproduce the failure**
+
+```bash
+rm -rf .next
+npm run test:e2e
+```
+
+Expected: at least one failure, most likely `networkidle` timing out, possibly accompanied by 500s from `/_next/image`. Capture the actual output — if it passes cold, the diagnosis has changed and the rest of this task needs rethinking rather than applying blind.
+
+- [ ] **Step 2: Cap worker concurrency**
+
+In `playwright.config.ts`, add:
+
+```ts
+// The next/image optimizer is CPU-bound on sharp. Unbounded workers stampede
+// it on a cold cache and it starts returning 500s. Two workers keeps the
+// suite honest without serialising it entirely.
+workers: process.env.CI ? 2 : 4,
+```
+
+- [ ] **Step 3: Warm the image cache in globalSetup**
+
+Create `tests/global-setup.ts`:
+
+```ts
+import { chromium, type FullConfig } from '@playwright/test';
+
+/**
+ * Warms the next/image optimizer cache before the suite runs.
+ *
+ * sharp re-encodes every image on first request. Without this, the first test
+ * to load the page races every other worker for optimizer capacity and the
+ * page never reaches networkidle inside its timeout.
+ */
+export default async function globalSetup(config: FullConfig) {
+  const baseURL = config.projects[0]?.use.baseURL ?? 'http://localhost:3000';
+  const browser = await chromium.launch();
+  const page = await browser.newPage();
+  await page.goto(baseURL, { waitUntil: 'load' });
+  // Scroll the full page so lazy-loaded project images are requested too.
+  await page.evaluate(async () => {
+    await new Promise<void>((resolve) => {
+      let y = 0;
+      const step = () => {
+        y += window.innerHeight;
+        window.scrollTo(0, y);
+        if (y < document.body.scrollHeight) setTimeout(step, 100);
+        else resolve();
+      };
+      step();
+    });
+  });
+  await page.waitForLoadState('networkidle').catch(() => {
+    // Best-effort warm-up: a timeout here is not a test failure.
+  });
+  await browser.close();
+}
+```
+
+Register it in `playwright.config.ts`:
+
+```ts
+globalSetup: './tests/global-setup.ts',
+```
+
+- [ ] **Step 4: Verify cold**
+
+```bash
+rm -rf .next
+npm run test:e2e
+```
+
+Expected: **all tests pass on a cold cache, first run.** Repeat twice to confirm it is not flaky. If it still fails, do not raise the `networkidle` timeout to paper over it — report instead, because that would hide a real optimizer capacity problem rather than fix it.
+
+- [ ] **Step 5: Verify and commit**
+
+Run: `npx tsc --noEmit && npm run lint && npm run build`
+
+```bash
+git add playwright.config.ts tests/global-setup.ts
+git commit -m "test: make e2e suite pass on a cold next/image cache (task 4b)"
+```
+
+---
+
 ## Task 5: Locale primitives
 
 Pure, testable locale logic with no React and no Next imports — so the proxy, the layout, and the tests can all share it.
@@ -1131,11 +1232,19 @@ src/theme/ThemeProvider.tsx
 
 - [ ] **Step 7: Measure the JS delta**
 
+Next 16's Turbopack build does **not** print a "First Load JS" column — use the measurement script instead:
+
 ```bash
-npm run build 2>&1 | grep -A 20 "Route (app)"
+npm run build
+npm run start &
+node scripts/measure-bundle.mjs http://localhost:3000/ar
 ```
 
-Record "First Load JS shared by all". Expected: a material drop from the 183 KB baseline. If it has not moved, a client boundary is still higher in the tree than intended — recheck `Providers`.
+Reference points, both gzipped: Next 14 baseline **183 KB**; post-upgrade, pre-split **252.8 KB** (the upgrade itself cost ~70 KB).
+
+Expected: a large drop, since `motion`, the i18n context, and every static section should leave the client bundle entirely. If the number has barely moved, a client boundary is still higher in the tree than intended — recheck `Providers`.
+
+**Report the real figure.** Do not round toward the 150 KB target, and do not treat missing it as a failure to conceal — the owner has explicitly said the target may move once this number is known.
 
 - [ ] **Step 8: Verify and commit**
 
@@ -1377,10 +1486,12 @@ import { m, AnimatePresence } from 'motion/react';
 - [ ] **Step 3: Verify the bundle moved**
 
 ```bash
-npm run build 2>&1 | grep -A 20 "Route (app)"
+npm run build
+npm run start &
+node scripts/measure-bundle.mjs http://localhost:3000/ar
 ```
 
-Expected: First Load JS down again. Target for the whole plan is ≤ ~150 KB gzipped.
+Expected: JS down again from whatever Task 8 measured. The plan's original target is ≤ ~150 KB gzipped, but that target is under review — Task 8 reports the real post-split number and the owner decides then whether the target moves or more gets cut. Report the actual figure either way.
 
 - [ ] **Step 4: Verify and commit**
 
