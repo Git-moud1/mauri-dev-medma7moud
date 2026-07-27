@@ -25,7 +25,7 @@ const tajawal = Tajawal({
   display: 'swap',
 });
 
-const SITE_URL = 'https://baycheikh.netlify.app';
+const SITE_URL = 'https://medmoudsite.netlify.app';
 
 // Default (Arabic) SEO metadata. Per-language <title>/<meta> is updated at
 // runtime by DocumentMeta.tsx when the visitor switches languages.
