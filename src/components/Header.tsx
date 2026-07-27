@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { AnimatePresence, motion } from 'framer-motion';
+import { AnimatePresence, motion } from 'motion/react';
 import { useI18n } from '@/i18n/I18nProvider';
 import { whatsappLink } from '@/lib/site';
 import { ThemeToggle } from './ThemeToggle';

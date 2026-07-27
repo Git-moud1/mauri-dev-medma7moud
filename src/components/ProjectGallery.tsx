@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useId, useMemo, useRef, useState } from 'react';
 import Image from 'next/image';
-import { AnimatePresence, motion, type PanInfo } from 'framer-motion';
+import { AnimatePresence, motion, type PanInfo } from 'motion/react';
 import { useI18n } from '@/i18n/I18nProvider';
 import type { Project } from '@/data/projects';
 import { blurFor } from '@/data/blur.generated';

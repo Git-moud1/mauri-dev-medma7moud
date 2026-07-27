@@ -3,14 +3,14 @@
 import { useMemo, useState } from 'react';
 import Image from 'next/image';
 import dynamic from 'next/dynamic';
-import { AnimatePresence, motion } from 'framer-motion';
+import { AnimatePresence, motion } from 'motion/react';
 import { useI18n } from '@/i18n/I18nProvider';
 import { projects, type Project, type ProjectCategory } from '@/data/projects';
 import { blurFor } from '@/data/blur.generated';
 import { Reveal } from './Reveal';
 import { ArrowRightIcon, ExternalLinkIcon, SmartphoneIcon } from './Icons';
 
-// Code-split the lightbox: its code (and framer-motion drag/gesture paths) load
+// Code-split the lightbox: its code (and motion's drag/gesture paths) load
 // only when a visitor actually opens a project, not on first paint.
 const ProjectGallery = dynamic(
   () => import('./ProjectGallery').then((m) => m.ProjectGallery),

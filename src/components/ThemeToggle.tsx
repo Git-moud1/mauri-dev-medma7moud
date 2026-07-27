@@ -1,6 +1,6 @@
 'use client';
 
-import { AnimatePresence, motion } from 'framer-motion';
+import { AnimatePresence, motion } from 'motion/react';
 import { useTheme } from '@/theme/ThemeProvider';
 import { useI18n } from '@/i18n/I18nProvider';
 import { MoonIcon, SunIcon } from './Icons';
