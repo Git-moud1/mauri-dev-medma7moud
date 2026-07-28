@@ -103,6 +103,106 @@ test('legacy localStorage locale migrates to a cookie and is honoured', async ({
   expect(leftover).toBeNull();
 });
 
+test.describe('scroll reveals', () => {
+  /**
+   * Every wrapper that must end up visible, and the section it belongs to.
+   * `footer` has no `<Reveal>` of its own today, so the helper falls back to
+   * the element itself — if it ever gains one, the same assertion covers it.
+   */
+  const SECTIONS = ['#about', '#projects', '#process', '#contact', 'footer'] as const;
+
+  /**
+   * Reads the computed opacity of every `.reveal` inside `selector`, falling
+   * back to the element itself when it contains none. Deliberately uses
+   * `getComputedStyle` rather than any Playwright visibility helper — see the
+   * protected-test note below for why that distinction is the whole point.
+   */
+  async function revealOpacities(
+    page: import('@playwright/test').Page,
+    selector: string,
+  ): Promise<number[]> {
+    return page.evaluate((sel) => {
+      const root = document.querySelector(sel);
+      if (!root) return [];
+      const reveals = [...root.querySelectorAll('.reveal')];
+      const targets = reveals.length > 0 ? reveals : [root];
+      return targets.map((el) => Number.parseFloat(getComputedStyle(el).opacity));
+    }, selector);
+  }
+
+  /**
+   * PROTECTED TEST — do not weaken, skip, or delete. Added in Task 10b.
+   *
+   * Playwright counts an element with `opacity: 0` as VISIBLE: it only checks
+   * that the box has a non-empty bounding box and is not `display:none` /
+   * `visibility:hidden`. Every reveal on this page ships with `opacity: 0` and
+   * is only raised by an IntersectionObserver in `Reveal.tsx`. So if that
+   * observer ever stops firing — a bad rootMargin, a hydration failure, a CSS
+   * class rename, a build that drops the effect — the site renders a fully
+   * blank page to a real visitor while `toBeVisible()`, `toHaveText()` and
+   * every other assertion in this suite still passes.
+   *
+   * Only a computed-opacity check closes that hole. Replacing this with
+   * `toBeVisible()` restores the blind spot exactly.
+   */
+  test('every section ends up with a revealed element at opacity > 0', async ({ page }) => {
+    // Five sections, each polled through a 0.55s transition plus its stagger,
+    // on a throttled mobile profile — the default 30s budget is uncomfortably
+    // close. This is a timeout bump, not a weakened assertion.
+    test.setTimeout(90_000);
+
+    await page.goto('/');
+
+    /**
+     * Precondition: the mechanism is armed. A reveal this far below the fold
+     * must start hidden. Without this check, a build where `.reveal` never
+     * made it into the stylesheet at all — Tailwind purges `@layer components`
+     * rules whose class name its extractor cannot find, which has already
+     * happened once — would leave every element at opacity 1 and pass the
+     * assertions below while the animation was entirely gone.
+     */
+    const beforeScroll = await revealOpacities(page, '#contact');
+    expect(beforeScroll.length).toBeGreaterThan(0);
+    expect(Math.max(...beforeScroll)).toBe(0);
+
+    for (const selector of SECTIONS) {
+      // `scrollIntoViewIfNeeded` is not enough: these sections are taller than
+      // the viewport, so once the previous one has been scrolled to, the next
+      // one's top edge already counts as "visible" and no scroll happens —
+      // leaving its reveals below the fold. Force the section to the top.
+      await page
+        .locator(selector)
+        .first()
+        .evaluate((el) => el.scrollIntoView({ block: 'start' }));
+
+      await expect
+        .poll(async () => Math.max(...(await revealOpacities(page, selector)), -1), {
+          message: `no element inside ${selector} reached opacity > 0 — the page renders blank here`,
+          timeout: 5_000,
+        })
+        .toBeGreaterThan(0);
+    }
+  });
+
+  /**
+   * B3: a visitor who asks for reduced motion gets the content immediately,
+   * with no scrolling and no transition. `#contact` sits far below the fold and
+   * is never scrolled into view here, so a reveal still waiting on the observer
+   * would be caught. The `reveal-in` assertion proves the effect's
+   * reduced-motion branch ran, not just the CSS media-query guard.
+   */
+  test('reduced motion renders reveals immediately, without scrolling', async ({ page }) => {
+    await page.emulateMedia({ reducedMotion: 'reduce' });
+    await page.goto('/');
+
+    await expect(page.locator('#contact .reveal').first()).toHaveClass(/reveal-in/);
+
+    const opacities = await revealOpacities(page, '#contact');
+    expect(opacities.length).toBeGreaterThan(0);
+    expect(Math.min(...opacities)).toBe(1);
+  });
+});
+
 test.describe('per-locale font loading', () => {
   /**
    * Every woff2 the browser actually fetches while loading a locale.

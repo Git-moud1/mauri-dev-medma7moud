@@ -191,6 +191,12 @@ export function ProjectsGrid({
                 filter === f.id ? 'text-[rgb(20_18_14)]' : 'text-muted hover:text-fg'
               }`}
             >
+              {/* The pill jumps between filters rather than sliding: shared-
+                  layout animation needs motion's layout projection, which
+                  `domAnimation` deliberately leaves out (Task 10a). Restoring
+                  the slide in CSS would mean measuring three variable-width,
+                  localized labels in JS — not worth it here. Owner decision:
+                  leave it; revisit with the new hero work in plan 3. */}
               {filter === f.id && (
                 <m.span
                   layoutId="filter-pill"
