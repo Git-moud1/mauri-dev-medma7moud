@@ -38,6 +38,43 @@ function bundledFallbackSettings(): SiteSettings {
 }
 
 /**
+ * "There is no Blobs runtime here" is a configuration fact, not a failure.
+ *
+ * It is the normal state of `npm run dev` and `next start`, where reads are
+ * meant to fall back to the bundled catalogue. Logging it at error level made
+ * Next 16's dev overlay throw a full-screen MissingBlobsEnvironmentError on
+ * every page load — the fallback was working perfectly and the reporting level
+ * was lying about it.
+ *
+ * A genuine failure — an outage, a malformed blob, a network error in
+ * production — still logs at error level, because that one does need attention.
+ */
+function isMissingBlobsEnvironment(error: unknown): boolean {
+  return (
+    error instanceof Error &&
+    (error.name === 'MissingBlobsEnvironmentError' ||
+      /not been configured to use Netlify Blobs/i.test(error.message))
+  );
+}
+
+/** Warned once per process, so it reads as a notice rather than a loop. */
+let warnedMissingEnvironment = false;
+
+function reportReadFailure(what: string, error: unknown): void {
+  if (isMissingBlobsEnvironment(error)) {
+    if (!warnedMissingEnvironment) {
+      warnedMissingEnvironment = true;
+      console.warn(
+        '[content] No Netlify Blobs runtime — serving the bundled catalogue. ' +
+          'Run `npx netlify dev` for the real store, or edit on the deploy.',
+      );
+    }
+    return;
+  }
+  console.error(`[content] ${what} read failed, using bundled data`, error);
+}
+
+/**
  * Every read falls back to the bundled data, on every failure path: a missing
  * blob (which is what a first deploy looks like), a cold store, an outage, or
  * a stored value that no longer satisfies the schema.
@@ -63,7 +100,7 @@ export const blobStore: ContentStore = {
       }
       return parsed.data;
     } catch (error) {
-      console.error('[content] projects read failed, using bundled data', error);
+      reportReadFailure('projects', error);
       return bundledFallbackProjects();
     }
   },
@@ -80,7 +117,7 @@ export const blobStore: ContentStore = {
       }
       return parsed.data;
     } catch (error) {
-      console.error('[content] settings read failed, using bundled data', error);
+      reportReadFailure('settings', error);
       return bundledFallbackSettings();
     }
   },
