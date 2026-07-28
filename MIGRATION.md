@@ -150,29 +150,37 @@ nor the JS work moved it.
 
 ---
 
-## 3. Open defect: CLS 0.059–0.062 on `/ar`
+## 3. CLOSED: the Arabic CLS regression (plan 2, task 2)
 
-Over the 0.05 budget, on Arabic only, on 2 of 3 runs. **This one is ours, not
-preview contamination** — the shift is caused by our own Tajawal faces, which
-arrive by 775 ms and swap in after first paint. Scheduled as a task in plan 2:
-tune `size-adjust` / `ascent-override` on the Arabic fallback and assert CLS in
-the suite so it cannot drift back.
+Fixed, and the plan 1 diagnosis in this section was wrong — recorded rather
+than rewritten, because the wrong diagnosis is the interesting part.
 
-It does not reproduce locally — CLS measured 0.0000 on `/ar` and `/en` against
-`next start` — because a localhost font serves too fast to shift anything.
+Plan 1 concluded that `preload: false` made the faces arrive late. The real
+cause was that Arabic had **no working fallback at all**: next/font generates
+one automatically and for Tajawal it emits `src: local(Arial)`, and Arial has no
+Arabic glyphs. Arabic text skipped past that adjusted face to whatever system
+font existed, whose metrics the adjustment was never computed for. Measured on
+the real hero string, matching Tajawal against it needed `size-adjust: 143.30%`
+— a 43% error on every Arabic page.
 
-Lighthouse attributes the shift to two `.woff2` loads (the Tajawal faces). The
-cause is task 9's `preload: false`: fonts are discovered through the stylesheet
-rather than preloaded, so they arrive after first paint and swap in. That is the
-same change that cut Arabic font bytes in half, so it is a genuine trade-off,
-not a mistake to simply revert.
+Tajawal is now self-hosted with an Arabic-capable, metric-matched fallback, and
+the hero face alone is preloaded. Font bytes are unchanged: 55.6 KB on `/ar`,
+84.9 KB on `/en`.
 
-Latin locales measure 0 because Playfair and Inter have closer fallback metrics.
+Measured on the deploy, three runs each, same environment before and after:
 
-**Not fixed in plan 1.** Candidate fixes, cheapest first: preload only the single
-Tajawal face the hero renders; tune `adjustFontFallback` / `size-adjust` for the
-Arabic fallback; or reserve the hero heading's height. Each needs re-measuring on
-a deploy, since local measurement cannot see this class of bug.
+|           | before                | after                        |
+| --------- | --------------------- | ---------------------------- |
+| CLS `/ar` | 0.059 / 0.062 / 0.000 | **0.0013 / 0.0000 / 0.0013** |
+| LCP `/ar` | 1.65 / 6.33 / 6.89 s  | **1.51 / 2.57 / 1.59 s**     |
+
+**This also revises §2's LCP conclusion.** That section attributes the 6.3–6.9 s
+outliers to Netlify's preview instrumentation. That was half the story: the
+same environment now medians 1.59 s with no change to the instrumentation, so
+our own Arabic font swap was doing most of the damage. The LCP question is still
+open on production — but the honest current reading is that plan 1 shipped an
+Arabic LCP regression, plan 2 task 2 fixed it, and the site is now plausibly
+faster than v1 for Arabic visitors rather than merely equal.
 
 ---
 

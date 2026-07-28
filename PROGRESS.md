@@ -422,3 +422,60 @@ against the full suite before pushing.
 locally · 7/7 header tests on the deploy.
 
 **Next:** Task 2 — the `/ar` CLS regression.
+
+---
+
+## Task 2 — the Arabic CLS regression, and what actually caused it
+
+**The diagnosis was wrong in plan 1, and the real cause was worse.**
+
+It was not simply that `preload: false` makes faces arrive late. Arabic had **no
+working fallback at all**. next/font generates one automatically, and for
+Tajawal it emits `src: local(Arial)` — and Arial has no Arabic glyphs. Arabic
+text skipped straight past that carefully adjusted face to whatever system
+Arabic font existed, with metrics the adjustment was never computed for.
+Measured on the real hero string: matching Tajawal's width against that fallback
+would need `size-adjust: 143.30%`. A 43% error, on every Arabic page, since
+plan 1 task 9.
+
+`adjustFontFallback: false` does not suppress it on Next 16 — verified against a
+clean build with `.next` and `node_modules/.cache` both removed.
+
+**What changed**
+
+- Tajawal is **self-hosted**. The six subset files are the exact ones next/font
+  was already serving, copied out of the build output, so the bytes on the wire
+  are unchanged: **55.6 KB on `/ar`, 84.9 KB on `/en`** — identical to plan 1.
+- `'Tajawal Arabic Fallback'` with an Arabic-capable `src` list and overrides
+  derived from Tajawal's own metrics, not guessed.
+- The hero face — and only the hero face — is preloaded on `/ar`, via
+  `ReactDOM.preload`. A hand-written `<link>` emitted two copies, because React
+  hoisted its own alongside ours.
+
+**Measured on the deploy, three runs each**
+
+|             | before (plan 1)       | after                        |
+| ----------- | --------------------- | ---------------------------- |
+| CLS `/ar`   | 0.059 / 0.062 / 0.000 | **0.0013 / 0.0000 / 0.0013** |
+| LCP `/ar`   | 1.65 / 6.33 / 6.89 s  | **1.51 / 2.57 / 1.59 s**     |
+| Performance | 91 / 70 / 67          | **94 / 93 / 100**            |
+
+Same preview environment, same contamination in both columns, so the difference
+is attributable to the fix. **Median LCP went from 6.33 s to 1.59 s.** The
+earlier reading that blamed Netlify's preview instrumentation for the long tail
+was only half right — our own font swap was doing most of it.
+
+**The test is the point.** It throttles every woff2 response by 1.2 s, because
+without that a local run cannot reproduce this class of bug at all: localhost
+serves fonts before anything has painted. That is exactly why plan 1 measured
+0.0000 and shipped 0.059. Confirmed to fail on `/ar` before the fix and pass
+after.
+
+The per-locale font test now counts both `/_next/static/media` and `/fonts`, and
+asserts **exactly one** preload on Arabic and zero on latin — so preloading
+everything fails as loudly as preloading nothing.
+
+**Build status:** tsc clean · lint clean · build passes · 72 passed, 14 skipped ·
+JS unchanged at 236.1 KB.
+
+**Next:** Task 3 — the content store.
