@@ -13,3 +13,6 @@ next-env.d.ts
 /test-results/
 /playwright-report/
 /blob-report/
+
+# Lighthouse raw reports — large, regenerate rather than commit
+docs/superpowers/baseline/*.json
