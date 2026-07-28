@@ -42,6 +42,18 @@ test.describe('delivered security headers', () => {
       expect(csp).toContain("object-src 'none'");
       expect(csp).toContain("base-uri 'self'");
       expect(csp).toContain("form-action 'self'");
+
+      /**
+       * PROTECTED — the dev convenience must never reach a deployed response.
+       *
+       * Development adds 'unsafe-eval' (React's dev build and Turbopack's HMR
+       * client both evaluate at runtime) and `ws:` (the HMR socket). In
+       * production either one is a real weakening: 'unsafe-eval' turns any
+       * injected string into executable code, and there is an admin session
+       * cookie on this origin.
+       */
+      expect(csp, `${path} shipped a development CSP`).not.toContain('unsafe-eval');
+      expect(csp).not.toContain('ws:');
     });
   }
 

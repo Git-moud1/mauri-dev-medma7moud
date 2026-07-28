@@ -55,7 +55,37 @@ const CSP_SHARED = [
   "object-src 'none'",
 ];
 
-const PUBLIC_CSP = ["script-src 'self' 'unsafe-inline'", ...CSP_SHARED].join('; ');
+/**
+ * Development needs two relaxations that production must never get.
+ *
+ * `'unsafe-eval'`: React's development build evaluates code at runtime, and
+ * Turbopack's HMR client does too. Without it every page dies on
+ * "eval() is not supported in this environment ... React requires eval() in
+ * development mode" — the CSP from task 2 made `npm run dev` unusable.
+ *
+ * `ws:` in connect-src: the HMR socket. `connect-src 'self'` covers http(s)
+ * only, so hot reload silently stops working without it.
+ *
+ * Both are gated on NODE_ENV and neither can reach a deployed response: Netlify
+ * builds with NODE_ENV=production, and `tests/headers.spec.ts` asserts on the
+ * delivered header that `unsafe-eval` is absent. A production `'unsafe-eval'`
+ * would be a real XSS primitive, and there is an admin panel behind this origin
+ * now.
+ */
+const IS_DEV = process.env.NODE_ENV === 'development';
+
+const SCRIPT_SRC = IS_DEV
+  ? "script-src 'self' 'unsafe-inline' 'unsafe-eval'"
+  : "script-src 'self' 'unsafe-inline'";
+
+const CONNECT_SRC = IS_DEV ? "connect-src 'self' ws: wss:" : "connect-src 'self'";
+
+const PUBLIC_CSP = [
+  SCRIPT_SRC,
+  ...CSP_SHARED.map((directive) =>
+    directive.startsWith('connect-src') ? CONNECT_SRC : directive,
+  ),
+].join('; ');
 
 /** @type {import('next').NextConfig} */
 const nextConfig = {
