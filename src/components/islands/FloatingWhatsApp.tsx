@@ -1,6 +1,6 @@
 'use client';
 
-import { motion } from 'motion/react';
+import * as m from 'motion/react-m';
 import { useI18n } from '@/i18n/I18nProvider';
 import { whatsappLink } from '@/lib/site';
 import { WhatsAppIcon } from '../Icons';
@@ -11,7 +11,7 @@ const PREFILL = "Hi Mauri-Dev, I saw your portfolio and I'd like to discuss a pr
 export function FloatingWhatsApp() {
   const { t, dir } = useI18n();
   return (
-    <motion.a
+    <m.a
       href={whatsappLink(PREFILL)}
       target="_blank"
       rel="noopener noreferrer"
@@ -27,6 +27,6 @@ export function FloatingWhatsApp() {
     >
       <span className="absolute inset-0 animate-ping rounded-full bg-[#25D366] opacity-30 group-hover:opacity-40" />
       <WhatsAppIcon className="relative h-7 w-7" />
-    </motion.a>
+    </m.a>
   );
 }

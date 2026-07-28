@@ -1,7 +1,8 @@
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
-import { AnimatePresence, motion } from 'motion/react';
+import { AnimatePresence } from 'motion/react';
+import * as m from 'motion/react-m';
 import { useI18n } from '@/i18n/I18nProvider';
 import { LOCALES, LOCALE_META, type Locale } from '@/i18n/config';
 import { GlobeIcon } from '../Icons';
@@ -47,7 +48,7 @@ export function LanguageSwitcher() {
 
       <AnimatePresence>
         {open && (
-          <motion.ul
+          <m.ul
             role="menu"
             initial={{ opacity: 0, y: -8, scale: 0.96 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
@@ -77,7 +78,7 @@ export function LanguageSwitcher() {
                 </li>
               );
             })}
-          </motion.ul>
+          </m.ul>
         )}
       </AnimatePresence>
     </div>

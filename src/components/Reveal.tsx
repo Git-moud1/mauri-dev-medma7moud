@@ -1,6 +1,7 @@
 'use client';
 
-import { motion, type Variants } from 'motion/react';
+import * as m from 'motion/react-m';
+import type { Variants } from 'motion/react';
 import type { ReactNode } from 'react';
 
 const variants: Variants = {
@@ -24,7 +25,9 @@ export function Reveal({
   delay?: number;
   as?: 'div' | 'section' | 'li' | 'article' | 'span';
 }) {
-  const MotionTag = motion[as];
+  // `m` rather than `motion`: the feature set comes from the LazyMotion in
+  // providers.tsx. `whileInView` is part of domAnimation's gesture bundle.
+  const MotionTag = m[as];
   return (
     <MotionTag
       className={className}

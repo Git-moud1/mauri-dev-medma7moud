@@ -1,7 +1,8 @@
 'use client';
 
 import { useState, type FormEvent } from 'react';
-import { motion, AnimatePresence } from 'motion/react';
+import { AnimatePresence } from 'motion/react';
+import * as m from 'motion/react-m';
 import { useI18n } from '@/i18n/I18nProvider';
 import { CheckIcon, SendIcon } from '../Icons';
 
@@ -172,7 +173,7 @@ export function ContactForm() {
       <div aria-live="polite" className="mt-4">
         <AnimatePresence mode="wait">
           {status === 'success' && (
-            <motion.p
+            <m.p
               key="success"
               initial={{ opacity: 0, y: 6 }}
               animate={{ opacity: 1, y: 0 }}
@@ -181,10 +182,10 @@ export function ContactForm() {
             >
               <CheckIcon className="h-4 w-4" />
               {t('contact.form.success')}
-            </motion.p>
+            </m.p>
           )}
           {status === 'error' && (
-            <motion.p
+            <m.p
               key="error"
               initial={{ opacity: 0, y: 6 }}
               animate={{ opacity: 1, y: 0 }}
@@ -192,7 +193,7 @@ export function ContactForm() {
               className="rounded-2xl bg-red-500/12 px-4 py-3 text-sm text-red-600 dark:text-red-400"
             >
               {t('contact.form.error')}
-            </motion.p>
+            </m.p>
           )}
         </AnimatePresence>
       </div>

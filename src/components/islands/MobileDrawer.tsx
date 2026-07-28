@@ -8,7 +8,8 @@ import {
   useState,
   type ReactNode,
 } from 'react';
-import { AnimatePresence, motion } from 'motion/react';
+import { AnimatePresence } from 'motion/react';
+import * as m from 'motion/react-m';
 import { CloseIcon, MenuIcon, WhatsAppIcon } from '../Icons';
 
 /**
@@ -108,7 +109,7 @@ export function DrawerPanel({
   return (
     <AnimatePresence>
       {open && (
-        <motion.div
+        <m.div
           initial={{ opacity: 0, height: 0 }}
           animate={{ opacity: 1, height: 'auto' }}
           exit={{ opacity: 0, height: 0 }}
@@ -140,7 +141,7 @@ export function DrawerPanel({
               </a>
             </li>
           </ul>
-        </motion.div>
+        </m.div>
       )}
     </AnimatePresence>
   );

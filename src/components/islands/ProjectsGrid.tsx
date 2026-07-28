@@ -3,7 +3,8 @@
 import { useMemo, useState } from 'react';
 import Image from 'next/image';
 import dynamic from 'next/dynamic';
-import { AnimatePresence, motion } from 'motion/react';
+import { AnimatePresence } from 'motion/react';
+import * as m from 'motion/react-m';
 import { dirFor } from '@/i18n/locale';
 import type { Locale } from '@/i18n/config';
 import type { Project, ProjectCategory } from '@/data/projects';
@@ -49,7 +50,7 @@ function ProjectCard({
   const isPhone = project.frame === 'phone';
 
   return (
-    <motion.article
+    <m.article
       layout
       initial={{ opacity: 0, y: 24 }}
       animate={{ opacity: 1, y: 0 }}
@@ -147,7 +148,7 @@ function ProjectCard({
           ) : null}
         </div>
       </div>
-    </motion.article>
+    </m.article>
   );
 }
 
@@ -191,7 +192,7 @@ export function ProjectsGrid({
               }`}
             >
               {filter === f.id && (
-                <motion.span
+                <m.span
                   layoutId="filter-pill"
                   className="absolute inset-0 -z-10 rounded-full bg-gold-grad"
                   transition={{ type: 'spring', stiffness: 380, damping: 30 }}
@@ -205,7 +206,7 @@ export function ProjectsGrid({
 
       {/* Grid */}
       {filtered.length > 0 ? (
-        <motion.div layout className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+        <m.div layout className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
           <AnimatePresence mode="popLayout">
             {filtered.map((project) => (
               <ProjectCard
@@ -218,7 +219,7 @@ export function ProjectsGrid({
               />
             ))}
           </AnimatePresence>
-        </motion.div>
+        </m.div>
       ) : (
         <p className="py-16 text-center text-muted">{labels.empty}</p>
       )}
