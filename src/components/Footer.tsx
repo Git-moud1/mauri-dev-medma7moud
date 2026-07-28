@@ -19,7 +19,7 @@ export function Footer({ locale }: { locale: Locale }) {
   const year = new Date().getFullYear();
 
   return (
-    <footer className="border-t border-border bg-surface/40">
+    <footer className="defer-paint defer-footer border-t border-border bg-surface/40">
       <div className="container-x py-14">
         <div className="grid gap-10 md:grid-cols-[1.5fr_1fr_1fr]">
           {/* Brand */}

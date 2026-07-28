@@ -9,7 +9,10 @@ export function TechMarquee({ locale }: { locale: Locale }) {
   const items = [...TECH_STACK, ...TECH_STACK];
 
   return (
-    <section aria-label={t('marquee.label')} className="border-y border-border bg-surface/40 py-6">
+    <section
+      aria-label={t('marquee.label')}
+      className="defer-paint defer-marquee border-y border-border bg-surface/40 py-6"
+    >
       <div className="relative overflow-hidden">
         {/* edge fades */}
         <div className="pointer-events-none absolute inset-y-0 start-0 z-10 w-16 bg-gradient-to-r from-bg to-transparent rtl:bg-gradient-to-l" />

@@ -74,3 +74,79 @@ reduced-motion query, so the page renders blank for that visitor. Same for a
 hydration failure. Worth closing with a `<noscript>` rule; carried into Task 11.
 
 **Next:** Task 11 — defer paint for below-the-fold sections.
+
+---
+
+## Measurement harness — refuses to run against a stale server
+
+Not a plan task. Landed because three separate measurements in this plan came
+back flatteringly low from a server that was not serving the build under test.
+
+- `scripts/port.mjs`: kill listeners on a port, verify, throw if any survived.
+- `scripts/measure-bundle.mjs`: owns the server for localhost targets, and
+  aborts without printing a total if any referenced asset does not return 200.
+  A missing asset is counted as zero bytes, so this class of failure always
+  biases the number **downward**.
+- `scripts/measure-cls.mjs`: new, same ownership rule. Total shift and worst 5s
+  session window on a mobile profile across a full-page scroll.
+- `playwright.config.ts`: `reuseExistingServer: false` unconditionally.
+
+The CLS instrument was validated against a deliberately injected 300px shift
+(reported 0.3576), so a reading of 0.0000 below means no shift, not no
+instrument.
+
+---
+
+## Task 11 — defer below-the-fold paint, and the no-JS blank page
+
+**What changed**
+
+- `globals.css`: `.defer-paint` (`content-visibility: auto`) plus a per-section
+  `contain-intrinsic-size`. Applied to TechMarquee, About, Process, Contact and
+  Footer. **Not** to Hero (LCP region) or Projects (too close to the fold).
+- The intrinsic sizes are measured, not guessed — Pixel 7 and Desktop Chrome,
+  Arabic and latin, with a `lg` media query because desktop lays the same
+  content out roughly half as tall and an over-reserved section shifts exactly
+  as badly as an under-reserved one.
+- The marquee's infinite animation now stops while offscreen:
+  `content-visibility: auto` suspends animations in a skipped subtree.
+- `layout.tsx`: a `<noscript>` style block that reveals `.reveal` and
+  `[data-anim-in]`.
+- `data-anim-in` added to the three server-rendered elements that motion
+  renders at `opacity: 0`: project cards, floating WhatsApp button, theme icon.
+
+**CLS — measured before and after, as asked**
+
+| Route | Before | After |
+|---|---|---|
+| `/ar` | 0.0000 (worst window), 0.0000 total | 0.0000 / 0.0000 |
+| `/en` | 0.0000 (worst window), 0.0000 total | 0.0000 / 0.0000 |
+
+No movement at all. The deferral stays.
+
+**Bundle:** `/ar` and `/en` unchanged at 235.6 KB — this task spends no JS.
+
+**The no-JS bug, which was worse than expected**
+
+With JavaScript disabled the page rendered blank: every `.reveal` sits at
+`opacity: 0` waiting for an IntersectionObserver that never runs. The
+`<noscript>` override fixes that half.
+
+The new test then caught a second, independent instance the fix did *not*
+cover. `ProjectsGrid` renders each card as a motion element with
+`initial={{ opacity: 0 }}`, which server-renders as an inline `opacity: 0` and
+is only cleared when the animation library hydrates. So the project cards — the
+reason a client is on the page — stayed invisible even after the reveals were
+fixed. Same for the floating WhatsApp button and the theme icon. Hence
+`data-anim-in` rather than a `.reveal`-only rule.
+
+Assertion detail: the test multiplies computed opacity up the ancestor chain.
+Checking the card alone would have passed while a `.reveal` wrapper above it
+held everything at zero.
+
+**Build status**
+
+`npx tsc --noEmit` clean · `npm run lint` 0 errors, 1 pre-existing warning (B4,
+Task 14) · `npm run build` passes · `npm run test:e2e` **50/50 pass**.
+
+**Next:** Task 12 — security and immutable cache headers.

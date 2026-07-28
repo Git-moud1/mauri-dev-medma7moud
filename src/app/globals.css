@@ -202,4 +202,56 @@
     background-image: radial-gradient(rgb(var(--gold) / 0.04) 1px, transparent 1px);
     background-size: 22px 22px;
   }
+
+  /* Skip layout, paint and compositing for sections that are nowhere near the
+     viewport (task 11). Also suspends animations inside the skipped subtree,
+     which is what stops the tech marquee compositing forever while offscreen.
+
+     `contain-intrinsic-size: auto <fallback>` reserves the fallback height
+     until the section has been rendered once, then remembers the real height
+     and uses that. So the fallback only has to be right the FIRST time a
+     section is reached — but if it is wrong there, the scrollbar and anything
+     already on screen jump. The values below are measured, not guessed:
+     Pixel 7 and Desktop Chrome, both an Arabic and a latin locale, rounded up
+     to the nearest 10px. Re-measure them if a section's content changes.
+
+     Deliberately NOT applied to Hero (it is the LCP region) or Projects (close
+     enough to the fold that deferring it risks a visible pop). */
+  .defer-paint {
+    content-visibility: auto;
+  }
+
+  .defer-marquee {
+    contain-intrinsic-size: auto 80px;
+  }
+  .defer-about {
+    contain-intrinsic-size: auto 1490px;
+  }
+  .defer-process {
+    contain-intrinsic-size: auto 1220px;
+  }
+  .defer-contact {
+    contain-intrinsic-size: auto 1150px;
+  }
+  .defer-footer {
+    contain-intrinsic-size: auto 650px;
+  }
+
+  /* Desktop lays the same content out far shorter. One fallback cannot serve
+     both, and an over-reserved section shifts exactly as badly as an
+     under-reserved one. */
+  @media (min-width: 1024px) {
+    .defer-about {
+      contain-intrinsic-size: auto 810px;
+    }
+    .defer-process {
+      contain-intrinsic-size: auto 650px;
+    }
+    .defer-contact {
+      contain-intrinsic-size: auto 710px;
+    }
+    .defer-footer {
+      contain-intrinsic-size: auto 360px;
+    }
+  }
 }

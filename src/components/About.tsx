@@ -34,7 +34,10 @@ export function About({ locale }: { locale: Locale }) {
   ];
 
   return (
-    <section id="about" className="relative scroll-mt-24 py-20 sm:py-28">
+    <section
+      id="about"
+      className="defer-paint defer-about relative scroll-mt-24 py-20 sm:py-28"
+    >
       <div className="container-x grid items-center gap-12 lg:grid-cols-2 lg:gap-16">
         {/* Left: copy */}
         <div>

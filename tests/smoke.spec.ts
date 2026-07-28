@@ -203,6 +203,52 @@ test.describe('scroll reveals', () => {
   });
 });
 
+test.describe('without JavaScript', () => {
+  test.use({ javaScriptEnabled: false });
+
+  /**
+   * Opacity as the reader experiences it: an element at `opacity: 1` inside a
+   * `.reveal` ancestor still at 0 is invisible, and checking the element alone
+   * would call that a pass. Multiplies the chain up to <html>.
+   */
+  async function effectiveOpacity(
+    page: import('@playwright/test').Page,
+    selector: string,
+  ): Promise<number> {
+    return page.evaluate((sel) => {
+      let node = document.querySelector(sel);
+      let opacity = 1;
+      while (node) {
+        opacity *= Number.parseFloat(getComputedStyle(node).opacity);
+        node = node.parentElement;
+      }
+      return opacity;
+    }, selector);
+  }
+
+  /**
+   * Every reveal on the page starts at `opacity: 0` and is raised by an
+   * IntersectionObserver. With scripting off that observer never runs, so
+   * without the `<noscript>` override in the locale layout the whole page
+   * renders blank — the markup is all there, the reader just cannot see any of
+   * it, and so does any crawler that does not execute JS.
+   *
+   * Content, not chrome: the hero headline is the LCP element and the project
+   * cards are the reason a client is on the page at all.
+   */
+  test('the hero headline and the project cards are visible', async ({ page }) => {
+    await page.goto('/ar');
+
+    await expect(page.locator('h1')).toHaveCount(1);
+    expect(await effectiveOpacity(page, 'h1')).toBeGreaterThan(0);
+
+    const cards = page.locator('#projects article');
+    expect(await cards.count()).toBeGreaterThan(0);
+    await expect(cards.first()).toBeVisible();
+    expect(await effectiveOpacity(page, '#projects article')).toBeGreaterThan(0);
+  });
+});
+
 test.describe('per-locale font loading', () => {
   /**
    * Every woff2 the browser actually fetches while loading a locale.

@@ -52,6 +52,9 @@ function ProjectCard({
   return (
     <m.article
       layout
+      // Server-rendered at opacity 0 and raised only once motion hydrates, so
+      // it needs the no-JS override in the locale layout. See data-anim-in.
+      data-anim-in
       initial={{ opacity: 0, y: 24 }}
       animate={{ opacity: 1, y: 0 }}
       exit={{ opacity: 0, scale: 0.96 }}

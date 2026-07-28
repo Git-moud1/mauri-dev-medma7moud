@@ -22,6 +22,7 @@ export function ThemeToggle() {
       <AnimatePresence mode="wait" initial={false}>
         <m.span
           key={ready ? theme : 'init'}
+          data-anim-in
           initial={{ opacity: 0, rotate: -90, scale: 0.6 }}
           animate={{ opacity: 1, rotate: 0, scale: 1 }}
           exit={{ opacity: 0, rotate: 90, scale: 0.6 }}
