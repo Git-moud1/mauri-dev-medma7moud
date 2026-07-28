@@ -49,9 +49,27 @@ const config: Config = {
       // locale's variables are defined, and one undefined var() invalidates the
       // entire font-family declaration. See the note in globals.css.
       fontFamily: {
-        display: ['var(--font-display, var(--font-arabic))', 'serif'],
-        sans: ['var(--font-sans, var(--font-arabic))', 'system-ui', 'sans-serif'],
-        arabic: ['var(--font-arabic, var(--font-sans))', 'sans-serif'],
+        // 'Tajawal Arabic Fallback' sits between the webfont and the generic
+        // family: on a latin locale it contributes nothing (no latin glyphs
+        // beyond what the local sources already have), and on Arabic it is the
+        // metric-matched box that stops the swap reflowing the page. See the
+        // derivation in globals.css.
+        display: [
+          'var(--font-display, var(--font-arabic))',
+          'Tajawal Arabic Fallback',
+          'serif',
+        ],
+        sans: [
+          'var(--font-sans, var(--font-arabic))',
+          'Tajawal Arabic Fallback',
+          'system-ui',
+          'sans-serif',
+        ],
+        arabic: [
+          'var(--font-arabic, var(--font-sans))',
+          'Tajawal Arabic Fallback',
+          'sans-serif',
+        ],
       },
       boxShadow: {
         gold: '0 10px 40px -12px rgb(var(--gold) / 0.45)',

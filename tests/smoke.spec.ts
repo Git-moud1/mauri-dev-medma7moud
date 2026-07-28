@@ -408,7 +408,14 @@ test.describe('per-locale font loading', () => {
     const fonts = new Set<string>();
     page.on('request', (r) => {
       const url = r.url();
-      if (url.includes('/_next/static/media/') && url.endsWith('.woff2')) {
+      // Two locations by design: latin faces come from next/font under
+      // /_next/static/media, Arabic is self-hosted under /fonts (see the
+      // Tajawal block in globals.css for why). Counting only one of them would
+      // have made this test pass on a page that fetched no fonts at all.
+      const isFont =
+        url.endsWith('.woff2') &&
+        (url.includes('/_next/static/media/') || url.includes('/fonts/'));
+      if (isFont) {
         const file = url.split('/').pop();
         if (file) fonts.add(file);
       }
@@ -427,16 +434,33 @@ test.describe('per-locale font loading', () => {
    * ranges (arabic + latin), so an Arabic page legitimately fetches six faces
    * while still never touching Playfair or Inter.
    */
-  test('Arabic never downloads a latin-locale face, and preloads nothing', async ({
-    browser,
-  }) => {
+  test('Arabic never downloads a latin-locale face', async ({ browser }) => {
     const latin = await fontsFetchedOn(browser, '/en');
     const arabic = await fontsFetchedOn(browser, '/ar');
 
     expect(arabic.fonts.size).toBeGreaterThan(0);
     expect(latin.fonts.size).toBeGreaterThan(0);
     expect([...arabic.fonts].filter((f) => latin.fonts.has(f))).toEqual([]);
-    expect(arabic.preloads).toBe(0);
+  });
+
+  /**
+   * Exactly one preload on Arabic, none on latin.
+   *
+   * Plan 1 asserted zero everywhere. That changed deliberately in plan 2 task
+   * 2: the single Arabic hero face is preloaded because it decides whether the
+   * LCP element reflows, and the other five faces stay discovered through CSS
+   * so the font-byte win survives. Asserting the exact count keeps both halves
+   * honest — a regression to preloading everything fails here just as loudly
+   * as a regression to preloading nothing.
+   */
+  test('Arabic preloads exactly the hero face, and latin preloads nothing', async ({
+    browser,
+  }) => {
+    const arabic = await fontsFetchedOn(browser, '/ar');
+    const latin = await fontsFetchedOn(browser, '/en');
+
+    expect(arabic.preloads).toBe(1);
+    expect(latin.preloads).toBe(0);
   });
 
   test('English does not download the Arabic face', async ({ browser }) => {
@@ -470,6 +494,58 @@ test.describe('per-locale font loading', () => {
       });
       expect(families.h1).toMatch(heading);
       expect(families.body).toMatch(body);
+    });
+  }
+});
+
+declare global {
+  interface Window {
+    __cls?: number;
+  }
+}
+
+/**
+ * PROTECTED TESTS — do not weaken, skip, or delete.
+ *
+ * /ar shipped CLS 0.059 to a real deploy while local measurement said 0.0000.
+ * Local could not have caught it: a localhost font arrives before anything has
+ * painted, so there is no swap to observe. These tests delay the font response
+ * by 1.2s, which is what makes a local run representative of a real network.
+ *
+ * A version of this that does not throttle is not a weaker test — it is a test
+ * that cannot fail, which is worse than having none.
+ */
+test.describe('font swap layout stability', () => {
+  for (const locale of ['ar', 'en'] as const) {
+    test(`${locale} does not shift when its webfont swaps in`, async ({ page }) => {
+      await page.route('**/_next/static/media/*.woff2', async (route) => {
+        await new Promise((resolve) => setTimeout(resolve, 1200));
+        await route.continue();
+      });
+      await page.route('**/fonts/*.woff2', async (route) => {
+        await new Promise((resolve) => setTimeout(resolve, 1200));
+        await route.continue();
+      });
+
+      await page.addInitScript(() => {
+        window.__cls = 0;
+        new PerformanceObserver((list) => {
+          for (const entry of list.getEntries()) {
+            const shift = entry as PerformanceEntry & {
+              value: number;
+              hadRecentInput: boolean;
+            };
+            if (!shift.hadRecentInput) window.__cls = (window.__cls ?? 0) + shift.value;
+          }
+        }).observe({ type: 'layout-shift', buffered: true });
+      });
+
+      await page.goto(`/${locale}`);
+      await page.evaluate(() => document.fonts.ready);
+      await page.waitForTimeout(1500);
+
+      const cls = await page.evaluate(() => window.__cls ?? 0);
+      expect(cls, `${locale} shifted by ${cls} when its font loaded`).toBeLessThan(0.05);
     });
   }
 });

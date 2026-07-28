@@ -44,7 +44,10 @@ export function Hero({ locale }: { locale: Locale }) {
             {t('hero.badge')}
           </span>
 
-          <h1 className="mt-6 font-display text-4xl font-bold leading-[1.1] tracking-tight sm:text-6xl lg:text-7xl">
+          {/* `font-hero` puts the preloaded Arabic face first for /ar; on a
+              latin locale its unicode-range never matches and the stack falls
+              through to Playfair unchanged. */}
+          <h1 className="font-hero mt-6 text-4xl font-bold leading-[1.1] tracking-tight sm:text-6xl lg:text-7xl">
             {t('hero.titleLine1')}{' '}
             <span className="gold-text">{t('hero.titleHighlight')}</span>
             <br />

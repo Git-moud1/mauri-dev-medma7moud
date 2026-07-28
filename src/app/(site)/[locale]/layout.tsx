@@ -1,8 +1,9 @@
 import type { Metadata, Viewport } from 'next';
+import ReactDOM from 'react-dom';
 import { notFound } from 'next/navigation';
 import '../../globals.css';
 import { NoFlashScript } from '../../no-flash';
-import { fontClassFor } from './fonts';
+import { fontClassFor, fontStyleFor } from './fonts';
 import { LOCALES, type Locale } from '@/i18n/config';
 import { isLocale, dirFor } from '@/i18n/locale';
 import { dictionaries } from '@/i18n/dictionaries';
@@ -47,6 +48,27 @@ export default async function LocaleLayout(props: {
   if (!isLocale(locale)) notFound();
   const typed: Locale = locale;
 
+  /**
+   * One preload, Arabic only, for the single face the hero headline renders.
+   *
+   * This is the narrow version of reverting `preload: false`: the other five
+   * Tajawal faces stay discovered through CSS, so plan 1's font-byte win
+   * survives, while the face that decides whether the LCP element reflows
+   * arrives before first paint. A latin locale must not preload it — it renders
+   * no Arabic glyphs and would pay 9 KB for nothing.
+   *
+   * `ReactDOM.preload` rather than a hand-written <link>: React hoists and
+   * deduplicates it. A raw <link> in <head> was emitted twice, because React
+   * hoisted its own copy alongside ours.
+   */
+  if (typed === 'ar') {
+    ReactDOM.preload('/fonts/tajawal-700-arabic.woff2', {
+      as: 'font',
+      type: 'font/woff2',
+      crossOrigin: 'anonymous',
+    });
+  }
+
   return (
     // suppressHydrationWarning covers the theme class written by NoFlashScript.
     // lang and dir are server-rendered per route and never mutated at runtime.
@@ -74,7 +96,9 @@ export default async function LocaleLayout(props: {
           <style>{`.reveal,[data-anim-in]{opacity:1!important;transform:none!important;transition:none!important}`}</style>
         </noscript>
       </head>
-      <body className={`${fontClassFor(typed)} antialiased`}>{props.children}</body>
+      <body className={`${fontClassFor(typed)} antialiased`} style={fontStyleFor(typed)}>
+        {props.children}
+      </body>
     </html>
   );
 }

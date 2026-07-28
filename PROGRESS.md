@@ -396,7 +396,7 @@ to ship than a public page with none.
 
 - Full header set moved from `netlify.toml` to `next.config.mjs` `headers()`:
   CSP, HSTS (`max-age=63072000`, preload), `nosniff`, `Referrer-Policy:
-  strict-origin-when-cross-origin`, `Permissions-Policy` denying camera,
+strict-origin-when-cross-origin`, `Permissions-Policy` denying camera,
   microphone and geolocation. Plus `X-Robots-Tag: noindex, nofollow` on
   `/admin/:path*`.
 - `netlify.toml` keeps only the cache rules, under a comment saying why —
@@ -410,7 +410,7 @@ the full set; static assets stay `immutable`; the no-flash script still runs.
 **One finding worth keeping.** The CSP test failed on its first deploy run with
 a real violation — Netlify's preview widget trying to frame `app.netlify.com`,
 correctly blocked by `default-src 'self'`. That is the policy working on markup
-we do not ship. The test now ignores *framing* violations naming netlify.com and
+we do not ship. The test now ignores _framing_ violations naming netlify.com and
 nothing else: a blocked script, style or font still fails it, including from
 that origin.
 

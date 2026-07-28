@@ -46,6 +46,156 @@
      Tailwind's preflight already sets a default border colour, so it only
      duplicated work on every element in the document. */
 
+  /* ---------------------------------------------------------------------
+     Arabic font metrics (plan 2, task 2).
+
+     /ar shipped CLS 0.059 while /en measured 0. The cause was not simply that
+     `preload: false` makes faces arrive late — it is that Arabic had no working
+     fallback at all. next/font generates one automatically, and for Tajawal it
+     emits:
+
+       @font-face { font-family: 'Tajawal Fallback'; src: local(Arial);
+                    ascent-override: 67.93%; size-adjust: 94.66%; ... }
+
+     Arial has no Arabic glyphs. So Arabic text skipped straight past that
+     carefully adjusted face to whatever system Arabic font existed, whose
+     metrics the adjustment was never computed for. Measured on the real hero
+     string: matching Tajawal's width would need size-adjust 143.30% against
+     that fallback — a 43% error, which is what reflowed the hero when the real
+     face swapped in.
+     --------------------------------------------------------------------- */
+
+  /* Tajawal, self-hosted.
+
+     next/font is not used for Arabic any more. Next 16 emits its generated
+     'Tajawal Fallback' — `src: local(Arial)`, which cannot render a single
+     Arabic glyph — regardless of `adjustFontFallback: false`, and that face
+     sits ahead of ours in the variable it generates. Verified against a clean
+     build with the flag off and every cache cleared: the rule is emitted
+     anyway. Self-hosting is what makes the fallback chain ours to control.
+
+     These are the exact subset files next/font was already serving, copied out
+     of the build output, so the bytes on the wire are unchanged (56.9 KB across
+     six faces, of which an Arabic page fetches the three it needs).
+
+     Stable URLs are also what makes the hero face preloadable: next/font's
+     copies are content-hashed, so a <link rel="preload"> cannot name one. */
+
+  @font-face {
+    font-family: 'Tajawal';
+    font-style: normal;
+    font-weight: 400;
+    font-display: swap;
+    src: url('/fonts/tajawal-400-arabic.woff2') format('woff2');
+    unicode-range:
+      U+6??, U+750-77F, U+870-88E, U+890-891, U+897-8E1, U+8E3-8FF, U+200C-200E,
+      U+2010-2011, U+204F, U+2E41, U+FB50-FDFF, U+FE70-FE74, U+FE76-FEFC, U+102E0-102FB,
+      U+10E60-10E7E, U+10EC2-10EC4, U+10EFC-10EFF, U+1EE00-1EE03, U+1EE05-1EE1F,
+      U+1EE21-1EE22, U+1EE24, U+1EE27, U+1EE29-1EE32, U+1EE34-1EE37, U+1EE39, U+1EE3B,
+      U+1EE42, U+1EE47, U+1EE49, U+1EE4B, U+1EE4D-1EE4F, U+1EE51-1EE52, U+1EE54, U+1EE57,
+      U+1EE59, U+1EE5B, U+1EE5D, U+1EE5F, U+1EE61-1EE62, U+1EE64, U+1EE67-1EE6A,
+      U+1EE6C-1EE72, U+1EE74-1EE77, U+1EE79-1EE7C, U+1EE7E, U+1EE80-1EE89, U+1EE8B-1EE9B,
+      U+1EEA1-1EEA3, U+1EEA5-1EEA9, U+1EEAB-1EEBB, U+1EEF0-1EEF1;
+  }
+
+  @font-face {
+    font-family: 'Tajawal';
+    font-style: normal;
+    font-weight: 400;
+    font-display: swap;
+    src: url('/fonts/tajawal-400-latin.woff2') format('woff2');
+    unicode-range:
+      U+??, U+131, U+152-153, U+2BB-2BC, U+2C6, U+2DA, U+2DC, U+304, U+308, U+329,
+      U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+  }
+
+  @font-face {
+    font-family: 'Tajawal';
+    font-style: normal;
+    font-weight: 500;
+    font-display: swap;
+    src: url('/fonts/tajawal-500-arabic.woff2') format('woff2');
+    unicode-range:
+      U+6??, U+750-77F, U+870-88E, U+890-891, U+897-8E1, U+8E3-8FF, U+200C-200E,
+      U+2010-2011, U+204F, U+2E41, U+FB50-FDFF, U+FE70-FE74, U+FE76-FEFC, U+102E0-102FB,
+      U+10E60-10E7E, U+10EC2-10EC4, U+10EFC-10EFF, U+1EE00-1EE03, U+1EE05-1EE1F,
+      U+1EE21-1EE22, U+1EE24, U+1EE27, U+1EE29-1EE32, U+1EE34-1EE37, U+1EE39, U+1EE3B,
+      U+1EE42, U+1EE47, U+1EE49, U+1EE4B, U+1EE4D-1EE4F, U+1EE51-1EE52, U+1EE54, U+1EE57,
+      U+1EE59, U+1EE5B, U+1EE5D, U+1EE5F, U+1EE61-1EE62, U+1EE64, U+1EE67-1EE6A,
+      U+1EE6C-1EE72, U+1EE74-1EE77, U+1EE79-1EE7C, U+1EE7E, U+1EE80-1EE89, U+1EE8B-1EE9B,
+      U+1EEA1-1EEA3, U+1EEA5-1EEA9, U+1EEAB-1EEBB, U+1EEF0-1EEF1;
+  }
+
+  @font-face {
+    font-family: 'Tajawal';
+    font-style: normal;
+    font-weight: 500;
+    font-display: swap;
+    src: url('/fonts/tajawal-500-latin.woff2') format('woff2');
+    unicode-range:
+      U+??, U+131, U+152-153, U+2BB-2BC, U+2C6, U+2DA, U+2DC, U+304, U+308, U+329,
+      U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+  }
+
+  @font-face {
+    font-family: 'Tajawal';
+    font-style: normal;
+    font-weight: 700;
+    font-display: swap;
+    src: url('/fonts/tajawal-700-arabic.woff2') format('woff2');
+    unicode-range:
+      U+6??, U+750-77F, U+870-88E, U+890-891, U+897-8E1, U+8E3-8FF, U+200C-200E,
+      U+2010-2011, U+204F, U+2E41, U+FB50-FDFF, U+FE70-FE74, U+FE76-FEFC, U+102E0-102FB,
+      U+10E60-10E7E, U+10EC2-10EC4, U+10EFC-10EFF, U+1EE00-1EE03, U+1EE05-1EE1F,
+      U+1EE21-1EE22, U+1EE24, U+1EE27, U+1EE29-1EE32, U+1EE34-1EE37, U+1EE39, U+1EE3B,
+      U+1EE42, U+1EE47, U+1EE49, U+1EE4B, U+1EE4D-1EE4F, U+1EE51-1EE52, U+1EE54, U+1EE57,
+      U+1EE59, U+1EE5B, U+1EE5D, U+1EE5F, U+1EE61-1EE62, U+1EE64, U+1EE67-1EE6A,
+      U+1EE6C-1EE72, U+1EE74-1EE77, U+1EE79-1EE7C, U+1EE7E, U+1EE80-1EE89, U+1EE8B-1EE9B,
+      U+1EEA1-1EEA3, U+1EEA5-1EEA9, U+1EEAB-1EEBB, U+1EEF0-1EEF1;
+  }
+
+  @font-face {
+    font-family: 'Tajawal';
+    font-style: normal;
+    font-weight: 700;
+    font-display: swap;
+    src: url('/fonts/tajawal-700-latin.woff2') format('woff2');
+    unicode-range:
+      U+??, U+131, U+152-153, U+2BB-2BC, U+2C6, U+2DA, U+2DC, U+304, U+308, U+329,
+      U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+  }
+
+  /* Metric-matched fallback for everything else in Arabic.
+
+     src is an actual Arabic-capable stack rather than Arial, which is the bug
+     above. The override values are derived, not guessed: next/font measured
+     Tajawal against Arial at size-adjust 94.66% with ascent 67.93% / descent
+     37.71% / line-gap 21.13%, which puts Tajawal's own raw metrics at
+     0.6430 / 0.3569 / 0.2000 em. Re-normalised for this face's measured
+     size-adjust of 104.49% (Tajawal width ÷ Segoe UI width on the real hero
+     string) that gives the numbers below.
+
+     Re-measure these if the Arabic family or its weights change. */
+  @font-face {
+    font-family: 'Tajawal Arabic Fallback';
+    src:
+      local('Segoe UI'), local('Tahoma'), local('Noto Naskh Arabic'),
+      local('Noto Sans Arabic'), local('Geeza Pro'), local('Arial');
+    ascent-override: 61.54%;
+    descent-override: 34.16%;
+    line-gap-override: 19.14%;
+    size-adjust: 104.49%;
+  }
+
+  /* The hero headline. Nothing special about the family any more — it resolves
+     to the same stack as any other display text — but the class is kept as the
+     anchor for the preload above and as documentation of which element the
+     preload exists for. */
+  .font-hero {
+    font-family:
+      var(--font-display, var(--font-arabic)), 'Tajawal Arabic Fallback', serif;
+  }
+
   html {
     scroll-behavior: smooth;
     -webkit-text-size-adjust: 100%;
