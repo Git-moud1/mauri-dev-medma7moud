@@ -150,3 +150,53 @@ held everything at zero.
 Task 14) · `npm run build` passes · `npm run test:e2e` **50/50 pass**.
 
 **Next:** Task 12 — security and immutable cache headers.
+
+---
+
+## Task 12 — security and cache headers
+
+**What changed**
+
+- `netlify.toml`: `X-Content-Type-Options`, `Referrer-Policy`, HSTS with
+  preload, `Permissions-Policy` denying camera/microphone/geolocation, and a
+  CSP with `frame-ancestors 'none'`, `object-src 'none'`, `base-uri 'self'`,
+  `form-action 'self'`, `connect-src 'self'`.
+- Immutable one-year cache for `/_next/static/*` and `/projects/*`.
+- Three tests, skipped unless `PLAYWRIGHT_BASE_URL` points at a deploy —
+  Netlify applies these headers, `next start` does not, so a local assertion
+  would be theatre. One of them checks that the CSP did not block the no-flash
+  script, which the header assertions alone cannot see.
+
+**Owner decision needed: `script-src 'unsafe-inline'`**
+
+The spec asks for a nonce-based CSP. The plan's fallback was to hash the inline
+no-flash script instead. Both are blocked, for different reasons:
+
+- A **nonce** must be minted per request, which forces every route to render
+  dynamically and discards the prerendered CDN HTML that Task 6 exists to
+  produce.
+- A **hash** does not scale here. The built HTML for one route contains 22
+  inline scripts — 21 of them Next's own RSC flight payload — and a browser
+  ignores `'unsafe-inline'` the moment any hash is present. Hashing only
+  no-flash would block the other 21, and the page would never hydrate.
+
+So the policy ships with `script-src 'self' 'unsafe-inline'` and this is
+recorded rather than buried. Three ways out, in rough order of cost:
+
+1. Generate hashes for all 22 inline scripts in a post-build step that writes a
+   Netlify `_headers` file per route. Automated, but regenerates every build.
+2. Move to a nonce once plan 2 adds `/admin`, accepting dynamic rendering for
+   the routes that need it and keeping the public routes static.
+3. Accept `'unsafe-inline'` for scripts and rely on the rest of the policy.
+
+Everything else in the header set is strict; this is the one loose directive.
+
+**Build status**
+
+`npx tsc --noEmit` clean · `npm run lint` 0 errors, 1 pre-existing warning (B4)
+· `npm run test:e2e` 50 passed, 6 skipped (the deploy-only header tests).
+
+**Not yet verified on a deploy.** These headers cannot be proven locally. They
+need `git push` and a run against the Netlify preview URL.
+
+**Next:** Task 13 — strict TypeScript, flat ESLint, Prettier.
