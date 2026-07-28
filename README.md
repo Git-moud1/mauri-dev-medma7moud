@@ -3,10 +3,10 @@
 A premium, single-page, multilingual (Arabic / English / French) portfolio and marketing site for
 **Mauri-Dev** — the brand of **Bay Cheikh (Med Moud)**, Full Stack & Mobile App Developer.
 
-Built with **Next.js 14 (App Router) · React 18 · TypeScript · Tailwind CSS 3 · Framer Motion**,
+Built with **Next.js 16 (App Router, Turbopack) · React 19 · TypeScript · Tailwind CSS 3 · motion**,
 deployed on **Netlify**.
 
-- **Live:** https://medmaoudsite.netlify.app
+- **Live:** https://medmoudsite.netlify.app
 - **Contact:** baymed000@gmail.com · WhatsApp [+222 31 31 75 01](https://wa.me/22231317501)
 
 ---
@@ -33,11 +33,13 @@ deployed on **Netlify**.
 
 ## 1. What this project is
 
-A **single-page** portfolio site (no routing — everything lives on `/` and navigates via anchors).
+A portfolio site with **one localized route per language** — `/ar`, `/en`, `/fr` — each statically
+prerendered. `/` 307-redirects to the visitor's best match (cookie, then `Accept-Language`, then
+Arabic). Within a route, navigation is still anchors, and switching language is still instant.
 Its purpose is to convert visitors into clients: show credibility, show real work, and give one-tap
-access to WhatsApp / email / contact form.
+access to WhatsApp / contact form.
 
-Page sections, in render order (`src/app/page.tsx`):
+Page sections, in render order (`src/app/(site)/[locale]/page.tsx`):
 
 | Order | Component          | Anchor      | Purpose                                                                         |
 | ----- | ------------------ | ----------- | ------------------------------------------------------------------------------- |
@@ -51,10 +53,13 @@ Page sections, in render order (`src/app/page.tsx`):
 | 8     | `Footer`           | —           | Nav, connect links, copyright                                                   |
 | 9     | `FloatingWhatsApp` | —           | Persistent floating WhatsApp button                                             |
 
-Plus `DocumentMeta` (headless — keeps `<title>`/`<meta description>` in sync with the active language).
+Metadata is server-rendered per locale by `generateMetadata`; the old client-side `DocumentMeta`
+is gone.
 
 **Defaults:** language **Arabic (RTL)**, theme **dark** (falls back to `prefers-color-scheme`).
-Both are persisted to `localStorage` and applied _before first paint_ by an inline no-flash script.
+The locale comes from the route and is remembered in the `bc-locale` **cookie** so the proxy can
+read it. The theme lives in `localStorage` and is applied _before first paint_ by the inline
+no-flash script, which no longer touches `lang`/`dir` — those are server-rendered.
 
 ---
 
@@ -85,14 +90,16 @@ Node 18+ recommended (the scripts use top-level `await` and global `fetch`).
 
 **Runtime deps**
 
-| Package               | Version  | Used for                                                       |
-| --------------------- | -------- | -------------------------------------------------------------- |
-| `next`                | 14.2.5   | App Router, `next/image`, `next/font`                          |
-| `react` / `react-dom` | ^18.3.1  | UI                                                             |
-| `framer-motion`       | ^11.3.24 | Scroll reveals, lightbox slides/drag, layout animations        |
-| `sharp`               | ^0.35.3  | Build-time image processing (blur LQIP + mockup rasterization) |
+| Package               | Version  | Used for                                                         |
+| --------------------- | -------- | ---------------------------------------------------------------- |
+| `next`                | 16.2.12  | App Router (Turbopack), `next/image`, `next/font`, `proxy.ts`    |
+| `react` / `react-dom` | 19.2.8   | UI                                                               |
+| `motion`              | ^12.42.2 | Lightbox slides/drag, island animations (scroll reveals are CSS) |
+| `sharp`               | ^0.35.3  | Build-time image processing (blur LQIP + mockup rasterization)   |
 
-**Dev deps:** TypeScript 5.5 (strict), Tailwind 3.4, PostCSS + Autoprefixer, ESLint 8 + `eslint-config-next`.
+**Dev deps:** TypeScript 5.5 (`strict` + `noUncheckedIndexedAccess`), Tailwind 3.4,
+PostCSS + Autoprefixer, ESLint 9 flat config (`typescript-eslint` strictTypeChecked +
+`eslint-plugin-jsx-a11y` + `eslint-config-next`), Prettier, `@playwright/test`.
 
 **Notably absent by design:** no i18n library, no state manager, no UI kit, no icon package
 (icons are hand-written inline SVGs in `src/components/Icons.tsx`), no CMS. Everything is local
@@ -118,20 +125,33 @@ Path alias: `@/*` → `./src/*` (see `tsconfig.json`).
 │   └── projects/<id>/…        # real project screenshots (jpg / jpeg / png / webp)
 │
 ├── scripts/
+│   ├── measure-bundle.mjs     # first-load JS, gzipped — owns its own server
+│   ├── measure-cls.mjs        # CLS on a scripted scroll — owns its own server
+│   ├── port.mjs               # frees a port and refuses to continue if it cannot
 │   ├── gen-blur.mjs           # walks public/projects/** → base64 LQIP map
 │   ├── gen-mockups.mjs        # SVG templates + real photos → high-res WebP screens
 │   ├── photos.mjs             # named photo tokens → fetched & processed JPEG buffers
 │   └── mockups/<project>/*.svg# mockup screen templates (__PH_<token>__ placeholders)
 │
+├── tests/
+│   ├── smoke.spec.ts          # Playwright suite (two PROTECTED tests — see the file)
+│   ├── locale.spec.ts         # locale negotiation unit tests
+│   └── global-setup.ts        # warms the next/image cache so a cold run is not flaky
+│
 └── src/
+    ├── proxy.ts               # redirects / to the best-match locale (was middleware.ts)
     ├── app/
-    │   ├── layout.tsx         # fonts, default (Arabic) metadata, viewport, providers
-    │   ├── page.tsx           # the single page — composes all sections
-    │   ├── providers.tsx      # ThemeProvider > I18nProvider
-    │   ├── no-flash.tsx       # inline pre-hydration script (theme + lang/dir)
+    │   ├── (site)/[locale]/
+    │   │   ├── layout.tsx     # <html lang dir>, per-locale fonts, generateMetadata
+    │   │   ├── page.tsx       # server component composing all sections
+    │   │   └── fonts.ts       # fontClassFor(locale) — only the active locale's faces
+    │   ├── providers.tsx      # ThemeProvider > I18nProvider > LazyMotion
+    │   ├── no-flash.tsx       # inline pre-hydration script (theme + locale-cookie shim)
     │   └── globals.css        # design tokens, base styles, component classes
     │
-    ├── components/            # all UI (see §1 table) + Icons.tsx, Reveal.tsx
+    ├── components/            # server-rendered sections + Icons.tsx, Reveal.tsx
+    │   └── islands/           # the client components: switcher, toggle, drawer,
+    │                          # ProjectsGrid, ContactForm, FloatingWhatsApp
     │
     ├── data/
     │   ├── projects.ts        # ← THE project catalog (edit this to add work)
@@ -139,6 +159,8 @@ Path alias: `@/*` → `./src/*` (see `tsconfig.json`).
     │
     ├── i18n/
     │   ├── config.ts          # locales, dir, storage keys
+    │   ├── locale.ts          # isLocale / negotiateLocale / dirFor / LOCALE_COOKIE
+    │   ├── server.ts          # getT(locale) — the server-side counterpart to useI18n().t
     │   ├── I18nProvider.tsx   # context, t(), dot-path key typing
     │   └── dictionaries/{ar,en,fr}.ts
     │
@@ -150,28 +172,36 @@ Path alias: `@/*` → `./src/*` (see `tsconfig.json`).
 
 ## 5. Architecture & key decisions
 
-**Single route, client-side i18n.** There is no `/en`, `/fr`, `/ar` route segmentation. The whole
-site is one route; language is React context + `localStorage`. Trade-off: simpler, zero duplicate
-pages, instant switching — at the cost of not having per-language URLs for crawlers. Server-rendered
-metadata is Arabic (the default); `DocumentMeta` refines `<title>`/`<description>` client-side once a
-visitor picks a language.
+**Localized routes, server-rendered i18n.** `/ar`, `/en` and `/fr` are three statically prerendered
+paths under `(site)/[locale]`. `proxy.ts` redirects `/` to the best match. This is the keystone
+decision: it gives crawlers per-language URLs and `hreflang`, lets the page render as server
+components, and lets the server load one font family instead of three.
 
-**Providers order** (`src/app/providers.tsx`): `ThemeProvider` wraps `I18nProvider`. Both are
-client components; everything below them is client-side too (they all need `useI18n`).
+**Server first, islands second.** Everything renders on the server unless it needs interactivity or
+a browser API. Sections take `locale` as a prop and resolve strings through `getT(locale)` from
+`src/i18n/server.ts`. The client components live in `src/components/islands/` and are the only
+things below `Providers` that ship JS: language switcher, theme toggle, mobile drawer, projects
+grid, contact form, floating WhatsApp.
 
-**No flash of wrong theme/direction.** `NoFlashScript` (in `<head>`) reads `bc-theme` and
-`bc-locale` from `localStorage` synchronously and sets `<html class="dark">`, `style.colorScheme`,
-`lang`, and `dir` _before_ React hydrates. `<html>` carries `suppressHydrationWarning` because of
-this. The default in the script (dark, `ar`, `rtl`) must stay in sync with `DEFAULT_LOCALE` and
-`ThemeProvider`'s initial state.
+**Animation is rationed.** Scroll reveals are CSS plus an IntersectionObserver — no library at all.
+The islands run under `LazyMotion features={domAnimation} strict`, importing `m` from
+**`motion/react-m`** (see §15). Only the lightbox, loaded via `dynamic(..., { ssr: false })`, pulls
+the full `domMax` feature set with drag and layout projection.
+
+**No flash of wrong theme.** `NoFlashScript` (in `<head>`) reads `bc-theme` from `localStorage`
+synchronously and sets `<html class="dark">` and `style.colorScheme` _before_ React hydrates; it
+also migrates a v1 `bc-locale` value out of `localStorage` into a cookie. `lang` and `dir` are
+server-rendered per route and never touched at runtime. Nothing React renders may branch on the
+theme — see §15.
 
 **Logical CSS properties everywhere.** Layout uses `start-*` / `end-*` / `ms-*` / `me-*` instead of
 `left`/`right`, so RTL works without a mirrored stylesheet. Directional icons are flipped manually
 with `dir === 'rtl' ? 'rotate-180' : ''`.
 
-**The lightbox is code-split.** `Projects.tsx` loads `ProjectGallery` via
-`dynamic(..., { ssr: false })`, so framer-motion's drag/gesture code only downloads when a visitor
-actually opens a project.
+**The lightbox is code-split.** `islands/ProjectsGrid.tsx` loads `ProjectGallery` via
+`dynamic(..., { ssr: false })`, so the drag/gesture code only downloads when a visitor actually
+opens a project. `AnimatePresence` lives in `ProjectsGrid`, not inside the gallery — presence has to
+be tracked by whoever controls the mounting, or the exit animation never runs.
 
 ---
 
@@ -188,8 +218,16 @@ actually opens a project.
 
 **Usage**
 
+In a server component:
+
 ```tsx
-const { t, locale, dir, dict, ready, setLocale } = useI18n();
+const t = getT(locale); // src/i18n/server.ts
+```
+
+In a client island:
+
+```tsx
+const { t, locale, dir, dict, setLocale } = useI18n();
 
 t('hero.badge'); // typed dot-path
 t('gallery.counter', { current: 2, total: 5 }); // {placeholder} interpolation
@@ -203,7 +241,8 @@ At runtime an unresolved key falls back to returning the key string itself.
 1. Add the code to `LOCALES` and an entry to `LOCALE_META` in `config.ts`.
 2. Copy `dictionaries/en.ts` → `dictionaries/<code>.ts`, translate every value, register it in
    `dictionaries/index.ts`.
-3. Add the code to the `locales` array inside `no-flash.tsx` (and to the `dir` ternary if RTL).
+3. Add the code to the `locales` array inside `no-flash.tsx`'s migration shim, and give it a font
+   in `src/app/(site)/[locale]/fonts.ts`.
 4. Add the localized `title` / `description` for every project in `src/data/projects.ts`
    (`Record<Locale, string>` will demand it).
 
@@ -377,15 +416,16 @@ Submissions appear in **Netlify → Forms → contact**. Email notifications:
 
 ## 11. SEO & metadata
 
-- **Server-side (crawlers):** `src/app/layout.tsx` exports Arabic-default `metadata` —
-  title template `%s — Mauri-Dev`, description, keywords (both Latin and Arabic: `Mauri-Dev`,
-  `Bay Cheikh`, `Med Moud`, `مطور ويب`, …), `authors`, `alternates.languages`, Open Graph, Twitter
-  card. `metadataBase` = `https://baycheikh.netlify.app`.
-- **Client-side:** `DocumentMeta.tsx` rewrites `document.title` and the description meta from
-  `dict.meta` whenever the locale changes.
+- **Per-locale, server-rendered.** `src/app/(site)/[locale]/layout.tsx` exports
+  `generateMetadata`, which resolves title, description, `canonical` and the `alternates.languages`
+  map (`ar` / `en` / `fr` / `x-default`) from the route's own dictionary. The client-side
+  `DocumentMeta` rewriter is gone.
+- **Origin lives in one place:** `SITE_URL` in `src/lib/site.ts`, read from
+  `NEXT_PUBLIC_SITE_URL` and defaulting to `https://medmoudsite.netlify.app`. Nothing else
+  hardcodes an origin.
 - **Viewport:** `themeColor` responds to `prefers-color-scheme` (`#f8f9fc` light / `#08080c` dark).
 
-If you change the deployed domain, update `SITE_URL` in `layout.tsx`.
+**Still missing** (plan 2/3): Open Graph images, JSON-LD, `sitemap.ts`, `robots.ts`.
 
 ---
 
@@ -399,7 +439,9 @@ If you change the deployed domain, update `SITE_URL` in `layout.tsx`.
 - `aria-label` on every icon-only control; form errors wired with `aria-invalid` /
   `aria-describedby` / `role="alert"`.
 - `prefers-reduced-motion: reduce` globally collapses animations and transitions to ~0ms and
-  disables smooth scrolling.
+  disables smooth scrolling; scroll reveals render visible immediately, guarded in both CSS and JS.
+- **Works without JavaScript.** A `<noscript>` rule in the locale layout reveals `.reveal` and
+  `[data-anim-in]`, so a visitor (or crawler) without JS sees the content instead of a blank page.
 - The primary CTA gradient is fixed dark enough for WCAG-safe white text in **both** themes.
 
 **Performance**
@@ -408,8 +450,18 @@ If you change the deployed domain, update `SITE_URL` in `layout.tsx`.
 - `next/image` everywhere with explicit `sizes`, tuned `quality` (70 cards / 78 stage / 55 thumbs),
   AVIF+WebP output, LQIP blur placeholders.
 - Only current + neighbouring gallery images are fetched — never the whole set.
-- Fonts via `next/font` with `display: 'swap'` and subsetting (latin / arabic).
-- Scroll listener is `{ passive: true }`; reveal animations use `viewport={{ once: true }}`.
+- **Only the active locale's fonts load:** Tajawal for `/ar`, Playfair + Inter for `/en` and `/fr`
+  (55.6 KB vs 84.9 KB, down from 111 KB on every route). `display: 'swap'` + `adjustFontFallback`.
+- Scroll reveals are CSS + IntersectionObserver, disconnecting after the first intersection.
+- Below-the-fold sections carry `content-visibility: auto` with measured
+  `contain-intrinsic-size`, which also suspends the marquee animation while it is offscreen.
+- Scroll listener is `{ passive: true }`.
+- Measure, don't guess: `node scripts/measure-bundle.mjs http://localhost:3000/ar` and
+  `node scripts/measure-cls.mjs`. Both start their own server and refuse to report a number
+  against one they did not start.
+
+Current first-load JS is **236.1 KB gzipped** on every route, against a 150 KB target that has not
+been met — see `docs/superpowers/baseline/2026-07-27-after-plan-1.md` for the full accounting.
 
 ---
 
@@ -426,14 +478,21 @@ Netlify, configured by `netlify.toml`:
   package = "@netlify/plugin-nextjs"
 ```
 
+`netlify.toml` also carries the security headers (nosniff, Referrer-Policy, HSTS, Permissions-Policy,
+CSP with `frame-ancestors 'none'`) and immutable one-year caching for `/_next/static/*` and
+`/projects/*`. Netlify applies these, not `next start`, so the tests covering them only run against
+a deploy: `PLAYWRIGHT_BASE_URL=https://<preview>.netlify.app npm run test:e2e`.
+
 The official Next.js runtime plugin handles `next/image` optimization, SSR, and routing.
 
 1. Push to GitHub/GitLab/Bitbucket.
 2. Netlify → **Add new site → Import an existing project** → pick the repo.
 3. Settings are auto-detected from `netlify.toml`. Deploy.
 
-No environment variables are required. Because `prebuild` runs `gen:blur`, `sharp` must remain in
-`dependencies` (not `devDependencies`) for the Netlify build to succeed.
+**Environment variables:** `NEXT_PUBLIC_SITE_URL` (optional — defaults to
+`https://medmoudsite.netlify.app`; set it when the custom domain lands). Because `prebuild` runs
+`gen:blur`, `sharp` must remain in `dependencies` (not `devDependencies`) for the Netlify build to
+succeed.
 
 ---
 
@@ -461,9 +520,12 @@ structurally identical or the build fails.
 **Recolor the site** — edit the token blocks in `src/app/globals.css` (`:root` and `:root.dark`)
 and the fixed hex stops in `.btn-gold`. Don't rename `--gold`; many utilities depend on it.
 
-**Change the default language or theme** — `DEFAULT_LOCALE` in `src/i18n/config.ts`,
-`ThemeProvider`'s initial state, **and** the matching defaults inside `src/app/no-flash.tsx`.
-All three must agree.
+**Change the default language or theme** — `DEFAULT_LOCALE` in `src/i18n/config.ts` is the proxy's
+fallback for a visitor whose `Accept-Language` matches nothing. The theme default must agree
+between `src/app/no-flash.tsx` and `ThemeProvider`'s SSR value.
+
+**Run the tests** — `npm run test:e2e`. Two tests in `tests/smoke.spec.ts` are marked PROTECTED and
+must not be weakened; each exists because a real regression passed a weaker check.
 
 ---
 
@@ -473,12 +535,26 @@ All three must agree.
 - **The accent is named `gold` but is violet.** Historical naming, kept for compatibility.
 - **`category` ≠ `frame`.** `category` drives filtering + lightbox layout; `frame` drives only the
   card cover. See §8.
-- **Three defaults must stay in sync:** `no-flash.tsx`, `config.ts` (`DEFAULT_LOCALE`), and
-  `ThemeProvider`. A mismatch causes a visible flash on first paint.
+- **The theme default must stay in sync** between `no-flash.tsx` and `ThemeProvider`'s SSR value.
+  A mismatch causes a visible flash on first paint. The locale is no longer part of this: it comes
+  from the route, and `DEFAULT_LOCALE` is only the proxy's fallback.
 - **`__forms.html` field names must mirror `ContactForm.tsx`** or Netlify rejects submissions.
 - **The contact form cannot work on `npm run dev`** — Netlify Forms is a deploy-time feature.
 - **`gen-mockups.mjs` needs network access** and will throw on an unknown `__PH_<token>__` or a
   missing `width`/`height` on the template's `<svg>` element.
 - **Dictionaries are structurally typed against `en.ts`.** A missing key in `ar.ts`/`fr.ts` is a
   build failure, not a silent fallback.
-- **The site is one route.** There are no per-language URLs; server-rendered metadata is Arabic.
+- **Never render anything that branches on the current theme.** The server cannot know which theme
+  a visitor stored, so any theme-dependent markup either mismatches on hydration (React error #418,
+  which throws away the server HTML) or is wrong for a frame. Both were shipped and both were bugs.
+  Use the `dark:` variant and let CSS choose — see `islands/ThemeToggle.tsx`.
+- **Import `m` from `motion/react-m`, never from `motion/react`.** The `motion/react` barrel also
+  exports the full `motion` proxy, so importing `m` from it keeps every feature and _increases_ the
+  bundle — measured at +2.4 KB versus doing nothing. Only `import * as m from 'motion/react-m'`
+  actually tree-shakes.
+- **Tailwind purges `@layer components` rules whose class name it cannot find in a scanned file.**
+  Keep class names as plain, unbroken literals; interpolating right after the name
+  (`` `reveal${x}` ``) silently deletes the rule. This has already happened once.
+- **Measurement scripts kill whatever is listening on their port.** An orphaned `next start` from a
+  crashed session serves an old build and produces a flattering, wrong number — this happened three
+  times before the guard existed.

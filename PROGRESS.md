@@ -243,18 +243,18 @@ six-major-version downgrade — so it is not a fix. Documented, not applied.
 
 ## Task 14 — bug register closed (B1–B10, B18)
 
-| Bug | Fix |
-|---|---|
-| B1 | Drawer closes when the viewport crosses `lg`, so `open` can never be stranded true while the panel is `lg:hidden` and the body stays scroll-locked. |
-| B2 | Marquee direction follows the locale; `marquee-rtl` was defined in the Tailwind config and never wired up. |
-| B4 | See below — the interesting one. |
-| B5 | `AnimatePresence` moved up into `ProjectsGrid`. Inside `ProjectGallery` it wrapped content the parent unmounted outright, so the exit animation never had anything to animate. |
-| B6 | Already closed: `Footer` is a server component since Task 8, so `getFullYear()` runs once at build. |
-| B7 | Drawer is a real dialog: `role`, `aria-modal`, `aria-controls`, focus moved in on open, Tab trapped inside, focus returned to the toggle on close, Escape closes. Body overflow restores its **previous** value, so a drawer closing over an open lightbox no longer unlocks scrolling. |
-| B8 | Language menu: arrow keys, Home/End, Escape and selection return focus to the trigger, and the document listeners are attached only while it is open. |
-| B9 | Field errors clear on change instead of persisting until the next submit. |
-| B10 | `Logo` takes `priority` as an opt-in; only the header passes it. The offscreen footer copy no longer preloads against the hero. |
-| B18 | The universal `border-color` reset is gone. |
+| Bug | Fix                                                                                                                                                                                                                                                                                     |
+| --- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| B1  | Drawer closes when the viewport crosses `lg`, so `open` can never be stranded true while the panel is `lg:hidden` and the body stays scroll-locked.                                                                                                                                     |
+| B2  | Marquee direction follows the locale; `marquee-rtl` was defined in the Tailwind config and never wired up.                                                                                                                                                                              |
+| B4  | See below — the interesting one.                                                                                                                                                                                                                                                        |
+| B5  | `AnimatePresence` moved up into `ProjectsGrid`. Inside `ProjectGallery` it wrapped content the parent unmounted outright, so the exit animation never had anything to animate.                                                                                                          |
+| B6  | Already closed: `Footer` is a server component since Task 8, so `getFullYear()` runs once at build.                                                                                                                                                                                     |
+| B7  | Drawer is a real dialog: `role`, `aria-modal`, `aria-controls`, focus moved in on open, Tab trapped inside, focus returned to the toggle on close, Escape closes. Body overflow restores its **previous** value, so a drawer closing over an open lightbox no longer unlocks scrolling. |
+| B8  | Language menu: arrow keys, Home/End, Escape and selection return focus to the trigger, and the document listeners are attached only while it is open.                                                                                                                                   |
+| B9  | Field errors clear on change instead of persisting until the next submit.                                                                                                                                                                                                               |
+| B10 | `Logo` takes `priority` as an opt-in; only the header passes it. The offscreen footer copy no longer preloads against the hero.                                                                                                                                                         |
+| B18 | The universal `border-color` reset is gone.                                                                                                                                                                                                                                             |
 
 **B4 was not what the plan thought it was**
 
@@ -290,3 +290,42 @@ both closed.
 `npm run test:e2e` **66 passed, 6 skipped** (the deploy-only header tests).
 
 **Next:** Task 15 — measure, document, hand off.
+
+---
+
+## Task 15 — measure, document, hand off
+
+Full numbers in `docs/superpowers/baseline/2026-07-27-after-plan-1.md`, which is
+the file `MIGRATION.md` reads from in plan 3.
+
+**Final, measured locally on a fresh build**
+
+|                         | `/ar`    | `/en`    | `/fr`    |
+| ----------------------- | -------- | -------- | -------- |
+| First-load JS (gzipped) | 236.1 KB | 236.1 KB | 236.1 KB |
+| Fonts                   | 55.6 KB  | 84.9 KB  | 84.9 KB  |
+| Font preloads           | 0        | 0        | 0        |
+| CLS (worst 5s window)   | 0.0000   | 0.0000   | —        |
+
+Against the Next 14 starting point: fonts down from 111.0 KB on every route; JS
+**up** from ~183 KB to 236.1 KB. The Next 16 + React 19 upgrade cost ~70 KB and
+the perf tasks clawed back ~17 KB of it. **The 150 KB target was not met.** Per
+owner decision the remaining islands keep `motion` (worth roughly 40 KB), and
+the real target is set in plan 3 once the new hero lands.
+
+**README updated** — header, §1, §3, §4, §5, §6, §11, §12, §13, §14, §15. The
+"single route, client-side i18n" architecture it described no longer exists.
+Four new gotchas were added, each one a bug that actually shipped during this
+plan: never render markup that branches on the theme; import `m` from
+`motion/react-m`; keep Tailwind class names as unbroken literals; measurement
+scripts kill whatever holds their port.
+
+**Cannot be done without a deploy** — needs `git push` and a Netlify preview:
+
+1. Lighthouse mobile scores for all four categories.
+2. The security and cache headers (6 skipped tests).
+3. Whether Netlify Forms still works on Next 16 — the empirical check the owner
+   asked for. If it fails, the instruction is to report and stop, not to switch
+   to an alternative.
+
+**Plan 1 is complete apart from those three.**
