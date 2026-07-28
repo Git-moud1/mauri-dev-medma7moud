@@ -102,3 +102,81 @@ test('legacy localStorage locale migrates to a cookie and is honoured', async ({
   const leftover = await page.evaluate(() => window.localStorage.getItem('bc-locale'));
   expect(leftover).toBeNull();
 });
+
+test.describe('per-locale font loading', () => {
+  /**
+   * Every woff2 the browser actually fetches while loading a locale.
+   *
+   * Each locale gets a fresh context: sharing one across two navigations lets
+   * the first locale's faces stay resident in the font cache, and the second
+   * page then reports them as its own.
+   */
+  async function fontsFetchedOn(
+    browser: import('@playwright/test').Browser,
+    path: string,
+  ): Promise<{ fonts: Set<string>; preloads: number }> {
+    const context = await browser.newContext();
+    const page = await context.newPage();
+    const fonts = new Set<string>();
+    page.on('request', (r) => {
+      const url = r.url();
+      if (url.includes('/_next/static/media/') && url.endsWith('.woff2')) {
+        fonts.add(url.split('/').pop()!);
+      }
+    });
+    await page.goto(path);
+    await page.waitForLoadState('networkidle');
+    await page.evaluate(() => document.fonts.ready);
+    const preloads = await page.locator('link[rel="preload"][as="font"]').count();
+    await context.close();
+    return { fonts, preloads };
+  }
+
+  /**
+   * The real invariant: the two font sets must not overlap. Counting files is
+   * the wrong assertion — Google splits Tajawal into 3 weights x 2 unicode
+   * ranges (arabic + latin), so an Arabic page legitimately fetches six faces
+   * while still never touching Playfair or Inter.
+   */
+  test('Arabic never downloads a latin-locale face, and preloads nothing', async ({
+    browser,
+  }) => {
+    const latin = await fontsFetchedOn(browser, '/en');
+    const arabic = await fontsFetchedOn(browser, '/ar');
+
+    expect(arabic.fonts.size).toBeGreaterThan(0);
+    expect(latin.fonts.size).toBeGreaterThan(0);
+    expect([...arabic.fonts].filter((f) => latin.fonts.has(f))).toEqual([]);
+    expect(arabic.preloads).toBe(0);
+  });
+
+  test('English does not download the Arabic face', async ({ browser }) => {
+    const arabic = await fontsFetchedOn(browser, '/ar');
+    const latin = await fontsFetchedOn(browser, '/en');
+
+    expect([...latin.fonts].filter((f) => arabic.fonts.has(f))).toEqual([]);
+    expect(latin.preloads).toBeLessThanOrEqual(2);
+  });
+
+  /**
+   * Byte savings mean nothing if a locale silently renders in the initial
+   * serif — which is exactly what happens if a font-family stack references a
+   * variable the active locale does not define.
+   */
+  for (const [locale, heading, body] of [
+    ['ar', /Tajawal/, /Tajawal/],
+    ['en', /Playfair Display/, /Inter/],
+    ['fr', /Playfair Display/, /Inter/],
+  ] as const) {
+    test(`/${locale} renders its intended typeface`, async ({ page }) => {
+      await page.goto(`/${locale}`);
+      await page.evaluate(() => document.fonts.ready);
+      const families = await page.evaluate(() => ({
+        h1: getComputedStyle(document.querySelector('h1')!).fontFamily,
+        body: getComputedStyle(document.body).fontFamily,
+      }));
+      expect(families.h1).toMatch(heading);
+      expect(families.body).toMatch(body);
+    });
+  }
+});

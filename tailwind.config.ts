@@ -33,10 +33,13 @@ const config: Config = {
           3: 'rgb(var(--brand-3) / <alpha-value>)',
         },
       },
+      // Nested var() fallbacks, not side-by-side families: only the active
+      // locale's variables are defined, and one undefined var() invalidates the
+      // entire font-family declaration. See the note in globals.css.
       fontFamily: {
-        display: ['var(--font-display)', 'var(--font-arabic)', 'serif'],
-        sans: ['var(--font-sans)', 'var(--font-arabic)', 'system-ui', 'sans-serif'],
-        arabic: ['var(--font-arabic)', 'sans-serif'],
+        display: ['var(--font-display, var(--font-arabic))', 'serif'],
+        sans: ['var(--font-sans, var(--font-arabic))', 'system-ui', 'sans-serif'],
+        arabic: ['var(--font-arabic, var(--font-sans))', 'sans-serif'],
       },
       boxShadow: {
         gold: '0 10px 40px -12px rgb(var(--gold) / 0.45)',

@@ -54,7 +54,15 @@
   body {
     background-color: rgb(var(--bg));
     color: rgb(var(--fg));
-    font-family: var(--font-sans), var(--font-arabic), system-ui, sans-serif;
+    /*
+     * Only the active locale's font variables are defined (see fonts.ts), so
+     * the stacks must nest the alternative as a var() *fallback* rather than
+     * list it as a second family. An undefined var() anywhere in the value
+     * invalidates the whole declaration at computed-value time and the element
+     * silently drops to the initial serif — listing both side by side broke
+     * every latin locale.
+     */
+    font-family: var(--font-sans, var(--font-arabic)), system-ui, sans-serif;
     /* Smooth theme transition without janking transforms */
     transition: background-color 0.4s ease, color 0.4s ease;
     -webkit-font-smoothing: antialiased;

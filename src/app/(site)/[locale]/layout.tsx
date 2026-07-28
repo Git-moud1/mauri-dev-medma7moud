@@ -1,32 +1,12 @@
 import type { Metadata, Viewport } from 'next';
-import { Playfair_Display, Inter, Tajawal } from 'next/font/google';
 import { notFound } from 'next/navigation';
 import '../../globals.css';
 import { NoFlashScript } from '../../no-flash';
+import { fontClassFor } from './fonts';
 import { LOCALES, type Locale } from '@/i18n/config';
 import { isLocale, dirFor } from '@/i18n/locale';
 import { dictionaries } from '@/i18n/dictionaries';
 import { SITE, SITE_URL } from '@/lib/site';
-
-const playfair = Playfair_Display({
-  subsets: ['latin'],
-  weight: ['400', '600', '700'],
-  variable: '--font-display',
-  display: 'swap',
-});
-
-const inter = Inter({
-  subsets: ['latin'],
-  variable: '--font-sans',
-  display: 'swap',
-});
-
-const tajawal = Tajawal({
-  subsets: ['arabic'],
-  weight: ['400', '500', '700'],
-  variable: '--font-arabic',
-  display: 'swap',
-});
 
 export function generateStaticParams() {
   return LOCALES.map((locale) => ({ locale }));
@@ -74,9 +54,7 @@ export default async function LocaleLayout(props: {
       <head>
         <NoFlashScript />
       </head>
-      <body
-        className={`${playfair.variable} ${inter.variable} ${tajawal.variable} antialiased`}
-      >
+      <body className={`${fontClassFor(typed)} antialiased`}>
         {props.children}
       </body>
     </html>
