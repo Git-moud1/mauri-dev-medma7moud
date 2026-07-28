@@ -26,7 +26,13 @@ export default defineConfig({
     : {
         command: 'npm run build && npm run start',
         url: 'http://localhost:3000',
-        reuseExistingServer: !process.env.CI,
+        // Never reuse. A server left running by an earlier session keeps
+        // answering with the build it started with, so the entire suite would
+        // green against code that is not in the working tree — silently, since
+        // nothing in the output says which build replied. Playwright errors out
+        // if the port is occupied, which is the correct outcome: fix the port,
+        // do not test whatever happens to be listening on it.
+        reuseExistingServer: false,
         timeout: 180_000,
       },
 });
