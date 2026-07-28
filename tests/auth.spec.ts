@@ -81,3 +81,48 @@ test.describe('auth primitives', () => {
     process.env.AUTH_SECRET = saved;
   });
 });
+
+/**
+ * PROTECTED TEST — do not weaken, skip, or delete.
+ *
+ * `ADMIN_PASSWORD_HASH` holds the base64 of an argon2id hash, not the hash.
+ * An argon2 hash is `$argon2id$v=19$m=…`, and `@next/env` runs dotenv-expand
+ * over every .env file, expanding each `$name` to nothing. Verified directly
+ * against @next/env: plain, double-quoted, single-quoted and backslash-escaped
+ * values are ALL destroyed, so there is no quoting that would let a raw hash
+ * live in .env.local.
+ *
+ * The trap is that Netlify's dashboard does no expansion, so a raw hash works
+ * in production while every local login fails. Both forms are therefore
+ * accepted, and both are asserted here — dropping either one resurrects a bug
+ * that costs an hour to find.
+ */
+test.describe('password hash encoding', () => {
+  const PASSWORD = 'encoding-fixture-password';
+
+  test('accepts a base64-encoded hash', async () => {
+    const raw = await hash(PASSWORD);
+    const saved = process.env.ADMIN_PASSWORD_HASH;
+    process.env.ADMIN_PASSWORD_HASH = Buffer.from(raw, 'utf8').toString('base64');
+    expect(await verifyPassword(PASSWORD)).toBe(true);
+    expect(await verifyPassword('wrong')).toBe(false);
+    process.env.ADMIN_PASSWORD_HASH = saved;
+  });
+
+  test('still accepts a raw hash, as set by hand in a dashboard', async () => {
+    const raw = await hash(PASSWORD);
+    const saved = process.env.ADMIN_PASSWORD_HASH;
+    process.env.ADMIN_PASSWORD_HASH = raw;
+    expect(await verifyPassword(PASSWORD)).toBe(true);
+    process.env.ADMIN_PASSWORD_HASH = saved;
+  });
+
+  test('rejects base64 of something that is not an argon2 hash', async () => {
+    const saved = process.env.ADMIN_PASSWORD_HASH;
+    process.env.ADMIN_PASSWORD_HASH = Buffer.from('not-a-hash', 'utf8').toString(
+      'base64',
+    );
+    expect(await verifyPassword(PASSWORD)).toBe(false);
+    process.env.ADMIN_PASSWORD_HASH = saved;
+  });
+});
