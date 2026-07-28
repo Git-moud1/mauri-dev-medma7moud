@@ -1,4 +1,4 @@
-# Bay Cheikh — Portfolio Website
+# medmahmoud — Portfolio Website
 
 A premium, multilingual (Arabic / English / French) marketing & portfolio site for
 **Bay Cheikh (Med Moud)** — Full Stack & Mobile App Developer.
