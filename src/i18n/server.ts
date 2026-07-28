@@ -20,15 +20,21 @@ export type TKey = PathInto<Dictionary>;
 export type TFunction = (key: TKey, vars?: Record<string, string | number>) => string;
 
 function resolve(dict: Dictionary, key: string): string {
-  const value = key
-    .split('.')
-    .reduce<unknown>((acc, part) => (acc as Record<string, unknown>)?.[part], dict);
+  const value = key.split('.').reduce<unknown>((acc, part) => {
+    if (typeof acc !== 'object' || acc === null) return undefined;
+    return (acc as Record<string, unknown>)[part];
+  }, dict);
+  // A miss returns the key itself: a visible "hero.stats.years" in the UI is a
+  // better failure than an empty string that nobody notices.
   return typeof value === 'string' ? value : key;
 }
 
 function interpolate(str: string, vars?: Record<string, string | number>): string {
   if (!vars) return str;
-  return str.replace(/\{(\w+)\}/g, (_, k) => String(vars[k] ?? `{${k}}`));
+  return str.replace(/\{(\w+)\}/g, (match: string, name: string) => {
+    const value = vars[name];
+    return value === undefined ? match : String(value);
+  });
 }
 
 /**

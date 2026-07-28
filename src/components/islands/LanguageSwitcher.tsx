@@ -36,7 +36,7 @@ export function LanguageSwitcher() {
     <div className="relative" ref={ref}>
       <button
         type="button"
-        onClick={() => setOpen((v) => !v)}
+        onClick={() => { setOpen((v) => !v); }}
         aria-label={t('language.switch')}
         aria-haspopup="menu"
         aria-expanded={open}
@@ -65,7 +65,7 @@ export function LanguageSwitcher() {
                   <button
                     role="menuitemradio"
                     aria-checked={active}
-                    onClick={() => choose(l)}
+                    onClick={() => { choose(l); }}
                     className={`flex w-full items-center justify-between rounded-xl px-3 py-2 text-sm transition-colors ${
                       active
                         ? 'bg-gold/15 font-semibold text-gold'

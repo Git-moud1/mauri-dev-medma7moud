@@ -39,7 +39,7 @@ export function Reveal({
     const node = ref.current;
     if (!node) return;
 
-    const reveal = () => node.classList.add('reveal-in');
+    const reveal = () => { node.classList.add('reveal-in'); };
 
     // Reduced motion, or a browser with no IntersectionObserver: show the
     // content now. A reveal that never fires is a blank page, so every path
@@ -64,7 +64,7 @@ export function Reveal({
       { rootMargin: '-60px' },
     );
     observer.observe(node);
-    return () => observer.disconnect();
+    return () => { observer.disconnect(); };
   }, []);
 
   /**

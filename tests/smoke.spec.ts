@@ -173,7 +173,7 @@ test.describe('scroll reveals', () => {
       await page
         .locator(selector)
         .first()
-        .evaluate((el) => el.scrollIntoView({ block: 'start' }));
+        .evaluate((el) => { el.scrollIntoView({ block: 'start' }); });
 
       await expect
         .poll(async () => Math.max(...(await revealOpacities(page, selector)), -1), {
@@ -234,8 +234,8 @@ test.describe('deployed security and cache headers', () => {
     const response = await request.get('/ar');
     const body = await response.text();
     const asset = body.match(/\/_next\/static\/[^"']+\.js/)?.[0];
-    expect(asset).toBeTruthy();
-    const assetResponse = await request.get(asset!);
+    if (!asset) throw new Error('no /_next/static asset referenced in the page HTML');
+    const assetResponse = await request.get(asset);
     expect(assetResponse.headers()['cache-control']).toContain('immutable');
   });
 
@@ -321,7 +321,8 @@ test.describe('per-locale font loading', () => {
     page.on('request', (r) => {
       const url = r.url();
       if (url.includes('/_next/static/media/') && url.endsWith('.woff2')) {
-        fonts.add(url.split('/').pop()!);
+        const file = url.split('/').pop();
+        if (file) fonts.add(file);
       }
     });
     await page.goto(path);
@@ -371,10 +372,14 @@ test.describe('per-locale font loading', () => {
     test(`/${locale} renders its intended typeface`, async ({ page }) => {
       await page.goto(`/${locale}`);
       await page.evaluate(() => document.fonts.ready);
-      const families = await page.evaluate(() => ({
-        h1: getComputedStyle(document.querySelector('h1')!).fontFamily,
-        body: getComputedStyle(document.body).fontFamily,
-      }));
+      const families = await page.evaluate(() => {
+        const heading = document.querySelector('h1');
+        if (!heading) throw new Error('no h1 on the page');
+        return {
+          h1: getComputedStyle(heading).fontFamily,
+          body: getComputedStyle(document.body).fontFamily,
+        };
+      });
       expect(families.h1).toMatch(heading);
       expect(families.body).toMatch(body);
     });

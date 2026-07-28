@@ -142,7 +142,7 @@ function ProjectCard({
               href={project.link}
               target="_blank"
               rel="noopener noreferrer"
-              onClick={(e) => e.stopPropagation()}
+              onClick={(e) => { e.stopPropagation(); }}
               className="inline-flex items-center gap-1 text-sm text-muted transition-colors hover:text-fg"
             >
               {labels.liveLink}
@@ -189,7 +189,7 @@ export function ProjectsGrid({
             <button
               key={f.id}
               type="button"
-              onClick={() => setFilter(f.id)}
+              onClick={() => { setFilter(f.id); }}
               className={`relative rounded-full px-5 py-2 text-sm font-semibold transition-colors ${
                 filter === f.id ? 'text-[rgb(20_18_14)]' : 'text-muted hover:text-fg'
               }`}
@@ -224,7 +224,7 @@ export function ProjectsGrid({
                 locale={locale}
                 dir={dir}
                 labels={labels}
-                onOpen={() => setActive(project)}
+                onOpen={() => { setActive(project); }}
               />
             ))}
           </AnimatePresence>
@@ -235,7 +235,7 @@ export function ProjectsGrid({
 
       {/* Lightbox */}
       {active && (
-        <ProjectGallery project={active} startIndex={0} onClose={() => setActive(null)} />
+        <ProjectGallery project={active} startIndex={0} onClose={() => { setActive(null); }} />
       )}
     </>
   );

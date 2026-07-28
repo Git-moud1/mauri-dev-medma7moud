@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, type FormEvent } from 'react';
+import { useState, type SyntheticEvent } from 'react';
 import { AnimatePresence } from 'motion/react';
 import * as m from 'motion/react-m';
 import { useI18n } from '@/i18n/I18nProvider';
@@ -10,8 +10,11 @@ type Status = 'idle' | 'sending' | 'success' | 'error';
 type Errors = Partial<Record<'name' | 'email' | 'message', string>>;
 
 function encode(data: Record<string, string>): string {
-  return Object.keys(data)
-    .map((k) => `${encodeURIComponent(k)}=${encodeURIComponent(data[k])}`)
+  // Entries rather than keys-then-index: indexing a Record by a string yields
+  // `string | undefined` under noUncheckedIndexedAccess, and encoding an
+  // undefined would post the literal "undefined" as the field value.
+  return Object.entries(data)
+    .map(([k, v]) => `${encodeURIComponent(k)}=${encodeURIComponent(v)}`)
     .join('&');
 }
 
@@ -22,9 +25,14 @@ export function ContactForm() {
 
   function validate(form: HTMLFormElement): Errors {
     const next: Errors = {};
-    const name = (form.elements.namedItem('name') as HTMLInputElement)?.value.trim();
-    const email = (form.elements.namedItem('email') as HTMLInputElement)?.value.trim();
-    const message = (form.elements.namedItem('message') as HTMLTextAreaElement)?.value.trim();
+    // Cast includes null: namedItem returns null for a missing field, and
+    // asserting it away made the optional chains below look redundant to the
+    // linter while they were in fact the only thing preventing a throw.
+    const name = (form.elements.namedItem('name') as HTMLInputElement | null)?.value.trim();
+    const email = (form.elements.namedItem('email') as HTMLInputElement | null)?.value.trim();
+    const message = (
+      form.elements.namedItem('message') as HTMLTextAreaElement | null
+    )?.value.trim();
     if (!name) next.name = t('contact.form.required');
     if (!email) next.email = t('contact.form.required');
     else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) next.email = t('contact.form.invalidEmail');
@@ -32,21 +40,28 @@ export function ContactForm() {
     return next;
   }
 
-  async function handleSubmit(e: FormEvent<HTMLFormElement>) {
+  // React 19's types deprecate FormEvent ("doesn't actually exist"); a submit
+  // handler receives a SyntheticEvent wrapping the native SubmitEvent.
+  async function handleSubmit(e: SyntheticEvent<HTMLFormElement, SubmitEvent>) {
     e.preventDefault();
     const form = e.currentTarget;
     const found = validate(form);
     setErrors(found);
     if (Object.keys(found).length > 0) {
       const firstKey = Object.keys(found)[0];
-      (form.elements.namedItem(firstKey) as HTMLElement | null)?.focus();
+      if (firstKey) (form.elements.namedItem(firstKey) as HTMLElement | null)?.focus();
       return;
     }
 
     setStatus('sending');
     const data = new FormData(form);
     const payload: Record<string, string> = { 'form-name': 'contact' };
-    data.forEach((v, k) => (payload[k] = String(v)));
+    // FormData values are string | File. There is no file input on this form,
+    // but stringifying a File would post "[object File]" rather than fail, so
+    // the non-string case is dropped explicitly.
+    data.forEach((v, k) => {
+      if (typeof v === 'string') payload[k] = v;
+    });
 
     try {
       const res = await fetch('/__forms.html', {
@@ -71,7 +86,12 @@ export function ContactForm() {
       method="POST"
       data-netlify="true"
       data-netlify-honeypot="bot-field"
-      onSubmit={handleSubmit}
+      // `void` rather than passing the async function straight in: React
+      // ignores the returned promise, so an unhandled rejection would surface
+      // as an unhandled rejection instead of the form's error state.
+      onSubmit={(e) => {
+        void handleSubmit(e);
+      }}
       noValidate
       className="glass rounded-3xl p-6 sm:p-8"
     >

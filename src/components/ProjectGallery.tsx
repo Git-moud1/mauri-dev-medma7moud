@@ -43,7 +43,12 @@ const slideVariants = {
  */
 export function ProjectGallery({ project, startIndex = 0, onClose }: Props) {
   const { t, locale, dir } = useI18n();
-  const images = project.images.length ? project.images : [project.cover];
+  // Memoised so the neighbour preloader below has a stable dependency: a fresh
+  // array literal every render would make its useMemo recompute every time.
+  const images = useMemo(
+    () => (project.images.length ? project.images : [project.cover]),
+    [project],
+  );
   const total = images.length;
   // Real mobile-app screenshots get a device frame; web screenshots are shown big & flat.
   const useDeviceFrame = project.category === 'app';
@@ -64,7 +69,11 @@ export function ProjectGallery({ project, startIndex = 0, onClose }: Props) {
   const titleId = useId();
   const descId = useId();
 
-  const currentSrc = images[index];
+  // `images` is non-empty by construction, but noUncheckedIndexedAccess cannot
+  // know that and an out-of-range index would otherwise reach next/image as
+  // undefined. Falling back to the first image, then the cover, keeps the
+  // lightbox showing something rather than throwing.
+  const currentSrc = images[index] ?? images[0] ?? project.cover;
   const isLoaded = loaded.has(currentSrc);
   const isErrored = errored.has(currentSrc);
 
@@ -95,12 +104,17 @@ export function ProjectGallery({ project, startIndex = 0, onClose }: Props) {
   }, []);
 
   // Preload only the immediate neighbours (never all images at once).
+  // Resolves to sources here rather than indices, so the render path never has
+  // to index back into the array.
   const neighbors = useMemo(() => {
     if (total <= 1) return [];
     const set = new Set<number>([(index + 1) % total, (index - 1 + total) % total]);
     set.delete(index);
-    return [...set];
-  }, [index, total]);
+    return [...set].flatMap((i) => {
+      const src = images[i];
+      return src === undefined ? [] : [src];
+    });
+  }, [images, index, total]);
 
   // Keyboard navigation (direction-aware) + Esc + focus trap.
   useEffect(() => {
@@ -124,6 +138,10 @@ export function ProjectGallery({ project, startIndex = 0, onClose }: Props) {
         if (!focusables || focusables.length === 0) return;
         const first = focusables[0];
         const last = focusables[focusables.length - 1];
+        // Both are present whenever the list is non-empty, which was checked
+        // above — but the compiler cannot see that, and a focus trap that
+        // throws would strand the visitor inside the dialog.
+        if (!first || !last) return;
         if (e.shiftKey && document.activeElement === first) {
           e.preventDefault();
           last.focus();
@@ -134,7 +152,7 @@ export function ProjectGallery({ project, startIndex = 0, onClose }: Props) {
       }
     }
     document.addEventListener('keydown', onKey);
-    return () => document.removeEventListener('keydown', onKey);
+    return () => { document.removeEventListener('keydown', onKey); };
   }, [dir, onClose, paginate]);
 
   // Lock body scroll and move focus to the dialog while open.
@@ -208,8 +226,8 @@ export function ProjectGallery({ project, startIndex = 0, onClose }: Props) {
             sizes={stageSizes}
             placeholder={blur ? 'blur' : 'empty'}
             blurDataURL={blur}
-            onLoad={() => markLoaded(currentSrc)}
-            onError={() => markErrored(currentSrc)}
+            onLoad={() => { markLoaded(currentSrc); }}
+            onError={() => { markErrored(currentSrc); }}
             className={useDeviceFrame ? 'object-cover object-top' : 'object-contain'}
             draggable={false}
           />
@@ -228,7 +246,7 @@ export function ProjectGallery({ project, startIndex = 0, onClose }: Props) {
     <>
       <button
         type="button"
-        onClick={() => paginate(-1)}
+        onClick={() => { paginate(-1); }}
         aria-label={t('gallery.prev')}
         className="pointer-events-auto absolute top-1/2 start-3 z-20 grid h-11 w-11 -translate-y-1/2 place-items-center rounded-full bg-white/12 text-white ring-1 ring-white/15 backdrop-blur transition-colors hover:bg-white/25 sm:h-12 sm:w-12"
       >
@@ -236,7 +254,7 @@ export function ProjectGallery({ project, startIndex = 0, onClose }: Props) {
       </button>
       <button
         type="button"
-        onClick={() => paginate(1)}
+        onClick={() => { paginate(1); }}
         aria-label={t('gallery.next')}
         className="pointer-events-auto absolute top-1/2 end-3 z-20 grid h-11 w-11 -translate-y-1/2 place-items-center rounded-full bg-white/12 text-white ring-1 ring-white/15 backdrop-blur transition-colors hover:bg-white/25 sm:h-12 sm:w-12"
       >
@@ -270,12 +288,12 @@ export function ProjectGallery({ project, startIndex = 0, onClose }: Props) {
 
           {/* Hidden neighbour preloaders — fetch prev/next at display resolution. */}
           <div aria-hidden="true" className="pointer-events-none fixed left-0 top-0 h-px w-px overflow-hidden opacity-0">
-            {neighbors.map((i) => {
-              const b = blurFor(images[i]);
+            {neighbors.map((src) => {
+              const b = blurFor(src);
               return (
-                <div key={images[i]} className="relative h-px w-px">
+                <div key={src} className="relative h-px w-px">
                   <Image
-                    src={images[i]}
+                    src={src}
                     alt=""
                     fill
                     loading="eager"
@@ -283,7 +301,7 @@ export function ProjectGallery({ project, startIndex = 0, onClose }: Props) {
                     sizes={stageSizes}
                     placeholder={b ? 'blur' : 'empty'}
                     blurDataURL={b}
-                    onLoad={() => markLoaded(images[i])}
+                    onLoad={() => { markLoaded(src); }}
                   />
                 </div>
               );
@@ -365,7 +383,7 @@ export function ProjectGallery({ project, startIndex = 0, onClose }: Props) {
                           role="tab"
                           aria-selected={i === index}
                           aria-label={t('gallery.goToImage', { index: i + 1 })}
-                          onClick={() => goTo(i)}
+                          onClick={() => { goTo(i); }}
                           className={`relative shrink-0 overflow-hidden rounded-lg transition-all duration-200 ${
                             useDeviceFrame ? 'aspect-[9/19.5] w-11' : 'aspect-[16/10] w-20'
                           } ${

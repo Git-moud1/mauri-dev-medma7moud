@@ -46,10 +46,10 @@ export function HeaderShell({ children }: { children: ReactNode }) {
   const [open, setOpen] = useState(false);
 
   useEffect(() => {
-    const onScroll = () => setScrolled(window.scrollY > 20);
+    const onScroll = () => { setScrolled(window.scrollY > 20); };
     onScroll();
     window.addEventListener('scroll', onScroll, { passive: true });
-    return () => window.removeEventListener('scroll', onScroll);
+    return () => { window.removeEventListener('scroll', onScroll); };
   }, []);
 
   // Lock body scroll while the mobile menu is open.
@@ -84,7 +84,7 @@ export function DrawerToggle() {
   return (
     <button
       type="button"
-      onClick={() => setOpen(!open)}
+      onClick={() => { setOpen(!open); }}
       aria-label="Menu"
       aria-expanded={open}
       className="grid h-10 w-10 place-items-center rounded-full border border-border bg-surface/60 text-fg lg:hidden"
@@ -121,7 +121,7 @@ export function DrawerPanel({
               <li key={item.id}>
                 <a
                   href={`#${item.id}`}
-                  onClick={() => setOpen(false)}
+                  onClick={() => { setOpen(false); }}
                   className="block rounded-xl px-4 py-3 text-base font-medium text-fg transition-colors hover:bg-surface-2"
                 >
                   {item.label}
@@ -133,7 +133,7 @@ export function DrawerPanel({
                 href={ctaHref}
                 target="_blank"
                 rel="noopener noreferrer"
-                onClick={() => setOpen(false)}
+                onClick={() => { setOpen(false); }}
                 className="mt-2 flex items-center justify-center gap-2 rounded-xl bg-[#25D366] px-4 py-3 text-base font-semibold text-white"
               >
                 <WhatsAppIcon className="h-5 w-5" />
