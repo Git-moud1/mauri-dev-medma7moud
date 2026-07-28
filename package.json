@@ -17,6 +17,8 @@
   },
   "dependencies": {
     "@netlify/blobs": "^10.7.10",
+    "@node-rs/argon2": "^2.0.2",
+    "jose": "^6.2.4",
     "motion": "^12.42.2",
     "next": "16.2.12",
     "react": "19.2.8",

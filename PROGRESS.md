@@ -479,3 +479,59 @@ everything fails as loudly as preloading nothing.
 JS unchanged at 236.1 KB.
 
 **Next:** Task 3 — the content store.
+
+---
+
+## Task 3 — content store
+
+`src/lib/content` exposes `getProjects()` and `getSettings()`, cached and tagged
+`content` so the public routes stay SSG between edits and a write can invalidate
+them with `revalidateTag`.
+
+Every read falls back to the bundled catalogue on every failure path: missing
+blob (what a first deploy looks like), cold store, outage, or a stored value
+that fails the schema. Nothing throws, nothing returns an empty array to signal
+a problem. Writes are the opposite — they validate and throw, because a rejected
+save with a visible error beats a silently corrupted store.
+
+`whatsappUrl` is derived in the schema transform rather than stored, so it
+cannot drift from `whatsappNumber`.
+
+**One finding in the bundled data:** `ml-scores` carries `link: ''` to mean "no
+live link". The schema normalises empty to absent rather than rejecting it — the
+UI already treats it as falsy and an empty `<input>` posts the same value. The
+alternative was editing the owner's data to satisfy a schema.
+
+8 schema tests. tsc clean, lint clean, build passes.
+
+---
+
+## Task 4 — auth primitives
+
+- `verifyPassword` — argon2id, constant-time, **fails closed** on a missing or
+  malformed hash. The test that matters most: an unset `ADMIN_PASSWORD_HASH`
+  must not read as "no password required", which is exactly what a naive
+  `stored === candidate` does when both sides are undefined.
+- `createSession` / `verifySession` — `jose` HS256, 8h expiry, fails closed on
+  no token, bad signature, wrong claim, another secret, or no `AUTH_SECRET`.
+- `SESSION_COOKIE_OPTIONS` — HttpOnly, Secure, SameSite=Strict, exported as one
+  object so no future write can drift on them.
+- Rate limit — 5 failures / 10 min / IP, 15 min lockout, Blobs-backed. **Fails
+  open** on a store error, deliberately: the password is the gate, and a Blobs
+  outage locking the owner out of their own panel is a self-inflicted denial of
+  service an attacker cannot trigger.
+- `proxy.ts` guards `/admin/*`, documented in the file as a first pass and not
+  the security boundary — every action re-verifies its own session.
+
+**`scripts/gen-admin-secrets.mjs`** generates both values, prompts with no echo,
+writes `.env.admin.local` (gitignored, mode 0600) and **prints nothing secret**.
+Verified: piped and interactive paths both work, stdout contains no argon2 hash
+and no base64 blob, and `git check-ignore` confirms the output file and
+`tests/.auth/` are ignored.
+
+`@node-rs/argon2` installed and smoke-tested on this machine — hash, verify-true
+and verify-false all correct, so the `@noble/hashes` fallback is not needed yet.
+
+10 auth tests. 108 passed, 14 skipped overall.
+
+**Next:** Task 5 — login page and session lifecycle.
