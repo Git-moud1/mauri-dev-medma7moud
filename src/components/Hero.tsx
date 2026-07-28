@@ -45,7 +45,8 @@ export function Hero({ locale }: { locale: Locale }) {
           </span>
 
           <h1 className="mt-6 font-display text-4xl font-bold leading-[1.1] tracking-tight sm:text-6xl lg:text-7xl">
-            {t('hero.titleLine1')} <span className="gold-text">{t('hero.titleHighlight')}</span>
+            {t('hero.titleLine1')}{' '}
+            <span className="gold-text">{t('hero.titleHighlight')}</span>
             <br />
             {t('hero.titleLine2')}
           </h1>
@@ -57,7 +58,9 @@ export function Hero({ locale }: { locale: Locale }) {
           <div className="mt-9 flex flex-col items-center justify-center gap-3 sm:flex-row">
             <a href="#projects" className="btn-gold w-full sm:w-auto">
               {t('hero.ctaWork')}
-              <ArrowRightIcon className={`h-4 w-4 ${dir === 'rtl' ? 'rotate-180' : ''}`} />
+              <ArrowRightIcon
+                className={`h-4 w-4 ${dir === 'rtl' ? 'rotate-180' : ''}`}
+              />
             </a>
             <a
               href={whatsappLink("Hi Mauri-Dev, I'd like to discuss a project.")}
@@ -86,7 +89,9 @@ export function Hero({ locale }: { locale: Locale }) {
         <div className="mx-auto mt-16 grid max-w-2xl grid-cols-3 divide-x divide-border rtl:divide-x-reverse">
           {stats.map((s) => (
             <div key={s.label} className="px-2 text-center">
-              <div className="font-display text-3xl font-bold gold-text sm:text-4xl">{s.value}</div>
+              <div className="font-display text-3xl font-bold gold-text sm:text-4xl">
+                {s.value}
+              </div>
               <div className="mt-1 text-xs text-muted sm:text-sm">{s.label}</div>
             </div>
           ))}

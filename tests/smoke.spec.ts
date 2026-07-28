@@ -145,7 +145,9 @@ test.describe('scroll reveals', () => {
    * Only a computed-opacity check closes that hole. Replacing this with
    * `toBeVisible()` restores the blind spot exactly.
    */
-  test('every section ends up with a revealed element at opacity > 0', async ({ page }) => {
+  test('every section ends up with a revealed element at opacity > 0', async ({
+    page,
+  }) => {
     // Five sections, each polled through a 0.55s transition plus its stagger,
     // on a throttled mobile profile — the default 30s budget is uncomfortably
     // close. This is a timeout bump, not a weakened assertion.
@@ -173,7 +175,9 @@ test.describe('scroll reveals', () => {
       await page
         .locator(selector)
         .first()
-        .evaluate((el) => { el.scrollIntoView({ block: 'start' }); });
+        .evaluate((el) => {
+          el.scrollIntoView({ block: 'start' });
+        });
 
       await expect
         .poll(async () => Math.max(...(await revealOpacities(page, selector)), -1), {
@@ -191,7 +195,9 @@ test.describe('scroll reveals', () => {
    * would be caught. The `reveal-in` assertion proves the effect's
    * reduced-motion branch ran, not just the CSS media-query guard.
    */
-  test('reduced motion renders reveals immediately, without scrolling', async ({ page }) => {
+  test('reduced motion renders reveals immediately, without scrolling', async ({
+    page,
+  }) => {
     await page.emulateMedia({ reducedMotion: 'reduce' });
     await page.goto('/');
 
@@ -248,10 +254,13 @@ test.describe('deployed security and cache headers', () => {
   test('the no-flash script is not blocked by the CSP', async ({ page }) => {
     const violations: string[] = [];
     page.on('console', (message) => {
-      if (/content security policy/i.test(message.text())) violations.push(message.text());
+      if (/content security policy/i.test(message.text()))
+        violations.push(message.text());
     });
     await page.goto('/ar');
-    const colorScheme = await page.evaluate(() => document.documentElement.style.colorScheme);
+    const colorScheme = await page.evaluate(
+      () => document.documentElement.style.colorScheme,
+    );
     expect(colorScheme).toMatch(/^(dark|light)$/);
     expect(violations).toEqual([]);
   });

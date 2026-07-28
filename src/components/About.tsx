@@ -49,7 +49,8 @@ export function About({ locale }: { locale: Locale }) {
           </Reveal>
           <Reveal delay={1}>
             <h2 className="mt-4 font-display text-3xl font-bold leading-tight sm:text-4xl lg:text-5xl">
-              {t('about.title')} <span className="gold-text">{t('about.titleStrong')}</span>
+              {t('about.title')}{' '}
+              <span className="gold-text">{t('about.titleStrong')}</span>
             </h2>
           </Reveal>
           <Reveal delay={2}>

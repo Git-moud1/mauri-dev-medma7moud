@@ -25,7 +25,9 @@ import { fileURLToPath } from 'node:url';
 import { chromium, devices } from '@playwright/test';
 import { ensurePortFree } from './port.mjs';
 
-const NEXT_BIN = fileURLToPath(new URL('../node_modules/next/dist/bin/next', import.meta.url));
+const NEXT_BIN = fileURLToPath(
+  new URL('../node_modules/next/dist/bin/next', import.meta.url),
+);
 
 const targets =
   process.argv.length > 2
@@ -118,7 +120,10 @@ async function measure(browser, url) {
   let windowStart = 0;
   let previous = 0;
   for (const shift of shifts) {
-    if (windowValue > 0 && (shift.time - previous > 1000 || shift.time - windowStart > 5000)) {
+    if (
+      windowValue > 0 &&
+      (shift.time - previous > 1000 || shift.time - windowStart > 5000)
+    ) {
       windowValue = 0;
       windowStart = shift.time;
     }

@@ -152,7 +152,9 @@ export function ProjectGallery({ project, startIndex = 0, onClose }: Props) {
       }
     }
     document.addEventListener('keydown', onKey);
-    return () => { document.removeEventListener('keydown', onKey); };
+    return () => {
+      document.removeEventListener('keydown', onKey);
+    };
   }, [dir, onClose, paginate]);
 
   // Lock body scroll and move focus to the dialog while open.
@@ -226,8 +228,12 @@ export function ProjectGallery({ project, startIndex = 0, onClose }: Props) {
             sizes={stageSizes}
             placeholder={blur ? 'blur' : 'empty'}
             blurDataURL={blur}
-            onLoad={() => { markLoaded(currentSrc); }}
-            onError={() => { markErrored(currentSrc); }}
+            onLoad={() => {
+              markLoaded(currentSrc);
+            }}
+            onError={() => {
+              markErrored(currentSrc);
+            }}
             className={useDeviceFrame ? 'object-cover object-top' : 'object-contain'}
             draggable={false}
           />
@@ -246,19 +252,31 @@ export function ProjectGallery({ project, startIndex = 0, onClose }: Props) {
     <>
       <button
         type="button"
-        onClick={() => { paginate(-1); }}
+        onClick={() => {
+          paginate(-1);
+        }}
         aria-label={t('gallery.prev')}
         className="pointer-events-auto absolute top-1/2 start-3 z-20 grid h-11 w-11 -translate-y-1/2 place-items-center rounded-full bg-white/12 text-white ring-1 ring-white/15 backdrop-blur transition-colors hover:bg-white/25 sm:h-12 sm:w-12"
       >
-        {dir === 'rtl' ? <ChevronRightIcon className="h-6 w-6" /> : <ChevronLeftIcon className="h-6 w-6" />}
+        {dir === 'rtl' ? (
+          <ChevronRightIcon className="h-6 w-6" />
+        ) : (
+          <ChevronLeftIcon className="h-6 w-6" />
+        )}
       </button>
       <button
         type="button"
-        onClick={() => { paginate(1); }}
+        onClick={() => {
+          paginate(1);
+        }}
         aria-label={t('gallery.next')}
         className="pointer-events-auto absolute top-1/2 end-3 z-20 grid h-11 w-11 -translate-y-1/2 place-items-center rounded-full bg-white/12 text-white ring-1 ring-white/15 backdrop-blur transition-colors hover:bg-white/25 sm:h-12 sm:w-12"
       >
-        {dir === 'rtl' ? <ChevronLeftIcon className="h-6 w-6" /> : <ChevronRightIcon className="h-6 w-6" />}
+        {dir === 'rtl' ? (
+          <ChevronLeftIcon className="h-6 w-6" />
+        ) : (
+          <ChevronRightIcon className="h-6 w-6" />
+        )}
       </button>
     </>
   );
@@ -287,7 +305,10 @@ export function ProjectGallery({ project, startIndex = 0, onClose }: Props) {
           />
 
           {/* Hidden neighbour preloaders — fetch prev/next at display resolution. */}
-          <div aria-hidden="true" className="pointer-events-none fixed left-0 top-0 h-px w-px overflow-hidden opacity-0">
+          <div
+            aria-hidden="true"
+            className="pointer-events-none fixed left-0 top-0 h-px w-px overflow-hidden opacity-0"
+          >
             {neighbors.map((src) => {
               const b = blurFor(src);
               return (
@@ -301,7 +322,9 @@ export function ProjectGallery({ project, startIndex = 0, onClose }: Props) {
                     sizes={stageSizes}
                     placeholder={b ? 'blur' : 'empty'}
                     blurDataURL={b}
-                    onLoad={() => { markLoaded(src); }}
+                    onLoad={() => {
+                      markLoaded(src);
+                    }}
                   />
                 </div>
               );
@@ -383,9 +406,13 @@ export function ProjectGallery({ project, startIndex = 0, onClose }: Props) {
                           role="tab"
                           aria-selected={i === index}
                           aria-label={t('gallery.goToImage', { index: i + 1 })}
-                          onClick={() => { goTo(i); }}
+                          onClick={() => {
+                            goTo(i);
+                          }}
                           className={`relative shrink-0 overflow-hidden rounded-lg transition-all duration-200 ${
-                            useDeviceFrame ? 'aspect-[9/19.5] w-11' : 'aspect-[16/10] w-20'
+                            useDeviceFrame
+                              ? 'aspect-[9/19.5] w-11'
+                              : 'aspect-[16/10] w-20'
                           } ${
                             i === index
                               ? 'ring-2 ring-gold ring-offset-2 ring-offset-black'
@@ -413,12 +440,20 @@ export function ProjectGallery({ project, startIndex = 0, onClose }: Props) {
               {/* Caption — centered, contained, legible. */}
               <div className="pointer-events-auto mx-auto mt-3 flex max-w-2xl flex-col items-center gap-1 px-5 text-center">
                 <span className="text-[11px] font-semibold uppercase tracking-[0.2em] text-gold">
-                  {project.category === 'web' ? t('projects.filterWeb') : t('projects.filterApp')}
+                  {project.category === 'web'
+                    ? t('projects.filterWeb')
+                    : t('projects.filterApp')}
                 </span>
-                <h3 id={titleId} className="font-display text-base font-bold text-white sm:text-lg">
+                <h3
+                  id={titleId}
+                  className="font-display text-base font-bold text-white sm:text-lg"
+                >
                   {project.title[locale]}
                 </h3>
-                <p id={descId} className="line-clamp-2 text-sm leading-relaxed text-white/65">
+                <p
+                  id={descId}
+                  className="line-clamp-2 text-sm leading-relaxed text-white/65"
+                >
                   {project.description[locale]}
                 </p>
                 {project.link ? (

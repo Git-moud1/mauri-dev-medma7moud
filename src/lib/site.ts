@@ -46,6 +46,15 @@ export const TECH_STACK = [
 
 export const SKILLS = {
   languages: ['HTML', 'CSS', 'JavaScript', 'TypeScript', 'Python', 'PHP', 'C++'],
-  frameworks: ['React', 'Next.js', 'Vue', 'Laravel', 'Node.js', 'Django', 'MySQL', 'REST API'],
+  frameworks: [
+    'React',
+    'Next.js',
+    'Vue',
+    'Laravel',
+    'Node.js',
+    'Django',
+    'MySQL',
+    'REST API',
+  ],
   mobile: ['React Native', 'Flutter'],
 } as const;

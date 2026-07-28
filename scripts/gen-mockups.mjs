@@ -44,7 +44,8 @@ for (const project of projects) {
     if (!w || !h) throw new Error(`${project}/${f}: missing width/height on <svg>`);
 
     svg = svg.replace(/__PH_([a-z0-9_]+)__/g, (_m, token) => {
-      if (!uris[token]) throw new Error(`Unknown photo token in ${project}/${f}: ${token}`);
+      if (!uris[token])
+        throw new Error(`Unknown photo token in ${project}/${f}: ${token}`);
       return uris[token];
     });
 

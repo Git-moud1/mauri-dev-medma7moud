@@ -34,7 +34,10 @@ export default defineConfig([
        * `${delay * 80}ms` in a style value or `${index + 1}` in a label is the
        * clearest way to write it. Objects, nullables and `any` stay banned.
        */
-      '@typescript-eslint/restrict-template-expressions': ['error', { allowNumber: true }],
+      '@typescript-eslint/restrict-template-expressions': [
+        'error',
+        { allowNumber: true },
+      ],
     },
   },
 

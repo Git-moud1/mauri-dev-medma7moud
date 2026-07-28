@@ -8,7 +8,10 @@ export function Process({ locale }: { locale: Locale }) {
   const t = getT(locale);
 
   return (
-    <section id="process" className="defer-paint defer-process scroll-mt-24 py-20 sm:py-28">
+    <section
+      id="process"
+      className="defer-paint defer-process scroll-mt-24 py-20 sm:py-28"
+    >
       <div className="container-x">
         <div className="mx-auto mb-14 max-w-2xl text-center">
           <Reveal>
@@ -20,7 +23,8 @@ export function Process({ locale }: { locale: Locale }) {
           </Reveal>
           <Reveal delay={1}>
             <h2 className="mt-4 font-display text-3xl font-bold sm:text-4xl lg:text-5xl">
-              {t('process.title')} <span className="gold-text">{t('process.titleStrong')}</span>
+              {t('process.title')}{' '}
+              <span className="gold-text">{t('process.titleStrong')}</span>
             </h2>
           </Reveal>
         </div>

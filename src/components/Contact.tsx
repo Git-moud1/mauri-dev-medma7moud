@@ -9,7 +9,10 @@ export function Contact({ locale }: { locale: Locale }) {
   const t = getT(locale);
 
   return (
-    <section id="contact" className="defer-paint defer-contact scroll-mt-24 py-20 sm:py-28">
+    <section
+      id="contact"
+      className="defer-paint defer-contact scroll-mt-24 py-20 sm:py-28"
+    >
       <div className="container-x grid gap-12 lg:grid-cols-2 lg:gap-16">
         {/* Left: intro + direct channels */}
         <div>
@@ -21,7 +24,8 @@ export function Contact({ locale }: { locale: Locale }) {
           </Reveal>
           <Reveal delay={1}>
             <h2 className="mt-4 font-display text-3xl font-bold leading-tight sm:text-4xl lg:text-5xl">
-              {t('contact.title')} <span className="gold-text">{t('contact.titleStrong')}</span>
+              {t('contact.title')}{' '}
+              <span className="gold-text">{t('contact.titleStrong')}</span>
             </h2>
           </Reveal>
           <Reveal delay={2}>
@@ -40,7 +44,9 @@ export function Contact({ locale }: { locale: Locale }) {
                   <WhatsAppIcon className="h-5 w-5" />
                 </span>
                 <span>
-                  <span className="block text-sm font-semibold">{t('contact.whatsapp')}</span>
+                  <span className="block text-sm font-semibold">
+                    {t('contact.whatsapp')}
+                  </span>
                   <span className="block text-sm text-muted" dir="ltr">
                     +{SITE.whatsappNumber}
                   </span>
@@ -55,7 +61,9 @@ export function Contact({ locale }: { locale: Locale }) {
                   <MailIcon className="h-5 w-5" />
                 </span>
                 <span>
-                  <span className="block text-sm font-semibold">{t('contact.emailLabel')}</span>
+                  <span className="block text-sm font-semibold">
+                    {t('contact.emailLabel')}
+                  </span>
                   <span className="block text-sm text-muted" dir="ltr">
                     {SITE.email}
                   </span>

@@ -27,7 +27,9 @@ import { fileURLToPath } from 'node:url';
 import { gzipSync } from 'node:zlib';
 import { ensurePortFree } from './port.mjs';
 
-const NEXT_BIN = fileURLToPath(new URL('../node_modules/next/dist/bin/next', import.meta.url));
+const NEXT_BIN = fileURLToPath(
+  new URL('../node_modules/next/dist/bin/next', import.meta.url),
+);
 
 const target = process.argv[2] ?? 'http://localhost:3000/';
 const KB = 1024;
@@ -124,7 +126,9 @@ async function main() {
   const scripts = unique(html.match(/\/_next\/static\/chunks\/[^"'\\\s]+?\.js/g) ?? []);
   const fonts = unique(html.match(/\/_next\/static\/media\/[^"'\\\s]+?\.woff2/g) ?? []);
   const preloadedFonts = unique(
-    [...html.matchAll(/<link[^>]+rel="preload"[^>]+href="([^"]+\.woff2)"/g)].map((m) => m[1]),
+    [...html.matchAll(/<link[^>]+rel="preload"[^>]+href="([^"]+\.woff2)"/g)].map(
+      (m) => m[1],
+    ),
   );
 
   const scriptSizes = await Promise.all(scripts.map((p) => transferSize(origin + p)));
@@ -147,11 +151,15 @@ async function main() {
   console.log(`  ${'—'.repeat(10)}`);
   console.log(`  ${fmt(jsTotal).padStart(10)}  TOTAL JS`);
 
-  console.log(`\nFonts (${fontSizes.length} referenced, ${preloadedFonts.length} preloaded)`);
+  console.log(
+    `\nFonts (${fontSizes.length} referenced, ${preloadedFonts.length} preloaded)`,
+  );
   for (const r of [...fontSizes].sort((a, b) => b.bytes - a.bytes)) {
     const name = r.url.split('/').pop();
     const isPreloaded = preloadedFonts.some((f) => r.url.endsWith(f.split('/').pop()));
-    console.log(`  ${fmt(r.bytes).padStart(10)}  ${name}${isPreloaded ? '  (preloaded)' : ''}`);
+    console.log(
+      `  ${fmt(r.bytes).padStart(10)}  ${name}${isPreloaded ? '  (preloaded)' : ''}`,
+    );
   }
   console.log(`  ${'—'.repeat(10)}`);
   console.log(`  ${fmt(fontTotal).padStart(10)}  TOTAL FONTS`);

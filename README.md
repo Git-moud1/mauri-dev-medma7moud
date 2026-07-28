@@ -39,22 +39,22 @@ access to WhatsApp / email / contact form.
 
 Page sections, in render order (`src/app/page.tsx`):
 
-| Order | Component | Anchor | Purpose |
-|-------|-----------|--------|---------|
-| 1 | `Header` | — | Fixed nav, language switcher, theme toggle, WhatsApp CTA, mobile drawer |
-| 2 | `Hero` | `#top` | Headline, availability badge, CTAs, stats (5+ yrs / 120+ projects / 10+ stacks) |
-| 3 | `TechMarquee` | — | Infinite-scrolling tech logos strip (RTL-aware) |
-| 4 | `About` | `#about` | Bio, skills grouped by Languages / Frameworks / Mobile, 3 highlight cards |
-| 5 | `Projects` | `#projects` | Filterable project grid (All / Web / App) + lightbox gallery |
-| 6 | `Process` | `#process` | 4-step method: Discover → Design → Build → Launch |
-| 7 | `Contact` | `#contact` | Contact form + WhatsApp + email cards |
-| 8 | `Footer` | — | Nav, connect links, copyright |
-| 9 | `FloatingWhatsApp` | — | Persistent floating WhatsApp button |
+| Order | Component          | Anchor      | Purpose                                                                         |
+| ----- | ------------------ | ----------- | ------------------------------------------------------------------------------- |
+| 1     | `Header`           | —           | Fixed nav, language switcher, theme toggle, WhatsApp CTA, mobile drawer         |
+| 2     | `Hero`             | `#top`      | Headline, availability badge, CTAs, stats (5+ yrs / 120+ projects / 10+ stacks) |
+| 3     | `TechMarquee`      | —           | Infinite-scrolling tech logos strip (RTL-aware)                                 |
+| 4     | `About`            | `#about`    | Bio, skills grouped by Languages / Frameworks / Mobile, 3 highlight cards       |
+| 5     | `Projects`         | `#projects` | Filterable project grid (All / Web / App) + lightbox gallery                    |
+| 6     | `Process`          | `#process`  | 4-step method: Discover → Design → Build → Launch                               |
+| 7     | `Contact`          | `#contact`  | Contact form + WhatsApp + email cards                                           |
+| 8     | `Footer`           | —           | Nav, connect links, copyright                                                   |
+| 9     | `FloatingWhatsApp` | —           | Persistent floating WhatsApp button                                             |
 
 Plus `DocumentMeta` (headless — keeps `<title>`/`<meta description>` in sync with the active language).
 
 **Defaults:** language **Arabic (RTL)**, theme **dark** (falls back to `prefers-color-scheme`).
-Both are persisted to `localStorage` and applied *before first paint* by an inline no-flash script.
+Both are persisted to `localStorage` and applied _before first paint_ by an inline no-flash script.
 
 ---
 
@@ -65,13 +65,13 @@ npm install
 npm run dev          # http://localhost:3000
 ```
 
-| Script | What it does |
-|--------|--------------|
-| `npm run dev` | Next dev server |
-| `npm run build` | Runs `prebuild` (`gen:blur`) then `next build` |
-| `npm start` | Serves the production build |
-| `npm run lint` | `next lint` (eslint-config-next / core-web-vitals) |
-| `npm run gen:blur` | Regenerates LQIP blur placeholders → `src/data/blur.generated.ts` |
+| Script                         | What it does                                                      |
+| ------------------------------ | ----------------------------------------------------------------- |
+| `npm run dev`                  | Next dev server                                                   |
+| `npm run build`                | Runs `prebuild` (`gen:blur`) then `next build`                    |
+| `npm start`                    | Serves the production build                                       |
+| `npm run lint`                 | `next lint` (eslint-config-next / core-web-vitals)                |
+| `npm run gen:blur`             | Regenerates LQIP blur placeholders → `src/data/blur.generated.ts` |
 | `node scripts/gen-mockups.mjs` | Rebuilds the synthetic mockup screens (network required — see §9) |
 
 > `prebuild` is wired into `build`, so blur placeholders are always regenerated on deploy.
@@ -85,12 +85,12 @@ Node 18+ recommended (the scripts use top-level `await` and global `fetch`).
 
 **Runtime deps**
 
-| Package | Version | Used for |
-|---------|---------|----------|
-| `next` | 14.2.5 | App Router, `next/image`, `next/font` |
-| `react` / `react-dom` | ^18.3.1 | UI |
-| `framer-motion` | ^11.3.24 | Scroll reveals, lightbox slides/drag, layout animations |
-| `sharp` | ^0.35.3 | Build-time image processing (blur LQIP + mockup rasterization) |
+| Package               | Version  | Used for                                                       |
+| --------------------- | -------- | -------------------------------------------------------------- |
+| `next`                | 14.2.5   | App Router, `next/image`, `next/font`                          |
+| `react` / `react-dom` | ^18.3.1  | UI                                                             |
+| `framer-motion`       | ^11.3.24 | Scroll reveals, lightbox slides/drag, layout animations        |
+| `sharp`               | ^0.35.3  | Build-time image processing (blur LQIP + mockup rasterization) |
 
 **Dev deps:** TypeScript 5.5 (strict), Tailwind 3.4, PostCSS + Autoprefixer, ESLint 8 + `eslint-config-next`.
 
@@ -161,7 +161,7 @@ client components; everything below them is client-side too (they all need `useI
 
 **No flash of wrong theme/direction.** `NoFlashScript` (in `<head>`) reads `bc-theme` and
 `bc-locale` from `localStorage` synchronously and sets `<html class="dark">`, `style.colorScheme`,
-`lang`, and `dir` *before* React hydrates. `<html>` carries `suppressHydrationWarning` because of
+`lang`, and `dir` _before_ React hydrates. `<html>` carries `suppressHydrationWarning` because of
 this. The default in the script (dark, `ar`, `rtl`) must stay in sync with `DEFAULT_LOCALE` and
 `ThemeProvider`'s initial state.
 
@@ -191,8 +191,8 @@ actually opens a project.
 ```tsx
 const { t, locale, dir, dict, ready, setLocale } = useI18n();
 
-t('hero.badge')                                  // typed dot-path
-t('gallery.counter', { current: 2, total: 5 })   // {placeholder} interpolation
+t('hero.badge'); // typed dot-path
+t('gallery.counter', { current: 2, total: 5 }); // {placeholder} interpolation
 ```
 
 `TKey` is a recursive mapped type over `Dictionary`, so `t('does.not.exist')` is a **compile error**.
@@ -215,14 +215,14 @@ At runtime an unresolved key falls back to returning the key string itself.
 space-separated RGB channels so Tailwind's `<alpha-value>` syntax works (`text-fg/70`,
 `bg-gold/20`).
 
-| Token | Light | Dark |
-|-------|-------|------|
-| `--bg` | `248 249 252` | `8 8 12` (OLED near-black) |
-| `--surface` / `--surface-2` | white / `241 243 249` | `18 18 27` / `26 26 38` |
-| `--border` | `224 227 236` | `42 42 58` |
-| `--fg` / `--muted` | `24 24 33` / `88 92 110` | `240 241 248` / `158 160 178` |
-| `--gold` (accent) | `109 40 217` violet-700 | `167 139 250` violet-400 |
-| `--brand-1/2/3` | violet → indigo → cyan-700 | violet → blue → cyan |
+| Token                       | Light                      | Dark                          |
+| --------------------------- | -------------------------- | ----------------------------- |
+| `--bg`                      | `248 249 252`              | `8 8 12` (OLED near-black)    |
+| `--surface` / `--surface-2` | white / `241 243 249`      | `18 18 27` / `26 26 38`       |
+| `--border`                  | `224 227 236`              | `42 42 58`                    |
+| `--fg` / `--muted`          | `24 24 33` / `88 92 110`   | `240 241 248` / `158 160 178` |
+| `--gold` (accent)           | `109 40 217` violet-700    | `167 139 250` violet-400      |
+| `--brand-1/2/3`             | violet → indigo → cyan-700 | violet → blue → cyan          |
 
 > **Naming gotcha:** the accent token is still called `--gold` / `gold` for backwards compatibility
 > with existing utility classes. It resolves to **brand violet**, not gold. Don't be misled.
@@ -250,22 +250,22 @@ Everything lives in **`src/data/projects.ts`**:
 
 ```ts
 interface Project {
-  id: string;                          // must match the folder name in public/projects/
-  title: Record<Locale, string>;       // ar + en + fr, all required
+  id: string; // must match the folder name in public/projects/
+  title: Record<Locale, string>; // ar + en + fr, all required
   description: Record<Locale, string>;
-  category: 'web' | 'app';             // drives the filter pills AND the lightbox layout
-  frame?: 'phone' | 'browser';         // drives the CARD presentation (default: browser)
-  cover: string;                       // "/projects/<id>/cover.jpg"
-  images: string[];                    // gallery images, in order
-  link?: string;                       // live URL; omit or "" to hide the button
+  category: 'web' | 'app'; // drives the filter pills AND the lightbox layout
+  frame?: 'phone' | 'browser'; // drives the CARD presentation (default: browser)
+  cover: string; // "/projects/<id>/cover.jpg"
+  images: string[]; // gallery images, in order
+  link?: string; // live URL; omit or "" to hide the button
 }
 ```
 
 **`category` vs `frame` — two different switches, easy to confuse:**
 
-- `category` filters the grid **and** decides the *lightbox* layout:
+- `category` filters the grid **and** decides the _lightbox_ layout:
   `app` → screenshot inside a device frame (9:19.5, notch); `web` → large `object-contain` image.
-- `frame` only decides the *card* cover presentation: `phone` → screenshot rising out of a gradient
+- `frame` only decides the _card_ cover presentation: `phone` → screenshot rising out of a gradient
   device mock; `browser` → edge-to-edge `object-cover`.
 
 They can legitimately disagree — e.g. `pharmanet` and `skin-beauty` are `category: 'web'` with
@@ -273,22 +273,22 @@ They can legitimately disagree — e.g. `pharmanet` and `skin-beauty` are `categ
 
 **Current catalog** (order = display order):
 
-| id | Title | Category / frame | Live |
-|----|-------|------------------|------|
-| `skin-beauty` | Skin Beauty — Korean Skincare Store | web / phone | [link](https://skin-beauty-nine.vercel.app) |
-| `ml-scores` | ML Scores — Live Football App | app / phone | — |
-| `ecommerce` | AURA — E-Commerce Platform | web / browser | — |
-| `swift-eats` | Swift Eats — Food Delivery App | app / phone | — |
-| `pharmanet` | PharmaNet — Pharmacy Management Platform | web / phone | [link](https://phamanet.site.je) |
-| `presencia` | PrésencIA — AI Attendance System | web / browser | — |
-| `pulse-analytics` | Pulse Analytics — SaaS Dashboard | web / browser | — |
+| id                | Title                                    | Category / frame | Live                                        |
+| ----------------- | ---------------------------------------- | ---------------- | ------------------------------------------- |
+| `skin-beauty`     | Skin Beauty — Korean Skincare Store      | web / phone      | [link](https://skin-beauty-nine.vercel.app) |
+| `ml-scores`       | ML Scores — Live Football App            | app / phone      | —                                           |
+| `ecommerce`       | AURA — E-Commerce Platform               | web / browser    | —                                           |
+| `swift-eats`      | Swift Eats — Food Delivery App           | app / phone      | —                                           |
+| `pharmanet`       | PharmaNet — Pharmacy Management Platform | web / phone      | [link](https://phamanet.site.je)            |
+| `presencia`       | PrésencIA — AI Attendance System         | web / browser    | —                                           |
+| `pulse-analytics` | Pulse Analytics — SaaS Dashboard         | web / browser    | —                                           |
 
 ### The lightbox (`ProjectGallery.tsx`)
 
 Opened by clicking a card. Features:
 
 - **Navigation:** arrow buttons, thumbnail strip (auto-scrolls the active thumb into view), swipe
-  (60px drag threshold), keyboard `←`/`→` — **direction-aware**, so in RTL `←` means *next*.
+  (60px drag threshold), keyboard `←`/`→` — **direction-aware**, so in RTL `←` means _next_.
 - **Close:** `Esc`, the close button, or clicking any empty scrim area.
 - **Accessibility:** `role="dialog"`, `aria-modal`, `aria-labelledby`/`aria-describedby`, focus trap
   on `Tab`/`Shift+Tab`, focus moved to the close button on open, body scroll locked, `aria-live`

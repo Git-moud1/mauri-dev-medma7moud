@@ -46,4 +46,6 @@ export function blurFor(src: string): string | undefined {
 `;
 
 await writeFile(join(root, 'src', 'data', 'blur.generated.ts'), body, 'utf8');
-console.log(`Generated ${Object.keys(map).length} blur placeholders → src/data/blur.generated.ts`);
+console.log(
+  `Generated ${Object.keys(map).length} blur placeholders → src/data/blur.generated.ts`,
+);

@@ -95,6 +95,7 @@ Right now every content change requires a code edit and a redeploy. Build a real
 ### What the admin can manage
 
 **Projects** (full CRUD + reorder — order in the list is display order):
+
 - `id` (auto-slugified, unique, immutable after creation)
 - `title` and `description` for **all three locales** (ar / en / fr) — enforce all three before saving
 - `category`: `web` | `app` (drives filter pills + lightbox layout)
@@ -104,6 +105,7 @@ Right now every content change requires a code edit and a redeploy. Build a real
 - `link` — optional live URL, validated, `https` only
 
 **Site settings:**
+
 - WhatsApp number + the prebuilt `wa.me` URL (keep them derived from one field so they can't drift apart)
 - **Social links** — add/edit/remove/reorder a list of `{ platform, url, label }`; these render in the Footer and Contact section (and header if it fits the design)
 - Hero stats (years of experience, projects delivered, stacks) and the "available for work" badge toggle

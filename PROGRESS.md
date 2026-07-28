@@ -30,10 +30,10 @@ fonts 55.7 KB on `/ar`, 84.8 KB on `/en`.
 
 **Bundle**
 
-| Route | Before (f955f21) | After | Delta |
-|---|---|---|---|
-| `/ar` | 238.7 KB | **235.6 KB** | −3.1 KB |
-| `/en` | 238.7 KB | **235.6 KB** | −3.1 KB |
+| Route | Before (f955f21) | After        | Delta   |
+| ----- | ---------------- | ------------ | ------- |
+| `/ar` | 238.7 KB         | **235.6 KB** | −3.1 KB |
+| `/en` | 238.7 KB         | **235.6 KB** | −3.1 KB |
 
 Fonts unchanged: 55.7 KB `/ar`, 84.8 KB `/en`, 0 preloaded on both.
 
@@ -117,8 +117,8 @@ instrument.
 
 **CLS — measured before and after, as asked**
 
-| Route | Before | After |
-|---|---|---|
+| Route | Before                              | After           |
+| ----- | ----------------------------------- | --------------- |
 | `/ar` | 0.0000 (worst window), 0.0000 total | 0.0000 / 0.0000 |
 | `/en` | 0.0000 (worst window), 0.0000 total | 0.0000 / 0.0000 |
 
@@ -132,7 +132,7 @@ With JavaScript disabled the page rendered blank: every `.reveal` sits at
 `opacity: 0` waiting for an IntersectionObserver that never runs. The
 `<noscript>` override fixes that half.
 
-The new test then caught a second, independent instance the fix did *not*
+The new test then caught a second, independent instance the fix did _not_
 cover. `ProjectsGrid` renders each card as a motion element with
 `initial={{ opacity: 0 }}`, which server-renders as an inline `opacity: 0` and
 is only cleared when the animation library hydrates. So the project cards — the

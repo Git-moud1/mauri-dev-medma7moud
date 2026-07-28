@@ -6,11 +6,11 @@
 
 Decisions locked with the owner before writing this spec:
 
-| Question | Decision |
-|---|---|
-| Canonical domain | `https://medmoudsite.netlify.app` (README's `medmaoudsite` is a typo) |
-| Localized routes `/ar`, `/en`, `/fr` | Approved |
-| Phase 4 hero concept | **A — Prism Stack** |
+| Question                             | Decision                                                              |
+| ------------------------------------ | --------------------------------------------------------------------- |
+| Canonical domain                     | `https://medmoudsite.netlify.app` (README's `medmaoudsite` is a typo) |
+| Localized routes `/ar`, `/en`, `/fr` | Approved                                                              |
+| Phase 4 hero concept                 | **A — Prism Stack**                                                   |
 
 ---
 
@@ -18,16 +18,16 @@ Decisions locked with the owner before writing this spec:
 
 These are the numbers `MIGRATION.md` must be compared against.
 
-| Asset | Transferred |
-|---|---|
-| HTML | 84.8 KB uncompressed |
-| `fd9d1056` (React) | 53.8 KB |
-| `677` (framer-motion + app) | 42.5 KB |
-| `23` | 31.9 KB |
-| `polyfills` | 31.1 KB |
-| `app/page` | 15.7 KB |
-| 4 remaining chunks | 8.4 KB |
-| **JS total** | **~183 KB** |
+| Asset                              | Transferred                                  |
+| ---------------------------------- | -------------------------------------------- |
+| HTML                               | 84.8 KB uncompressed                         |
+| `fd9d1056` (React)                 | 53.8 KB                                      |
+| `677` (framer-motion + app)        | 42.5 KB                                      |
+| `23`                               | 31.9 KB                                      |
+| `polyfills`                        | 31.1 KB                                      |
+| `app/page`                         | 15.7 KB                                      |
+| 4 remaining chunks                 | 8.4 KB                                       |
+| **JS total**                       | **~183 KB**                                  |
 | **Fonts (5 woff2, all preloaded)** | **113.7 KB** (48.4 + 38.5 + 9.0 + 8.9 + 8.9) |
 
 Lighthouse mobile before/after numbers are captured in step 0 of the plan and recorded in `MIGRATION.md`.
@@ -52,37 +52,37 @@ Every item below is fixed as part of this work. Numbering is referenced by the p
 
 ### Confirmed defects
 
-| # | File | Defect |
-|---|---|---|
-| B1 | `src/components/Header.tsx` | Drawer locks `document.body.style.overflow`. Resizing past `lg` while open hides the drawer (`lg:hidden`) but leaves `menuOpen === true`, so the page stays permanently unscrollable. |
-| B2 | `src/components/TechMarquee.tsx` | Hardcodes `animate-marquee`; `tailwind.config.ts` defines an unused `marquee-rtl` keyframe. The marquee scrolls the wrong direction in Arabic — the default locale. |
-| B3 | `src/app/globals.css` | The `prefers-reduced-motion` block only neutralizes CSS animations. Framer Motion writes inline styles, so every JS animation still runs for reduced-motion users. No `useReducedMotion` anywhere in the codebase. |
-| B4 | `src/theme/ThemeProvider.tsx` | Initial state is hardcoded `'dark'`. A visitor with `bc-theme=light` gets a correct first paint from the no-flash script but the wrong `ThemeToggle` icon until the effect fires. |
-| B5 | `src/components/ProjectGallery.tsx` | The outer `<AnimatePresence>` wraps a single always-present child while the parent unmounts it via `{active && …}`. The close/exit animation is unreachable dead code. |
-| B6 | `src/components/Footer.tsx` | `new Date().getFullYear()` in a client component: server and client years differ across a timezone boundary on Dec 31 → hydration mismatch. React 19 is stricter about this. |
+| #   | File                                | Defect                                                                                                                                                                                                             |
+| --- | ----------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| B1  | `src/components/Header.tsx`         | Drawer locks `document.body.style.overflow`. Resizing past `lg` while open hides the drawer (`lg:hidden`) but leaves `menuOpen === true`, so the page stays permanently unscrollable.                              |
+| B2  | `src/components/TechMarquee.tsx`    | Hardcodes `animate-marquee`; `tailwind.config.ts` defines an unused `marquee-rtl` keyframe. The marquee scrolls the wrong direction in Arabic — the default locale.                                                |
+| B3  | `src/app/globals.css`               | The `prefers-reduced-motion` block only neutralizes CSS animations. Framer Motion writes inline styles, so every JS animation still runs for reduced-motion users. No `useReducedMotion` anywhere in the codebase. |
+| B4  | `src/theme/ThemeProvider.tsx`       | Initial state is hardcoded `'dark'`. A visitor with `bc-theme=light` gets a correct first paint from the no-flash script but the wrong `ThemeToggle` icon until the effect fires.                                  |
+| B5  | `src/components/ProjectGallery.tsx` | The outer `<AnimatePresence>` wraps a single always-present child while the parent unmounts it via `{active && …}`. The close/exit animation is unreachable dead code.                                             |
+| B6  | `src/components/Footer.tsx`         | `new Date().getFullYear()` in a client component: server and client years differ across a timezone boundary on Dec 31 → hydration mismatch. React 19 is stricter about this.                                       |
 
 ### Accessibility defects
 
-| # | File | Defect |
-|---|---|---|
-| B7 | `src/components/Header.tsx` | Mobile drawer has no focus trap, no `Escape` handler, no `aria-controls`, and is not `role="dialog"`. |
-| B8 | `src/components/LanguageSwitcher.tsx` | Declares `role="menu"` + `menuitemradio` but implements no arrow-key navigation and no focus restore to the trigger on close. |
-| B9 | `src/components/ContactForm.tsx` | Errors are set on submit and never cleared while typing; a corrected field keeps its error until the next submit. |
-| B10 | `src/components/Logo.tsx` | `priority` on a 40 px image rendered twice. The footer instance preloads an off-screen image, competing with LCP. |
+| #   | File                                  | Defect                                                                                                                        |
+| --- | ------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------- |
+| B7  | `src/components/Header.tsx`           | Mobile drawer has no focus trap, no `Escape` handler, no `aria-controls`, and is not `role="dialog"`.                         |
+| B8  | `src/components/LanguageSwitcher.tsx` | Declares `role="menu"` + `menuitemradio` but implements no arrow-key navigation and no focus restore to the trigger on close. |
+| B9  | `src/components/ContactForm.tsx`      | Errors are set on submit and never cleared while typing; a corrected field keeps its error until the next submit.             |
+| B10 | `src/components/Logo.tsx`             | `priority` on a 40 px image rendered twice. The footer instance preloads an off-screen image, competing with LCP.             |
 
 ### Architecture and configuration
 
-| # | Location | Issue |
-|---|---|---|
+| #   | Location                    | Issue                                                                                                                                                                                                         |
+| --- | --------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | B11 | `src/i18n/I18nProvider.tsx` | SSRs the Arabic dictionary unconditionally then swaps client-side. Causes a content flash for non-Arabic visitors, a second render of every section, and forces the whole tree client-side. Resolved by §3.1. |
-| B12 | `netlify.toml` | No `[[headers]]` block at all — no caching directives, no security headers. |
-| B13 | `src/app/` | No `sitemap.ts`, no `robots.ts`, no `opengraph-image`. |
-| B14 | `src/app/layout.tsx` | `alternates.languages` maps `ar`/`en`/`fr` all to `/`. Three hreflang entries on one URL; search engines discard it. |
-| B15 | `next.config.mjs` | `dangerouslyAllowSVG: true`. Verified `public/projects/**` contains zero SVGs (all jpg/jpeg/png/webp), so it is safe to delete. |
-| B16 | `tsconfig.json` | Missing `noUncheckedIndexedAccess`. Enabling it surfaces four genuine unchecked accesses: `images[index]`, `focusables[0]`, `focusables[last]` in `ProjectGallery.tsx`, and `data[k]` in `ContactForm.tsx`. |
-| B17 | `.eslintrc.json` | `next/core-web-vitals` alone; no `typescript-eslint`, no `jsx-a11y` beyond Next's subset. |
-| B18 | `src/app/globals.css` | `* { border-color: … }` duplicates Tailwind preflight. |
-| B19 | README + `layout.tsx` | Domain drift, resolved: canonical is `medmoudsite.netlify.app`; the README line is corrected. |
+| B12 | `netlify.toml`              | No `[[headers]]` block at all — no caching directives, no security headers.                                                                                                                                   |
+| B13 | `src/app/`                  | No `sitemap.ts`, no `robots.ts`, no `opengraph-image`.                                                                                                                                                        |
+| B14 | `src/app/layout.tsx`        | `alternates.languages` maps `ar`/`en`/`fr` all to `/`. Three hreflang entries on one URL; search engines discard it.                                                                                          |
+| B15 | `next.config.mjs`           | `dangerouslyAllowSVG: true`. Verified `public/projects/**` contains zero SVGs (all jpg/jpeg/png/webp), so it is safe to delete.                                                                               |
+| B16 | `tsconfig.json`             | Missing `noUncheckedIndexedAccess`. Enabling it surfaces four genuine unchecked accesses: `images[index]`, `focusables[0]`, `focusables[last]` in `ProjectGallery.tsx`, and `data[k]` in `ContactForm.tsx`.   |
+| B17 | `.eslintrc.json`            | `next/core-web-vitals` alone; no `typescript-eslint`, no `jsx-a11y` beyond Next's subset.                                                                                                                     |
+| B18 | `src/app/globals.css`       | `* { border-color: … }` duplicates Tailwind preflight.                                                                                                                                                        |
+| B19 | README + `layout.tsx`       | Domain drift, resolved: canonical is `medmoudsite.netlify.app`; the README line is corrected.                                                                                                                 |
 
 ---
 
@@ -172,18 +172,18 @@ The form keeps using Netlify Forms via the `public/__forms.html` decoy; field na
 
 The brief's phase numbering contains a dependency inversion: Phase 5's localized routes must precede Phase 2's server-component restructure, because client-side i18n is exactly what forces the tree client-side. Doing Phase 2 first means rewriting it during Phase 5.
 
-| Step | Work | Brief phase | Bugs closed |
-|---|---|---|---|
-| 0 | Commit lockfile, record baseline Lighthouse, branch `feat/v2` | — | — |
-| 1 | Next 16 + React 19 + `motion`; codemod, async request APIs, `middleware`→`proxy`, drop webpack config, declare `images.qualities`, delete `dangerouslyAllowSVG` | 1 | B15 |
-| 2 | `/[locale]` routes, `proxy.ts` locale redirect, delete `DocumentMeta` | 5 (structural) | B11, B14 |
-| 3 | Perf: server components + islands, per-locale fonts, `LazyMotion`, deferred below-fold content | 2 | B10 |
-| 4 | Security headers, toolchain (`noUncheckedIndexedAccess`, flat ESLint + `typescript-eslint` strict + `jsx-a11y`, Prettier), all remaining bug fixes. **Lands whole — not partially.** | 6 | B1–B9, B12, B16–B19 |
-| 5 | Admin: auth → `ContentStore` → CRUD + reorder → uploads → admin UX | 3 | — |
-| 6 | SEO: canonical + hreflang + `x-default`, OG images per locale, JSON-LD, sitemap/robots, GSC verification, localized `alt` text, copy rewrite in all three dictionaries | 5 (rest) | B13 |
-| 7 | Hero — Prism Stack | 4 | — |
-| 8 | Contact rework, email removal | 7 | — |
-| 9 | Playwright smoke tests + axe, `MIGRATION.md`, README | — | — |
+| Step | Work                                                                                                                                                                                 | Brief phase    | Bugs closed         |
+| ---- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | -------------- | ------------------- |
+| 0    | Commit lockfile, record baseline Lighthouse, branch `feat/v2`                                                                                                                        | —              | —                   |
+| 1    | Next 16 + React 19 + `motion`; codemod, async request APIs, `middleware`→`proxy`, drop webpack config, declare `images.qualities`, delete `dangerouslyAllowSVG`                      | 1              | B15                 |
+| 2    | `/[locale]` routes, `proxy.ts` locale redirect, delete `DocumentMeta`                                                                                                                | 5 (structural) | B11, B14            |
+| 3    | Perf: server components + islands, per-locale fonts, `LazyMotion`, deferred below-fold content                                                                                       | 2              | B10                 |
+| 4    | Security headers, toolchain (`noUncheckedIndexedAccess`, flat ESLint + `typescript-eslint` strict + `jsx-a11y`, Prettier), all remaining bug fixes. **Lands whole — not partially.** | 6              | B1–B9, B12, B16–B19 |
+| 5    | Admin: auth → `ContentStore` → CRUD + reorder → uploads → admin UX                                                                                                                   | 3              | —                   |
+| 6    | SEO: canonical + hreflang + `x-default`, OG images per locale, JSON-LD, sitemap/robots, GSC verification, localized `alt` text, copy rewrite in all three dictionaries               | 5 (rest)       | B13                 |
+| 7    | Hero — Prism Stack                                                                                                                                                                   | 4              | —                   |
+| 8    | Contact rework, email removal                                                                                                                                                        | 7              | —                   |
+| 9    | Playwright smoke tests + axe, `MIGRATION.md`, README                                                                                                                                 | —              | —                   |
 
 Step 6 follows step 5 because JSON-LD `sameAs` is populated from the admin's social links. Step 8 follows step 5 for the same reason.
 

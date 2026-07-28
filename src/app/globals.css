@@ -64,7 +64,9 @@
      */
     font-family: var(--font-sans, var(--font-arabic)), system-ui, sans-serif;
     /* Smooth theme transition without janking transforms */
-    transition: background-color 0.4s ease, color 0.4s ease;
+    transition:
+      background-color 0.4s ease,
+      color 0.4s ease;
     -webkit-font-smoothing: antialiased;
     text-rendering: optimizeLegibility;
   }

@@ -28,14 +28,19 @@ export function ContactForm() {
     // Cast includes null: namedItem returns null for a missing field, and
     // asserting it away made the optional chains below look redundant to the
     // linter while they were in fact the only thing preventing a throw.
-    const name = (form.elements.namedItem('name') as HTMLInputElement | null)?.value.trim();
-    const email = (form.elements.namedItem('email') as HTMLInputElement | null)?.value.trim();
+    const name = (
+      form.elements.namedItem('name') as HTMLInputElement | null
+    )?.value.trim();
+    const email = (
+      form.elements.namedItem('email') as HTMLInputElement | null
+    )?.value.trim();
     const message = (
       form.elements.namedItem('message') as HTMLTextAreaElement | null
     )?.value.trim();
     if (!name) next.name = t('contact.form.required');
     if (!email) next.email = t('contact.form.required');
-    else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) next.email = t('contact.form.invalidEmail');
+    else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email))
+      next.email = t('contact.form.invalidEmail');
     if (!message) next.message = t('contact.form.required');
     return next;
   }
@@ -149,7 +154,12 @@ export function ContactForm() {
         <label htmlFor="subject" className="mb-1.5 block text-sm font-medium">
           {t('contact.form.subject')}
         </label>
-        <input id="subject" name="subject" type="text" className={`${fieldBase} border-border`} />
+        <input
+          id="subject"
+          name="subject"
+          type="text"
+          className={`${fieldBase} border-border`}
+        />
       </div>
 
       <div className="mt-4">

@@ -74,9 +74,7 @@ export default async function LocaleLayout(props: {
           <style>{`.reveal,[data-anim-in]{opacity:1!important;transform:none!important;transition:none!important}`}</style>
         </noscript>
       </head>
-      <body className={`${fontClassFor(typed)} antialiased`}>
-        {props.children}
-      </body>
+      <body className={`${fontClassFor(typed)} antialiased`}>{props.children}</body>
     </html>
   );
 }

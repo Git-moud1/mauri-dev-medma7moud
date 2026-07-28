@@ -31,10 +31,10 @@ Every task's requirements implicitly include this section.
 - **`category` and `frame` stay distinct.** `category` (`web`|`app`) drives the filter and lightbox layout; `frame` (`phone`|`browser`) drives only the card cover.
 - **Commit style:** conventional commits, one focused commit per task step where indicated.
 - **PROTECTED TESTS — no task may weaken or remove these.** Each exists because a real regression slipped past a weaker check:
-  - *Computed `font-family` per locale* (`tests/smoke.spec.ts`). Added in Task 9 after an undefined `var()` collapsed the whole font declaration and every latin locale silently rendered in Times New Roman — while fetching **zero** fonts, which looked like a byte-budget win. A byte measurement must never again be able to hide a typography failure.
-  - *Computed `opacity > 0` on at least one reveal per section.* Playwright treats `opacity: 0` as "visible", so a page whose scroll reveals never fire renders blank and still passes every visibility assertion. Added in Task 10b.
+  - _Computed `font-family` per locale_ (`tests/smoke.spec.ts`). Added in Task 9 after an undefined `var()` collapsed the whole font declaration and every latin locale silently rendered in Times New Roman — while fetching **zero** fonts, which looked like a byte-budget win. A byte measurement must never again be able to hide a typography failure.
+  - _Computed `opacity > 0` on at least one reveal per section._ Playwright treats `opacity: 0` as "visible", so a page whose scroll reveals never fire renders blank and still passes every visibility assertion. Added in Task 10b.
 - **Do not chase the 150 KB JS target by removing motion from the remaining islands.** Owner decision: that trades the site's feel for a number set before there was data. Report the real figure. The final target is set in plan 3, after the Prism Stack hero lands and changes the calculation.
-- **Import `m` from `motion/react-m`, never from `motion/react`.** The `motion/react` barrel also exports the full `motion` proxy, so `import { m } from 'motion/react'` keeps every feature and *increases* bundle size — measured at +2.4 KB versus doing nothing at all. Only `import * as m from 'motion/react-m'` actually tree-shakes.
+- **Import `m` from `motion/react-m`, never from `motion/react`.** The `motion/react` barrel also exports the full `motion` proxy, so `import { m } from 'motion/react'` keeps every feature and _increases_ bundle size — measured at +2.4 KB versus doing nothing at all. Only `import * as m from 'motion/react-m'` actually tree-shakes.
 
 ---
 
@@ -42,30 +42,30 @@ Every task's requirements implicitly include this section.
 
 **Created:**
 
-| Path | Responsibility |
-|---|---|
-| `src/proxy.ts` | Redirect `/` to best-match locale; reserve `/admin/*` guard hook for plan 2 |
-| `src/i18n/locale.ts` | Locale parsing, `Accept-Language` negotiation, cookie name — pure functions, no React |
-| `src/app/(site)/[locale]/layout.tsx` | Root layout for the public site: `<html lang dir>`, per-locale fonts, metadata |
-| `src/app/(site)/[locale]/page.tsx` | Server component composing all sections |
-| `src/app/(site)/[locale]/fonts.ts` | Per-locale font selection |
-| `src/components/Reveal.tsx` | *(rewritten)* CSS + IntersectionObserver scroll reveal, no animation library |
-| `src/components/site/*.tsx` | Server-rendered sections (About, Process, TechMarquee, Footer, Hero shell) |
-| `src/components/islands/*.tsx` | Client islands (LanguageSwitcher, ThemeToggle, MobileDrawer, ProjectsGrid, ContactForm) |
-| `tests/smoke.spec.ts` | Playwright smoke suite |
-| `playwright.config.ts` | Playwright config |
-| `eslint.config.mjs` | Flat ESLint config |
-| `.prettierrc.json` | Prettier config |
+| Path                                 | Responsibility                                                                          |
+| ------------------------------------ | --------------------------------------------------------------------------------------- |
+| `src/proxy.ts`                       | Redirect `/` to best-match locale; reserve `/admin/*` guard hook for plan 2             |
+| `src/i18n/locale.ts`                 | Locale parsing, `Accept-Language` negotiation, cookie name — pure functions, no React   |
+| `src/app/(site)/[locale]/layout.tsx` | Root layout for the public site: `<html lang dir>`, per-locale fonts, metadata          |
+| `src/app/(site)/[locale]/page.tsx`   | Server component composing all sections                                                 |
+| `src/app/(site)/[locale]/fonts.ts`   | Per-locale font selection                                                               |
+| `src/components/Reveal.tsx`          | _(rewritten)_ CSS + IntersectionObserver scroll reveal, no animation library            |
+| `src/components/site/*.tsx`          | Server-rendered sections (About, Process, TechMarquee, Footer, Hero shell)              |
+| `src/components/islands/*.tsx`       | Client islands (LanguageSwitcher, ThemeToggle, MobileDrawer, ProjectsGrid, ContactForm) |
+| `tests/smoke.spec.ts`                | Playwright smoke suite                                                                  |
+| `playwright.config.ts`               | Playwright config                                                                       |
+| `eslint.config.mjs`                  | Flat ESLint config                                                                      |
+| `.prettierrc.json`                   | Prettier config                                                                         |
 
 **Deleted:**
 
-| Path | Why |
-|---|---|
-| `src/app/layout.tsx` | Replaced by the `(site)/[locale]` root layout |
-| `src/app/page.tsx` | Replaced by `(site)/[locale]/page.tsx` |
-| `src/app/providers.tsx` | ThemeProvider moves to an island; I18nProvider becomes server-fed |
+| Path                              | Why                                                               |
+| --------------------------------- | ----------------------------------------------------------------- |
+| `src/app/layout.tsx`              | Replaced by the `(site)/[locale]` root layout                     |
+| `src/app/page.tsx`                | Replaced by `(site)/[locale]/page.tsx`                            |
+| `src/app/providers.tsx`           | ThemeProvider moves to an island; I18nProvider becomes server-fed |
 | `src/components/DocumentMeta.tsx` | Metadata is server-rendered per locale (closes B13's client half) |
-| `.eslintrc.json` | Replaced by flat config |
+| `.eslintrc.json`                  | Replaced by flat config                                           |
 
 **Heavily modified:** `next.config.mjs`, `netlify.toml`, `tsconfig.json`, `package.json`, `src/i18n/config.ts`, `src/i18n/I18nProvider.tsx`, `src/app/no-flash.tsx`, `src/theme/ThemeProvider.tsx`, `src/lib/site.ts`, `src/app/globals.css`, `tailwind.config.ts`, and every component in `src/components/`.
 
@@ -74,10 +74,12 @@ Every task's requirements implicitly include this section.
 ## Task 0: Branch and baseline capture
 
 **Files:**
+
 - Create: `docs/superpowers/baseline/2026-07-27.md`
 - Modify: none
 
 **Interfaces:**
+
 - Consumes: nothing
 - Produces: `docs/superpowers/baseline/2026-07-27.md` — the before-numbers that `MIGRATION.md` compares against in plan 3.
 
@@ -109,11 +111,11 @@ grep -o '/_next/static/media/[^"]*\.woff2' /tmp/baseline.html | sort -u
 
 Record every URL's transferred size. Reference values already measured on 2026-07-27:
 
-| Asset | Transferred |
-|---|---|
-| HTML | 84.8 KB uncompressed |
-| JS total (9 chunks) | ~183 KB |
-| Fonts (5 woff2, all preloaded) | 113.7 KB |
+| Asset                          | Transferred          |
+| ------------------------------ | -------------------- |
+| HTML                           | 84.8 KB uncompressed |
+| JS total (9 chunks)            | ~183 KB              |
+| Fonts (5 woff2, all preloaded) | 113.7 KB             |
 
 - [ ] **Step 4: Capture baseline Lighthouse mobile**
 
@@ -144,10 +146,12 @@ git commit -m "docs: capture pre-upgrade performance baseline"
 Establishes the safety net **before** the upgrade, so Tasks 2–15 have a real regression signal. Written against the current Next 14 single-route site; extended for localized routes in Task 7.
 
 **Files:**
+
 - Create: `playwright.config.ts`, `tests/smoke.spec.ts`
 - Modify: `package.json`, `.gitignore`
 
 **Interfaces:**
+
 - Consumes: nothing
 - Produces: `npm run test:e2e` — the verification command every later task runs.
 
@@ -275,9 +279,11 @@ git commit -m "test: add Playwright smoke harness as upgrade safety net"
 ## Task 2: Next.js 16 + React 19 upgrade
 
 **Files:**
+
 - Modify: `package.json`, `package-lock.json`, `tsconfig.json`
 
 **Interfaces:**
+
 - Consumes: Task 1's `npm run test:e2e`
 - Produces: a Next 16 / React 19 toolchain. `next.config.mjs` is corrected in Task 3, not here.
 
@@ -335,10 +341,12 @@ git commit -m "feat: upgrade to Next.js 16 and React 19"
 ## Task 3: next.config, proxy convention, and image qualities
 
 **Files:**
+
 - Modify: `next.config.mjs`
 - Create: `src/proxy.ts` (stub; locale logic lands in Task 6)
 
 **Interfaces:**
+
 - Consumes: Task 2's Next 16 toolchain
 - Produces: `next.config.mjs` with `images.qualities` declared and `dangerouslyAllowSVG` removed; `src/proxy.ts` exporting `proxy(request: NextRequest)`.
 
@@ -412,9 +420,11 @@ git commit -m "feat: declare images.qualities, drop dangerouslyAllowSVG, add pro
 ## Task 4: Migrate framer-motion to motion
 
 **Files:**
+
 - Modify: `package.json`, and every file importing `framer-motion`
 
 **Interfaces:**
+
 - Consumes: Task 2's React 19
 - Produces: all motion imports resolve to `motion/react`.
 
@@ -473,10 +483,12 @@ The suite currently passes only on a warm `next/image` optimizer cache. On a col
 **A suite that only passes on a warm cache is not a real gate.** Fix the harness, not the assertions.
 
 **Files:**
+
 - Create: `tests/global-setup.ts`
 - Modify: `playwright.config.ts`
 
 **Interfaces:**
+
 - Consumes: Task 1's harness
 - Produces: a suite that passes from a cold `.next` on the first run.
 
@@ -570,10 +582,12 @@ git commit -m "test: make e2e suite pass on a cold next/image cache (task 4b)"
 Pure, testable locale logic with no React and no Next imports — so the proxy, the layout, and the tests can all share it.
 
 **Files:**
+
 - Create: `src/i18n/locale.ts`, `tests/locale.spec.ts`
 - Modify: `src/i18n/config.ts`
 
 **Interfaces:**
+
 - Consumes: `LOCALES`, `DEFAULT_LOCALE`, `Locale` from `src/i18n/config.ts`
 - Produces:
   - `LOCALE_COOKIE: 'bc-locale'`
@@ -703,11 +717,13 @@ git commit -m "feat: add locale negotiation primitives"
 The structural change. Uses a route group so the admin panel can be added in plan 2 as a second root layout without restructuring.
 
 **Files:**
+
 - Create: `src/app/(site)/[locale]/layout.tsx`, `src/app/(site)/[locale]/page.tsx`
 - Modify: `src/proxy.ts`
 - Delete: `src/app/layout.tsx`, `src/app/page.tsx`
 
 **Interfaces:**
+
 - Consumes: `isLocale`, `negotiateLocale`, `dirFor`, `LOCALE_COOKIE` from Task 5
 - Produces: three statically prerendered routes; `/` 307-redirects. `generateStaticParams()` returns `[{locale:'ar'},{locale:'en'},{locale:'fr'}]`.
 
@@ -722,7 +738,11 @@ test('root redirects to a locale route', async ({ page }) => {
 });
 
 test.describe('localized routes', () => {
-  for (const [locale, dir] of [['ar', 'rtl'], ['en', 'ltr'], ['fr', 'ltr']] as const) {
+  for (const [locale, dir] of [
+    ['ar', 'rtl'],
+    ['en', 'ltr'],
+    ['fr', 'ltr'],
+  ] as const) {
     test(`/${locale} renders with lang=${locale} dir=${dir}`, async ({ page }) => {
       await page.goto(`/${locale}`);
       await expect(page.locator('html')).toHaveAttribute('lang', locale);
@@ -800,22 +820,26 @@ import { dictionaries } from '@/i18n/dictionaries';
 import { SITE, SITE_URL } from '@/lib/site';
 
 const playfair = Playfair_Display({
-  subsets: ['latin'], weight: ['400', '600', '700'],
-  variable: '--font-display', display: 'swap',
+  subsets: ['latin'],
+  weight: ['400', '600', '700'],
+  variable: '--font-display',
+  display: 'swap',
 });
 const inter = Inter({ subsets: ['latin'], variable: '--font-sans', display: 'swap' });
 const tajawal = Tajawal({
-  subsets: ['arabic'], weight: ['400', '500', '700'],
-  variable: '--font-arabic', display: 'swap',
+  subsets: ['arabic'],
+  weight: ['400', '500', '700'],
+  variable: '--font-arabic',
+  display: 'swap',
 });
 
 export function generateStaticParams() {
   return LOCALES.map((locale) => ({ locale }));
 }
 
-export async function generateMetadata(
-  props: { params: Promise<{ locale: string }> },
-): Promise<Metadata> {
+export async function generateMetadata(props: {
+  params: Promise<{ locale: string }>;
+}): Promise<Metadata> {
   const { locale } = await props.params;
   if (!isLocale(locale)) return {};
   const dict = dictionaries[locale];
@@ -855,7 +879,9 @@ export default async function LocaleLayout(props: {
       <head>
         <NoFlashScript />
       </head>
-      <body className={`${playfair.variable} ${inter.variable} ${tajawal.variable} antialiased`}>
+      <body
+        className={`${playfair.variable} ${inter.variable} ${tajawal.variable} antialiased`}
+      >
         {props.children}
       </body>
     </html>
@@ -1022,10 +1048,12 @@ git commit -m "feat: localized /ar /en /fr routes with proxy locale redirect"
 ## Task 7: no-flash rewrite and the one-time locale migration shim
 
 **Files:**
+
 - Modify: `src/app/no-flash.tsx`
 - Create: test in `tests/smoke.spec.ts`
 
 **Interfaces:**
+
 - Consumes: `LOCALE_COOKIE` from Task 5
 - Produces: a no-flash script that handles **theme only**, plus a one-time `localStorage` → cookie locale migration.
 
@@ -1034,12 +1062,17 @@ git commit -m "feat: localized /ar /en /fr routes with proxy locale redirect"
 Append to `tests/smoke.spec.ts`:
 
 ```ts
-test('legacy localStorage locale migrates to a cookie and is honoured', async ({ page, context }) => {
+test('legacy localStorage locale migrates to a cookie and is honoured', async ({
+  page,
+  context,
+}) => {
   await context.addInitScript(() => {
-    try { window.localStorage.setItem('bc-locale', 'fr'); } catch {}
+    try {
+      window.localStorage.setItem('bc-locale', 'fr');
+    } catch {}
   });
-  await page.goto('/en');           // prime the origin so the shim runs
-  await page.goto('/');             // now the proxy should read the migrated cookie
+  await page.goto('/en'); // prime the origin so the shim runs
+  await page.goto('/'); // now the proxy should read the migrated cookie
 
   expect(page.url()).toMatch(/\/fr$/);
 
@@ -1118,11 +1151,13 @@ git commit -m "feat: migrate legacy localStorage locale to cookie in no-flash sc
 Where the JS budget is actually won. Nothing below the providers is a client component unless it needs interactivity or browser APIs.
 
 **Files:**
+
 - Create: `src/components/islands/LanguageSwitcher.tsx`, `src/components/islands/ThemeToggle.tsx`, `src/components/islands/MobileDrawer.tsx`, `src/components/islands/ProjectsGrid.tsx`, `src/components/islands/ContactForm.tsx`, `src/components/islands/FloatingWhatsApp.tsx`
 - Modify: `src/components/Header.tsx`, `Hero.tsx`, `About.tsx`, `Process.tsx`, `TechMarquee.tsx`, `Contact.tsx`, `Footer.tsx`, `Projects.tsx`
 - Modify: `src/app/(site)/[locale]/page.tsx`
 
 **Interfaces:**
+
 - Consumes: Task 6's server-resolved locale
 - Produces: server sections take `{ locale, dict }` props; islands keep using `useI18n()`.
 
@@ -1265,10 +1300,12 @@ git commit -m "perf: render page as server components with client islands"
 ## Task 9: Per-locale fonts
 
 **Files:**
+
 - Create: `src/app/(site)/[locale]/fonts.ts`
 - Modify: `src/app/(site)/[locale]/layout.tsx`, `src/app/globals.css`
 
 **Interfaces:**
+
 - Consumes: Task 6's layout
 - Produces: `fontClassFor(locale: Locale): string` — the className string for the active locale only.
 
@@ -1316,25 +1353,34 @@ import type { Locale } from '@/i18n/config';
 
 // Latin locales: Playfair for display, Inter for body. Only these two preload.
 const playfair = Playfair_Display({
-  subsets: ['latin'], weight: ['400', '600', '700'],
-  variable: '--font-display', display: 'swap', preload: true, adjustFontFallback: true,
+  subsets: ['latin'],
+  weight: ['400', '600', '700'],
+  variable: '--font-display',
+  display: 'swap',
+  preload: true,
+  adjustFontFallback: true,
 });
 const inter = Inter({
-  subsets: ['latin'], variable: '--font-sans',
-  display: 'swap', preload: true, adjustFontFallback: true,
+  subsets: ['latin'],
+  variable: '--font-sans',
+  display: 'swap',
+  preload: true,
+  adjustFontFallback: true,
 });
 
 // Arabic: Tajawal covers both body and display (Playfair has no Arabic glyphs).
 const tajawal = Tajawal({
-  subsets: ['arabic'], weight: ['400', '500', '700'],
-  variable: '--font-arabic', display: 'swap', preload: true, adjustFontFallback: true,
+  subsets: ['arabic'],
+  weight: ['400', '500', '700'],
+  variable: '--font-arabic',
+  display: 'swap',
+  preload: true,
+  adjustFontFallback: true,
 });
 
 /** The className carrying only the font variables the given locale renders. */
 export function fontClassFor(locale: Locale): string {
-  return locale === 'ar'
-    ? tajawal.variable
-    : `${playfair.variable} ${inter.variable}`;
+  return locale === 'ar' ? tajawal.variable : `${playfair.variable} ${inter.variable}`;
 }
 ```
 
@@ -1375,9 +1421,11 @@ git commit -m "perf: load only the fonts the active locale renders"
 ## Task 10: LazyMotion and CSS scroll reveals
 
 **Files:**
+
 - Modify: `src/components/Reveal.tsx`, `src/app/globals.css`, `src/components/islands/*.tsx`
 
 **Interfaces:**
+
 - Consumes: Task 4's `motion/react`
 - Produces: `Reveal` with no animation-library dependency; `LazyMotion` wrapping the remaining islands.
 
@@ -1451,15 +1499,20 @@ Add to `globals.css` under `@layer components`:
 .reveal {
   opacity: 0;
   transform: translateY(28px);
-  transition: opacity 0.55s cubic-bezier(0.22, 1, 0.36, 1),
-              transform 0.55s cubic-bezier(0.22, 1, 0.36, 1);
+  transition:
+    opacity 0.55s cubic-bezier(0.22, 1, 0.36, 1),
+    transform 0.55s cubic-bezier(0.22, 1, 0.36, 1);
 }
 .reveal-in {
   opacity: 1;
   transform: none;
 }
 @media (prefers-reduced-motion: reduce) {
-  .reveal { opacity: 1; transform: none; transition: none; }
+  .reveal {
+    opacity: 1;
+    transform: none;
+    transition: none;
+  }
 }
 ```
 
@@ -1472,11 +1525,13 @@ In `src/app/providers.tsx`:
 
 import { LazyMotion, domAnimation } from 'motion/react';
 // …
-    <ThemeProvider>
-      <I18nProvider locale={locale}>
-        <LazyMotion features={domAnimation} strict>{children}</LazyMotion>
-      </I18nProvider>
-    </ThemeProvider>
+<ThemeProvider>
+  <I18nProvider locale={locale}>
+    <LazyMotion features={domAnimation} strict>
+      {children}
+    </LazyMotion>
+  </I18nProvider>
+</ThemeProvider>;
 ```
 
 `strict` makes any use of the full `motion.*` component a build-time error, forcing the lighter `m.*` form. Rewrite the remaining animated islands to import `m` instead of `motion`:
@@ -1512,9 +1567,11 @@ git commit -m "perf: replace reveal animations with CSS and scope motion to Lazy
 ## Task 11: Defer below-the-fold work
 
 **Files:**
+
 - Modify: `src/app/(site)/[locale]/page.tsx`, `src/app/globals.css`, `src/components/TechMarquee.tsx`
 
 **Interfaces:**
+
 - Consumes: Task 8's section components
 - Produces: below-fold sections skip rendering work until near-viewport.
 
@@ -1540,8 +1597,11 @@ Apply `defer-paint` to the `About`, `Process`, `Contact`, and `Footer` root elem
 `TechMarquee` runs an infinite CSS animation that composites continuously even when scrolled away. Gate it on visibility using the same class:
 
 ```css
-.marquee-track { animation-play-state: paused; }
-.defer-paint:has(.marquee-track), .marquee-visible .marquee-track {
+.marquee-track {
+  animation-play-state: paused;
+}
+.defer-paint:has(.marquee-track),
+.marquee-visible .marquee-track {
   animation-play-state: running;
 }
 ```
@@ -1566,9 +1626,11 @@ git commit -m "perf: defer paint for below-the-fold sections"
 ## Task 12: Security and caching headers
 
 **Files:**
+
 - Modify: `netlify.toml`
 
 **Interfaces:**
+
 - Consumes: nothing
 - Produces: security and cache headers on every response (closes B12).
 
@@ -1678,11 +1740,13 @@ git commit -m "feat: add security and immutable cache headers"
 **Lands whole. Do not partially land this task** — `noUncheckedIndexedAccess` turns four latent unchecked accesses into hard build errors simultaneously.
 
 **Files:**
+
 - Create: `eslint.config.mjs`, `.prettierrc.json`
 - Delete: `.eslintrc.json`
 - Modify: `tsconfig.json`, `package.json`, `src/components/ProjectGallery.tsx`, `src/components/islands/ContactForm.tsx`
 
 **Interfaces:**
+
 - Consumes: everything prior
 - Produces: zero-warning lint and typecheck under strict settings.
 
@@ -1699,12 +1763,12 @@ In `tsconfig.json` `compilerOptions`, add:
 Run: `npx tsc --noEmit`
 Expected: **FAIL** with roughly four errors, all "possibly undefined":
 
-| File | Expression |
-|---|---|
-| `ProjectGallery.tsx` | `images[index]` assigned to `currentSrc` |
-| `ProjectGallery.tsx` | `focusables[0]` |
-| `ProjectGallery.tsx` | `focusables[focusables.length - 1]` |
-| `islands/ContactForm.tsx` | `data[k]` in `encode()` |
+| File                      | Expression                               |
+| ------------------------- | ---------------------------------------- |
+| `ProjectGallery.tsx`      | `images[index]` assigned to `currentSrc` |
+| `ProjectGallery.tsx`      | `focusables[0]`                          |
+| `ProjectGallery.tsx`      | `focusables[focusables.length - 1]`      |
+| `islands/ContactForm.tsx` | `data[k]` in `encode()`                  |
 
 - [ ] **Step 3: Fix the gallery index accesses**
 
@@ -1765,7 +1829,15 @@ import next from 'eslint-config-next/flat';
 import prettier from 'eslint-config-prettier';
 
 export default tseslint.config(
-  { ignores: ['.next/**', 'node_modules/**', 'src/data/blur.generated.ts', 'test-results/**', 'playwright-report/**'] },
+  {
+    ignores: [
+      '.next/**',
+      'node_modules/**',
+      'src/data/blur.generated.ts',
+      'test-results/**',
+      'playwright-report/**',
+    ],
+  },
   ...tseslint.configs.strictTypeChecked,
   ...next,
   jsxA11y.flatConfigs.recommended,
@@ -1824,9 +1896,11 @@ git commit -m "chore: strict TypeScript and flat ESLint config with zero warning
 ## Task 14: Close the remaining bug register
 
 **Files:**
+
 - Modify: `src/components/islands/MobileDrawer.tsx`, `src/components/TechMarquee.tsx`, `tailwind.config.ts`, `src/theme/ThemeProvider.tsx`, `src/components/ProjectGallery.tsx`, `src/components/Footer.tsx`, `src/components/islands/LanguageSwitcher.tsx`, `src/components/islands/ContactForm.tsx`, `src/components/Logo.tsx`, `src/app/globals.css`
 
 **Interfaces:**
+
 - Consumes: Task 8's island structure
 - Produces: B1–B10 and B18 closed. B3 partially closed in Task 10; this finishes it.
 
@@ -1835,15 +1909,16 @@ git commit -m "chore: strict TypeScript and flat ESLint config with zero warning
 Append to `tests/smoke.spec.ts`:
 
 ```ts
-test('B1: resizing past the lg breakpoint with the drawer open restores scrolling',
-  async ({ page }) => {
-    await page.setViewportSize({ width: 390, height: 844 });
-    await page.goto('/ar');
-    await page.getByRole('button', { name: /menu/i }).click();
-    await page.setViewportSize({ width: 1280, height: 800 });
-    const overflow = await page.evaluate(() => document.body.style.overflow);
-    expect(overflow).not.toBe('hidden');
-  });
+test('B1: resizing past the lg breakpoint with the drawer open restores scrolling', async ({
+  page,
+}) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.goto('/ar');
+  await page.getByRole('button', { name: /menu/i }).click();
+  await page.setViewportSize({ width: 1280, height: 800 });
+  const overflow = await page.evaluate(() => document.body.style.overflow);
+  expect(overflow).not.toBe('hidden');
+});
 
 test('B2: the marquee scrolls right-to-left in Arabic', async ({ page }) => {
   await page.goto('/ar');
@@ -1853,14 +1928,18 @@ test('B2: the marquee scrolls right-to-left in Arabic', async ({ page }) => {
   expect(name).toContain('marquee-rtl');
 });
 
-test('B4: the theme toggle icon matches the stored theme on first paint',
-  async ({ page, context }) => {
-    await context.addInitScript(() => {
-      try { window.localStorage.setItem('bc-theme', 'light'); } catch {}
-    });
-    await page.goto('/ar');
-    await expect(page.getByRole('button', { name: /switch to dark mode/i })).toBeVisible();
+test('B4: the theme toggle icon matches the stored theme on first paint', async ({
+  page,
+  context,
+}) => {
+  await context.addInitScript(() => {
+    try {
+      window.localStorage.setItem('bc-theme', 'light');
+    } catch {}
   });
+  await page.goto('/ar');
+  await expect(page.getByRole('button', { name: /switch to dark mode/i })).toBeVisible();
+});
 
 test('B7: the mobile drawer traps focus and closes on Escape', async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 844 });
@@ -1894,7 +1973,9 @@ In `MobileDrawer.tsx`: close the drawer when the viewport crosses the `lg` break
 ```tsx
 useEffect(() => {
   const mq = window.matchMedia('(min-width: 1024px)');
-  const onChange = (e: MediaQueryListEvent) => { if (e.matches) setMenuOpen(false); };
+  const onChange = (e: MediaQueryListEvent) => {
+    if (e.matches) setMenuOpen(false);
+  };
   mq.addEventListener('change', onChange);
   return () => mq.removeEventListener('change', onChange);
 }, []);
@@ -1903,7 +1984,9 @@ useEffect(() => {
   if (!menuOpen) return;
   const prev = document.body.style.overflow;
   document.body.style.overflow = 'hidden';
-  const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') setMenuOpen(false); };
+  const onKey = (e: KeyboardEvent) => {
+    if (e.key === 'Escape') setMenuOpen(false);
+  };
   document.addEventListener('keydown', onKey);
   return () => {
     document.body.style.overflow = prev;
@@ -1912,7 +1995,7 @@ useEffect(() => {
 }, [menuOpen]);
 ```
 
-Restoring the *previous* value rather than `''` also stops the drawer from unlocking scroll while the lightbox holds it.
+Restoring the _previous_ value rather than `''` also stops the drawer from unlocking scroll while the lightbox holds it.
 
 Add `role="dialog"`, `aria-modal="true"`, `aria-label`, `aria-controls` on the trigger, and a focus trap matching `ProjectGallery`'s.
 
@@ -2021,10 +2104,12 @@ git commit -m "fix: close bug register B1-B10 and B18"
 ## Task 15: Measure, document, and hand off
 
 **Files:**
+
 - Create: `docs/superpowers/baseline/2026-07-27-after-plan-1.md`
 - Modify: `README.md`
 
 **Interfaces:**
+
 - Consumes: everything
 - Produces: after-numbers for `MIGRATION.md` in plan 3; a README that matches reality.
 
@@ -2058,6 +2143,7 @@ If a target is missed, say so plainly with the number — do not round toward th
 This is the empirical check the owner asked for. On the deploy preview, submit the contact form with real values, then check Netlify → Forms → contact.
 
 Record the evidence either way:
+
 - **Works:** note the submission timestamp and move on.
 - **Fails:** capture the exact HTTP status and response body from the network tab, and the Netlify Forms dashboard state. **Report to the owner and stop.** Do not propose or implement a replacement — the owner decides between staying on Netlify Forms and moving to a server action plus transactional email.
 
@@ -2065,18 +2151,18 @@ Record the evidence either way:
 
 Correct these, all now stale:
 
-| Section | Change |
-|---|---|
-| Header | Next 16 / React 19; live URL `medmoudsite.netlify.app` (fix the `medmaoudsite` typo, B19) |
-| §1 | No longer a single route — describe `/ar`, `/en`, `/fr` and the `/` redirect |
-| §3 | `motion` replaces `framer-motion`; add `@playwright/test` |
-| §4 | New layout: `(site)/[locale]/`, `src/proxy.ts`, `src/i18n/locale.ts`, `src/components/islands/` |
-| §5 | Server-first architecture with client islands; drop the "everything below is client-side" claim |
-| §6 | Locale comes from the route, not context; cookie not `localStorage` |
-| §9 | `dangerouslyAllowSVG` removed; document `images.qualities` |
-| §11 | Server-rendered per-locale metadata; `DocumentMeta` deleted |
-| §13 | Document `NEXT_PUBLIC_SITE_URL` |
-| §15 | Rewrite the "three defaults" gotcha to the narrowed theme-only form; drop the "one route / Arabic-only metadata" gotcha |
+| Section | Change                                                                                                                  |
+| ------- | ----------------------------------------------------------------------------------------------------------------------- |
+| Header  | Next 16 / React 19; live URL `medmoudsite.netlify.app` (fix the `medmaoudsite` typo, B19)                               |
+| §1      | No longer a single route — describe `/ar`, `/en`, `/fr` and the `/` redirect                                            |
+| §3      | `motion` replaces `framer-motion`; add `@playwright/test`                                                               |
+| §4      | New layout: `(site)/[locale]/`, `src/proxy.ts`, `src/i18n/locale.ts`, `src/components/islands/`                         |
+| §5      | Server-first architecture with client islands; drop the "everything below is client-side" claim                         |
+| §6      | Locale comes from the route, not context; cookie not `localStorage`                                                     |
+| §9      | `dangerouslyAllowSVG` removed; document `images.qualities`                                                              |
+| §11     | Server-rendered per-locale metadata; `DocumentMeta` deleted                                                             |
+| §13     | Document `NEXT_PUBLIC_SITE_URL`                                                                                         |
+| §15     | Rewrite the "three defaults" gotcha to the narrowed theme-only form; drop the "one route / Arabic-only metadata" gotcha |
 
 - [ ] **Step 5: Note what plan 1 deliberately left undone**
 

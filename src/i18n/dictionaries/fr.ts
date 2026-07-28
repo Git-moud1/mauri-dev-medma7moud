@@ -49,16 +49,26 @@ const fr: Dictionary = {
     frameworksTitle: 'Frameworks & Outils',
     mobileTitle: 'Mobile',
     highlights: {
-      web: { title: 'Applications Web', desc: 'Interfaces rapides et responsives avec React, Vue et outils modernes.' },
-      mobile: { title: 'Applications Mobiles', desc: 'Applications multiplateformes avec React Native & Flutter.' },
-      backend: { title: 'Back-End & APIs', desc: 'Logique serveur sécurisée et APIs REST avec Node, Laravel & Django.' },
+      web: {
+        title: 'Applications Web',
+        desc: 'Interfaces rapides et responsives avec React, Vue et outils modernes.',
+      },
+      mobile: {
+        title: 'Applications Mobiles',
+        desc: 'Applications multiplateformes avec React Native & Flutter.',
+      },
+      backend: {
+        title: 'Back-End & APIs',
+        desc: 'Logique serveur sécurisée et APIs REST avec Node, Laravel & Django.',
+      },
     },
   },
   projects: {
     label: 'Projets sélectionnés',
     title: 'Projets',
     titleStrong: 'récents',
-    subtitle: 'Une sélection de produits web et mobiles réalisés de bout en bout. Cliquez sur un projet pour parcourir sa galerie.',
+    subtitle:
+      'Une sélection de produits web et mobiles réalisés de bout en bout. Cliquez sur un projet pour parcourir sa galerie.',
     filterAll: 'Tous',
     filterWeb: 'Web',
     filterApp: 'App',
@@ -82,17 +92,30 @@ const fr: Dictionary = {
     title: 'Un parcours clair de',
     titleStrong: 'l’idée au lancement',
     steps: {
-      s1: { title: 'Découverte', desc: 'Nous alignons objectifs, utilisateurs et périmètre pour donner un sens à chaque décision.' },
-      s2: { title: 'Design', desc: 'Interfaces modernes et épurées, pensées mobile-first pour le web et l’app.' },
-      s3: { title: 'Développement', desc: 'Code maintenable, APIs solides et expériences mobiles au rendu natif.' },
-      s4: { title: 'Lancement', desc: 'Tests, optimisation et un déploiement fluide sur lequel compter.' },
+      s1: {
+        title: 'Découverte',
+        desc: 'Nous alignons objectifs, utilisateurs et périmètre pour donner un sens à chaque décision.',
+      },
+      s2: {
+        title: 'Design',
+        desc: 'Interfaces modernes et épurées, pensées mobile-first pour le web et l’app.',
+      },
+      s3: {
+        title: 'Développement',
+        desc: 'Code maintenable, APIs solides et expériences mobiles au rendu natif.',
+      },
+      s4: {
+        title: 'Lancement',
+        desc: 'Tests, optimisation et un déploiement fluide sur lequel compter.',
+      },
     },
   },
   contact: {
     label: 'Contact',
     title: 'Créons ensemble quelque chose',
     titleStrong: 'd’exceptionnel',
-    subtitle: 'Un projet web ou mobile en tête ? Envoyez un message ou contactez-moi directement.',
+    subtitle:
+      'Un projet web ou mobile en tête ? Envoyez un message ou contactez-moi directement.',
     whatsapp: 'Message sur WhatsApp',
     emailLabel: 'E-mail',
     form: {
@@ -109,7 +132,8 @@ const fr: Dictionary = {
     },
   },
   footer: {
-    tagline: 'Développeur Full Stack & Mobile créant des produits web et mobiles premium.',
+    tagline:
+      'Développeur Full Stack & Mobile créant des produits web et mobiles premium.',
     nav: 'Navigation',
     connect: 'Réseaux',
     rights: 'Tous droits réservés.',

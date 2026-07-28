@@ -29,7 +29,10 @@ export function Header({ locale }: { locale: Locale }) {
 
   return (
     <HeaderShell>
-      <nav className="container-x flex items-center justify-between gap-4" aria-label="Primary">
+      <nav
+        className="container-x flex items-center justify-between gap-4"
+        aria-label="Primary"
+      >
         {/* Logo */}
         <a href="#top" className="group flex items-center" aria-label="Mauri-Dev — home">
           <Logo size={40} />

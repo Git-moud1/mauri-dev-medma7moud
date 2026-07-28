@@ -37,24 +37,29 @@ export function findListeners(port) {
     } catch {
       return [];
     }
-    return out
-      .split('\n')
-      .map((line) => line.trim())
-      .filter(Boolean)
-      // PID first, command line after the first space. Split on the first
-      // space only — a Windows command line is full of them.
-      .map((line) => {
-        const separator = line.indexOf(' ');
-        const pid = separator === -1 ? line : line.slice(0, separator);
-        const command = separator === -1 ? '(unknown)' : line.slice(separator + 1).trim();
-        return { pid: Number(pid), command };
-      })
-      .filter((entry) => Number.isInteger(entry.pid));
+    return (
+      out
+        .split('\n')
+        .map((line) => line.trim())
+        .filter(Boolean)
+        // PID first, command line after the first space. Split on the first
+        // space only — a Windows command line is full of them.
+        .map((line) => {
+          const separator = line.indexOf(' ');
+          const pid = separator === -1 ? line : line.slice(0, separator);
+          const command =
+            separator === -1 ? '(unknown)' : line.slice(separator + 1).trim();
+          return { pid: Number(pid), command };
+        })
+        .filter((entry) => Number.isInteger(entry.pid))
+    );
   }
 
   let out = '';
   try {
-    out = execFileSync('lsof', ['-ti', `tcp:${port}`, '-sTCP:LISTEN'], { encoding: 'utf8' });
+    out = execFileSync('lsof', ['-ti', `tcp:${port}`, '-sTCP:LISTEN'], {
+      encoding: 'utf8',
+    });
   } catch {
     return [];
   }

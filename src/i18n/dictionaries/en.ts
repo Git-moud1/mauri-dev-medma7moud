@@ -47,16 +47,26 @@ const en = {
     frameworksTitle: 'Frameworks & Tools',
     mobileTitle: 'Mobile',
     highlights: {
-      web: { title: 'Web Apps', desc: 'Responsive, fast interfaces with React, Vue & modern tooling.' },
-      mobile: { title: 'Mobile Apps', desc: 'Cross-platform apps with React Native & Flutter.' },
-      backend: { title: 'Back-End & APIs', desc: 'Secure server logic and REST APIs with Node, Laravel & Django.' },
+      web: {
+        title: 'Web Apps',
+        desc: 'Responsive, fast interfaces with React, Vue & modern tooling.',
+      },
+      mobile: {
+        title: 'Mobile Apps',
+        desc: 'Cross-platform apps with React Native & Flutter.',
+      },
+      backend: {
+        title: 'Back-End & APIs',
+        desc: 'Secure server logic and REST APIs with Node, Laravel & Django.',
+      },
     },
   },
   projects: {
     label: 'Selected Work',
     title: 'Recent',
     titleStrong: 'Projects',
-    subtitle: 'A selection of web and mobile products built end-to-end. Click any project to browse its gallery.',
+    subtitle:
+      'A selection of web and mobile products built end-to-end. Click any project to browse its gallery.',
     filterAll: 'All',
     filterWeb: 'Web',
     filterApp: 'App',
@@ -80,17 +90,30 @@ const en = {
     title: 'A clear path from',
     titleStrong: 'idea to launch',
     steps: {
-      s1: { title: 'Discover', desc: 'We align on goals, users, and scope so every decision has a purpose.' },
-      s2: { title: 'Design', desc: 'Clean, modern interfaces designed mobile-first for web and app.' },
-      s3: { title: 'Build', desc: 'Maintainable code, solid APIs, and native-feeling mobile experiences.' },
-      s4: { title: 'Launch', desc: 'Testing, optimization, and a smooth deployment you can rely on.' },
+      s1: {
+        title: 'Discover',
+        desc: 'We align on goals, users, and scope so every decision has a purpose.',
+      },
+      s2: {
+        title: 'Design',
+        desc: 'Clean, modern interfaces designed mobile-first for web and app.',
+      },
+      s3: {
+        title: 'Build',
+        desc: 'Maintainable code, solid APIs, and native-feeling mobile experiences.',
+      },
+      s4: {
+        title: 'Launch',
+        desc: 'Testing, optimization, and a smooth deployment you can rely on.',
+      },
     },
   },
   contact: {
     label: 'Get in touch',
     title: 'Let’s build something',
     titleStrong: 'exceptional',
-    subtitle: 'Have a web or mobile project in mind? Send a message or reach me directly.',
+    subtitle:
+      'Have a web or mobile project in mind? Send a message or reach me directly.',
     whatsapp: 'Message on WhatsApp',
     emailLabel: 'Email',
     form: {
@@ -107,7 +130,8 @@ const en = {
     },
   },
   footer: {
-    tagline: 'Full Stack & Mobile App Developer building premium web and mobile products.',
+    tagline:
+      'Full Stack & Mobile App Developer building premium web and mobile products.',
     nav: 'Navigate',
     connect: 'Connect',
     rights: 'All rights reserved.',
