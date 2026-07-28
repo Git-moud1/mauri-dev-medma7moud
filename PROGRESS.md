@@ -329,3 +329,59 @@ scripts kill whatever holds their port.
    to an alternative.
 
 **Plan 1 is complete apart from those three.**
+
+---
+
+## Deploy verification — PR #1
+
+Preview: https://deploy-preview-1--medmoudsite.netlify.app
+
+The first two Deploy Previews failed to build. Cause was a Netlify plan limit on
+private repos, not the code; the owner made the repository public and the third
+build passed. `NODE_VERSION = "22.11.0"` was pinned in `netlify.toml` along the
+way — Next 16 needs 20.9+ and the site predates that.
+
+Full write-up in `MIGRATION.md`. Headlines:
+
+**Lighthouse** — `/ar` 96 / 100 / 92 / 66, `/en` 95 / 100 / 92 / 66, against the
+live v1 baseline of 96 / 100 / 96 / 100. The Best Practices and SEO drops are
+both deploy-preview artifacts (Netlify's own instrumentation, and the
+`X-Robots-Tag: noindex` it puts on every preview). SEO is therefore _unverified_
+until after merge.
+
+**Two real findings, neither fixed here:**
+
+1. **CLS 0.059 on `/ar`** — over the 0.05 budget, Arabic only, attributed by
+   Lighthouse to the Tajawal faces swapping in. It is the direct cost of task 9's
+   `preload: false`, which is also what halved Arabic font bytes. It does **not**
+   reproduce locally (0.0000), because localhost serves fonts too fast to shift
+   anything. First measurement of this whole plan that only a real deploy could
+   produce.
+2. **Security headers never reach HTML documents.** `netlify.toml` headers apply
+   to files the CDN serves; pages come from the Next runtime's function and do
+   not pick them up. Static assets get the full set plus immutable caching; `/ar`
+   gets only `nosniff` and HSTS, both from Netlify itself. **B12 is half closed**
+   — CSP, `Referrer-Policy` and `Permissions-Policy` are absent exactly where
+   they matter. Two of the six header tests fail against the preview and are
+   correct to fail.
+
+**Contact form works on Next 16.** `POST /__forms.html` → 200 with Netlify's
+confirmation page, and the UI shows its success state. Two test submissions were
+sent and need deleting from Netlify → Forms → contact. No alternative
+implemented, none needed.
+
+**The `w=3840` suspicion is settled, on a real deploy.** A Pixel 7 viewport
+downloads 1× 96px, 4× 750px, 3× 1200px — 8 requests, 243.2 KB, **zero at 3840**
+— identically on v1 live and the v2 preview. It was never the cause of the slow
+first load, and v2's `sizes` did not regress it.
+
+**Deploy-measured transfer**, confirming the local figures:
+
+|       | v1 live  | v2 `/ar` | v2 `/en` |
+| ----- | -------- | -------- | -------- |
+| JS    | 178.5 KB | 236.1 KB | 236.1 KB |
+| Fonts | 111.0 KB | 55.6 KB  | 84.9 KB  |
+
+**Next:** plan 2 (admin panel), with the document-headers fix folded in as a
+prerequisite — an `/admin` route with no CSP and no `frame-ancestors` is worse
+to ship than a public page with none.
