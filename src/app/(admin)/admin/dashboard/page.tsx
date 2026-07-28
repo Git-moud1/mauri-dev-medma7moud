@@ -1,7 +1,8 @@
 import { redirect } from 'next/navigation';
+import { getStore } from '@netlify/blobs';
 import { blobStore } from '@/lib/content';
 import { requireSession } from '../actions';
-import { ProjectsTable } from './ProjectsTable';
+import { DashboardShell } from './DashboardShell';
 
 /**
  * Always rendered per request: it shows a signed-in view of live content, so
@@ -9,19 +10,41 @@ import { ProjectsTable } from './ProjectsTable';
  */
 export const dynamic = 'force-dynamic';
 
+/**
+ * Can this runtime actually write?
+ *
+ * Reads always succeed because they fall back to the bundled catalogue, so
+ * "the list rendered" proves nothing about whether saving will work. Probing
+ * once here lets the UI say so up front instead of letting each save discover
+ * it separately.
+ */
+async function isStoreAvailable(): Promise<boolean> {
+  try {
+    await getStore('site-content').get('projects.json', { type: 'json' });
+    return true;
+  } catch {
+    return false;
+  }
+}
+
 export default async function DashboardPage() {
-  // The proxy already redirects a signed-out request, but this page re-checks
-  // for the same reason every action does: the proxy is a first pass, not the
-  // security boundary.
+  // The proxy already redirects a signed-out request. This re-checks for the
+  // same reason every action does: the proxy is a first pass, not the boundary.
   if (!(await requireSession())) redirect('/admin');
 
-  // Read straight from the store, bypassing the tagged cache: an admin must see
-  // what is actually stored, not what the public cache last captured.
-  const projects = await blobStore.getProjects();
+  // Straight from the store, bypassing the tagged cache: an admin must see what
+  // is actually stored, not what the public cache last captured.
+  const [projects, settings, storeAvailable] = await Promise.all([
+    blobStore.getProjects(),
+    blobStore.getSettings(),
+    isStoreAvailable(),
+  ]);
 
   return (
-    <main className="mx-auto max-w-5xl px-4 py-12">
-      <ProjectsTable projects={projects} />
-    </main>
+    <DashboardShell
+      projects={projects}
+      settings={settings}
+      storeAvailable={storeAvailable}
+    />
   );
 }

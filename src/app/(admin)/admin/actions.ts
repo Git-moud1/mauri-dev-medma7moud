@@ -12,7 +12,7 @@ import {
   SESSION_COOKIE_OPTIONS,
 } from '@/lib/auth/session';
 import { checkRateLimit, recordFailure, clearAttempts } from '@/lib/auth/rate-limit';
-import { blobStore, CONTENT_TAG, projectSchema } from '@/lib/content';
+import { blobStore, CONTENT_TAG, projectSchema, settingsSchema } from '@/lib/content';
 
 /**
  * One message for every authentication failure.
@@ -109,6 +109,18 @@ async function withStore(work: () => Promise<void>): Promise<Result> {
     }
     return { ok: false, error: `Could not save: ${message}` };
   }
+}
+
+/**
+ * One FormData field as a trimmed string.
+ *
+ * FormDataEntryValue is `string | File`, and a File stringifies to
+ * "[object File]" rather than failing, so non-strings are dropped rather than
+ * coerced. Not exported: a 'use server' module may only export async functions.
+ */
+function fieldString(formData: FormData, key: string): string {
+  const value = formData.get(key);
+  return typeof value === 'string' ? value.trim() : '';
 }
 
 /** Reads the per-locale fields the form posts as `title.ar`, `title.en`, … */
@@ -232,6 +244,65 @@ export async function moveProject(id: string, direction: -1 | 1): Promise<Result
 
   const saved = await withStore(async () => {
     await blobStore.saveProjects(next);
+  });
+  if (saved.ok) updateTag(CONTENT_TAG);
+  return saved;
+}
+
+export async function updateSettings(formData: FormData): Promise<Result> {
+  if (!(await requireSession())) return { ok: false, error: 'Not signed in.' };
+
+  const socials: { platform: string; url: string; label: string }[] = [];
+  const platforms = formData.getAll('social.platform').map(String);
+  const urls = formData.getAll('social.url').map(String);
+  const labels = formData.getAll('social.label').map(String);
+  for (const [index, platform] of platforms.entries()) {
+    const url = urls[index] ?? '';
+    if (!platform.trim() && !url.trim()) continue;
+    socials.push({
+      platform: platform.trim(),
+      url: url.trim(),
+      label: (labels[index] ?? platform).trim(),
+    });
+  }
+
+  const number = (key: string): number => {
+    const value = Number(formData.get(key));
+    return Number.isFinite(value) ? value : 0;
+  };
+
+  const parsed = settingsSchema.safeParse({
+    whatsappNumber: fieldString(formData, 'whatsappNumber'),
+    socials,
+    heroStats: {
+      years: number('heroStats.years'),
+      projects: number('heroStats.projects'),
+      stacks: number('heroStats.stacks'),
+    },
+    availableForWork: formData.get('availableForWork') === 'on',
+  });
+
+  if (!parsed.success) {
+    const issue = parsed.error.issues[0];
+    const path = issue?.path.join('.') ?? '';
+    if (path.startsWith('socials')) {
+      return {
+        ok: false,
+        error: 'Social links must be full https:// URLs with a platform name.',
+      };
+    }
+    if (path === 'whatsappNumber') {
+      return {
+        ok: false,
+        error:
+          'WhatsApp number must be digits only, including the country code (e.g. 22231317501).',
+      };
+    }
+    return { ok: false, error: issue?.message ?? 'Invalid settings.' };
+  }
+
+  const saved = await withStore(async () => {
+    await blobStore.saveSettings(parsed.data);
   });
   if (saved.ok) updateTag(CONTENT_TAG);
   return saved;
