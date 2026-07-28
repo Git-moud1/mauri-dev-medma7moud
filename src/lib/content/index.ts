@@ -9,6 +9,20 @@ import { blobStore } from './blobs';
 export const CONTENT_TAG = 'content';
 
 /**
+ * Bump this when the *bundled fallback data* changes.
+ *
+ * `unstable_cache` entries are keyed by the array below and persist in
+ * `.next/cache`, which Netlify restores between builds for speed. A code change
+ * to the fallback therefore does NOT invalidate them: a stale entry survives the
+ * deploy and the old value keeps rendering. Observed locally — editing the hero
+ * stacks figure changed nothing until `.next/cache` was deleted.
+ *
+ * Runtime writes are unaffected; they call `updateTag(CONTENT_TAG)` and expire
+ * immediately. This exists only for the case where the fallback itself moves.
+ */
+const CACHE_VERSION = 'v2';
+
+/**
  * Reads are cached and tagged so the public routes stay statically prerendered
  * between edits. Without the cache wrapper the Blobs call would be request-time
  * data and Next would flip `/[locale]` to dynamic, which forfeits the CDN HTML
@@ -17,7 +31,7 @@ export const CONTENT_TAG = 'content';
  */
 export const getProjects = unstable_cache(
   () => blobStore.getProjects(),
-  ['content:projects'],
+  ['content:projects', CACHE_VERSION],
   {
     tags: [CONTENT_TAG],
   },
@@ -25,7 +39,7 @@ export const getProjects = unstable_cache(
 
 export const getSettings = unstable_cache(
   () => blobStore.getSettings(),
-  ['content:settings'],
+  ['content:settings', CACHE_VERSION],
   {
     tags: [CONTENT_TAG],
   },

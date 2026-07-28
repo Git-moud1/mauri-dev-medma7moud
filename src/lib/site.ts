@@ -19,6 +19,13 @@ export const SITE = {
   whatsappUrl: 'https://wa.me/22231317501',
   yearsExperience: 5,
   projectsDelivered: 120,
+  /**
+   * The hero's third figure. Deliberately not `TECH_STACK.length` — that array
+   * lists 14 technologies and the live site claims 10+, so deriving it would
+   * silently rewrite published copy. This mirrors what the site says today and
+   * is editable from the admin like the other two.
+   */
+  stacksCount: 10,
 } as const;
 
 export function whatsappLink(message?: string): string {

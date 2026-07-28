@@ -1,6 +1,6 @@
 import { getStore } from '@netlify/blobs';
 import { projects as bundledProjects } from '@/data/projects';
-import { SITE, TECH_STACK } from '@/lib/site';
+import { SITE } from '@/lib/site';
 import {
   projectSchema,
   projectToStored,
@@ -31,7 +31,7 @@ function bundledFallbackSettings(): SiteSettings {
     heroStats: {
       years: SITE.yearsExperience,
       projects: SITE.projectsDelivered,
-      stacks: TECH_STACK.length,
+      stacks: SITE.stacksCount,
     },
     availableForWork: true,
   });

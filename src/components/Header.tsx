@@ -1,6 +1,6 @@
 import { getT } from '@/i18n/server';
 import type { Locale } from '@/i18n/config';
-import { whatsappLink } from '@/lib/site';
+
 import { ThemeToggle } from './islands/ThemeToggle';
 import { LanguageSwitcher } from './islands/LanguageSwitcher';
 import { HeaderShell, DrawerPanel, DrawerToggle } from './islands/MobileDrawer';
@@ -21,10 +21,10 @@ const CTA_MESSAGE = "Hi Mauri-Dev, I'd like to discuss a project.";
  * class + drawer state), the language switcher, and the theme toggle. Nav
  * labels are resolved here and handed to the drawer as plain strings.
  */
-export function Header({ locale }: { locale: Locale }) {
+export function Header({ locale, whatsappUrl }: { locale: Locale; whatsappUrl: string }) {
   const t = getT(locale);
   const links = NAV.map((item) => ({ id: item.id, label: t(item.key) }));
-  const ctaHref = whatsappLink(CTA_MESSAGE);
+  const ctaHref = `${whatsappUrl}?text=${encodeURIComponent(CTA_MESSAGE)}`;
   const ctaLabel = t('nav.cta');
 
   return (

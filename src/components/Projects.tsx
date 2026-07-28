@@ -1,6 +1,6 @@
 import { getT } from '@/i18n/server';
 import type { Locale } from '@/i18n/config';
-import { projects } from '@/data/projects';
+import type { StoredProject } from '@/lib/content/types';
 import { Reveal } from './Reveal';
 import { ProjectsGrid } from './islands/ProjectsGrid';
 
@@ -10,7 +10,14 @@ import { ProjectsGrid } from './islands/ProjectsGrid';
  * every label cross the boundary as serialized props, so the island carries no
  * dictionary of its own.
  */
-export function Projects({ locale }: { locale: Locale }) {
+export function Projects({
+  locale,
+  projects,
+}: {
+  locale: Locale;
+  /** From the content store, with the bundled catalogue as its fallback. */
+  projects: StoredProject[];
+}) {
   const t = getT(locale);
 
   return (

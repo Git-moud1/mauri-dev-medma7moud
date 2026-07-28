@@ -1,11 +1,17 @@
 import { getT } from '@/i18n/server';
 import type { Locale } from '@/i18n/config';
-import { SITE, whatsappLink } from '@/lib/site';
+import { SITE } from '@/lib/site';
 import { Reveal } from './Reveal';
 import { ContactForm } from './islands/ContactForm';
 import { MailIcon, WhatsAppIcon } from './Icons';
 
-export function Contact({ locale }: { locale: Locale }) {
+export function Contact({
+  locale,
+  whatsappUrl,
+}: {
+  locale: Locale;
+  whatsappUrl: string;
+}) {
   const t = getT(locale);
 
   return (
@@ -35,7 +41,7 @@ export function Contact({ locale }: { locale: Locale }) {
           <Reveal delay={3}>
             <div className="mt-8 space-y-3">
               <a
-                href={whatsappLink("Hi Mauri-Dev, I'd like to discuss a project.")}
+                href={`${whatsappUrl}?text=${encodeURIComponent("Hi Mauri-Dev, I'd like to discuss a project.")}`}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="flex items-center gap-4 rounded-2xl border border-border bg-surface/50 p-4 transition-colors hover:border-[#25D366]"
@@ -48,7 +54,7 @@ export function Contact({ locale }: { locale: Locale }) {
                     {t('contact.whatsapp')}
                   </span>
                   <span className="block text-sm text-muted" dir="ltr">
-                    +{SITE.whatsappNumber}
+                    +{whatsappUrl.replace('https://wa.me/', '')}
                   </span>
                 </span>
               </a>

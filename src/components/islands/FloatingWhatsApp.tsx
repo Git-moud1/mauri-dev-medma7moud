@@ -2,17 +2,17 @@
 
 import * as m from 'motion/react-m';
 import { useI18n } from '@/i18n/I18nProvider';
-import { whatsappLink } from '@/lib/site';
+
 import { WhatsAppIcon } from '../Icons';
 
 const PREFILL = "Hi Mauri-Dev, I saw your portfolio and I'd like to discuss a project.";
 
 /** Floating WhatsApp button, fixed to the bottom corner (respects RTL). */
-export function FloatingWhatsApp() {
+export function FloatingWhatsApp({ whatsappUrl }: { whatsappUrl: string }) {
   const { t, dir } = useI18n();
   return (
     <m.a
-      href={whatsappLink(PREFILL)}
+      href={`${whatsappUrl}?text=${encodeURIComponent(PREFILL)}`}
       target="_blank"
       rel="noopener noreferrer"
       aria-label={t('whatsappFloat')}

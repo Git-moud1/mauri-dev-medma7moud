@@ -1,6 +1,7 @@
 import { getT } from '@/i18n/server';
 import type { Locale } from '@/i18n/config';
-import { SITE, whatsappLink } from '@/lib/site';
+import { SITE } from '@/lib/site';
+import type { Social } from '@/lib/content/types';
 import { MailIcon, WhatsAppIcon } from './Icons';
 import { Logo } from './Logo';
 
@@ -11,7 +12,16 @@ const NAV = [
   { id: 'contact', key: 'nav.contact' },
 ] as const;
 
-export function Footer({ locale }: { locale: Locale }) {
+export function Footer({
+  locale,
+  whatsappUrl,
+  socials,
+}: {
+  locale: Locale;
+  whatsappUrl: string;
+  /** Admin-managed. Empty until the owner adds any, and simply not rendered then. */
+  socials: Social[];
+}) {
   const t = getT(locale);
   // Server-rendered, so this is the build date. The stale-year problem is B6,
   // owned by Task 14 — but the hydration-mismatch half of it is gone already:
@@ -58,7 +68,7 @@ export function Footer({ locale }: { locale: Locale }) {
             </h3>
             <div className="flex flex-col gap-3">
               <a
-                href={whatsappLink()}
+                href={whatsappUrl}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="inline-flex items-center gap-2 text-sm text-muted transition-colors hover:text-fg"
@@ -71,6 +81,17 @@ export function Footer({ locale }: { locale: Locale }) {
               >
                 <MailIcon className="h-4 w-4" /> {SITE.email}
               </a>
+              {socials.map((social) => (
+                <a
+                  key={social.url}
+                  href={social.url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center gap-2 text-sm text-muted transition-colors hover:text-fg"
+                >
+                  {social.label}
+                </a>
+              ))}
             </div>
           </div>
         </div>

@@ -591,3 +591,68 @@ now build on its primitives. Two layout directions are with the owner; nothing
 further is being built until one is picked.
 
 **Next:** owner picks a layout direction, then tasks 7, 8 and 10.
+
+---
+
+## Tasks 7, 8, 10 — the admin, rebuilt in direction B
+
+Owner picked **B, "Stack"**: one centred column, media-forward rows, editing
+expands in place at full column width. `ProjectsTable` and `ProjectForm` were
+deleted rather than edited.
+
+- `ui/primitives.tsx` + `ui/Toaster.tsx`: one vocabulary — Button (four
+  variants, all seven states), IconButton with a required label, Field wiring
+  label/hint/error through `aria-describedby`, Section, Badge, Skeleton,
+  EmptyState, and toasts that are `aria-live` and never steal focus.
+- **Media is thumbnails, never paths.** Drop zone, grid, drag reorder _plus_
+  arrow buttons (drag-only locks out keyboard users), × to remove with an undo
+  toast rather than a confirm dialog, ★ to set the cover. Removing the cover
+  promotes the next image instead of leaving a project pointing at an image it
+  no longer has.
+- Uploads: magic-byte sniffing that ignores filename and client MIME, sharp
+  re-encode to WebP at four widths — which is what strips EXIF, a security
+  property not an optimisation — LQIP at upload time, immutable media route.
+- Settings: Contact / Social / Hero, `wa.me` URL shown as derived read-only text.
+- Editor: Identity / Content / Media / Link, locales as tabs with a filled dot
+  per language, danger zone bordered and separated from Save, unsaved-changes
+  guard.
+
+**The serif was an omission, not a choice.** The admin set no font variables, so
+`font-sans` resolved through `var(--font-sans, var(--font-arabic))` — both
+undefined in that tree — and fell to the browser serif default. Both variables
+now bind to Inter, so even `font-display` resolves to Inter there.
+
+Fixing that immediately broke a protected test, correctly: with `preload: true`
+Next emitted the admin's Inter on the **public** Arabic route. Same behaviour
+plan 1 task 9 measured. `preload: false` on that face.
+
+---
+
+## Task 9 — the public site reads the store
+
+`page.tsx` reads `getProjects()` and `getSettings()` once and passes them down.
+Projects takes the list; Hero takes the stats and the availability badge; Header,
+Contact, Footer and FloatingWhatsApp take the derived WhatsApp URL; Footer
+renders the admin's social links when there are any.
+
+**`/[locale]` is still SSG** — confirmed in the build output, which is the point
+of the `unstable_cache` wrapper.
+
+**Verified with no store at all:** `/ar` and `/en` both render 7 project cards
+and the full hero, no console errors. Every test in the suite already exercises
+this path, since local runs have no Blobs runtime.
+
+**Two things caught while verifying, both real:**
+
+1. The hero's third figure would have started reading **14+** — the fallback
+   derived it from `TECH_STACK.length` — where the live site says **10+**. That
+   is published copy, so it is now `SITE.stacksCount = 10` and editable from the
+   admin rather than silently rewritten.
+2. **`unstable_cache` entries persist in `.next/cache`, which Netlify restores
+   between builds.** A change to the _bundled fallback_ does not invalidate
+   them, so a stale value survives a deploy — locally the stacks fix changed
+   nothing until `.next/cache` was deleted. The cache keys now carry a
+   `CACHE_VERSION` to bump when the fallback moves. Runtime writes were never
+   affected; they call `updateTag` and expire immediately.
+
+**Next:** Task 11 — secret audit and bundle isolation.

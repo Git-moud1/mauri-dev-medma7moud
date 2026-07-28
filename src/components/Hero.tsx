@@ -1,7 +1,7 @@
 import { getT } from '@/i18n/server';
 import { dirFor } from '@/i18n/locale';
 import type { Locale } from '@/i18n/config';
-import { SITE, whatsappLink } from '@/lib/site';
+
 import { ArrowRightIcon, WhatsAppIcon, CodeIcon, SmartphoneIcon } from './Icons';
 
 /**
@@ -15,14 +15,25 @@ import { ArrowRightIcon, WhatsAppIcon, CodeIcon, SmartphoneIcon } from './Icons'
  * later plan. Ambient blur/grain layers and the pulsing status dot are CSS and
  * are untouched.
  */
-export function Hero({ locale }: { locale: Locale }) {
+export function Hero({
+  locale,
+  stats: figures,
+  availableForWork,
+  whatsappUrl,
+}: {
+  locale: Locale;
+  /** Admin-managed. Falls back to the bundled values when the store is cold. */
+  stats: { years: number; projects: number; stacks: number };
+  availableForWork: boolean;
+  whatsappUrl: string;
+}) {
   const t = getT(locale);
   const dir = dirFor(locale);
 
   const stats = [
-    { value: `${SITE.yearsExperience}+`, label: t('hero.stats.years') },
-    { value: `${SITE.projectsDelivered}+`, label: t('hero.stats.projects') },
-    { value: '10+', label: t('hero.stats.stacks') },
+    { value: `${figures.years}+`, label: t('hero.stats.years') },
+    { value: `${figures.projects}+`, label: t('hero.stats.projects') },
+    { value: `${figures.stacks}+`, label: t('hero.stats.stacks') },
   ];
 
   return (
@@ -36,13 +47,20 @@ export function Hero({ locale }: { locale: Locale }) {
 
       <div className="container-x">
         <div className="mx-auto max-w-4xl text-center">
-          <span className="glass inline-flex items-center gap-2 rounded-full px-4 py-1.5 text-xs font-medium text-fg">
-            <span className="relative flex h-2 w-2">
-              <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-green-500 opacity-70" />
-              <span className="relative inline-flex h-2 w-2 rounded-full bg-green-500" />
+          {/*
+            Toggled from the admin. Hidden rather than reworded when the owner
+            is not taking work: an "available" badge that is not true costs more
+            than no badge at all.
+          */}
+          {availableForWork ? (
+            <span className="glass inline-flex items-center gap-2 rounded-full px-4 py-1.5 text-xs font-medium text-fg">
+              <span className="relative flex h-2 w-2">
+                <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-green-500 opacity-70" />
+                <span className="relative inline-flex h-2 w-2 rounded-full bg-green-500" />
+              </span>
+              {t('hero.badge')}
             </span>
-            {t('hero.badge')}
-          </span>
+          ) : null}
 
           {/* `font-hero` puts the preloaded Arabic face first for /ar; on a
               latin locale its unicode-range never matches and the stack falls
@@ -66,7 +84,7 @@ export function Hero({ locale }: { locale: Locale }) {
               />
             </a>
             <a
-              href={whatsappLink("Hi Mauri-Dev, I'd like to discuss a project.")}
+              href={`${whatsappUrl}?text=${encodeURIComponent("Hi Mauri-Dev, I'd like to discuss a project.")}`}
               target="_blank"
               rel="noopener noreferrer"
               className="btn-outline w-full sm:w-auto"
