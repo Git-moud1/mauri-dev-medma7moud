@@ -12,7 +12,8 @@
     "lint": "eslint .",
     "test:e2e": "playwright test",
     "format": "prettier --write .",
-    "format:check": "prettier --check ."
+    "format:check": "prettier --check .",
+    "test:headers": "playwright test tests/headers.spec.ts --project=desktop"
   },
   "dependencies": {
     "motion": "^12.42.2",

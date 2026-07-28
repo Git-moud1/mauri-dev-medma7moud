@@ -214,63 +214,6 @@ test.describe('scroll reveals', () => {
 });
 
 /**
- * Headers declared in netlify.toml are applied by Netlify, not by `next start`,
- * so there is nothing here a local run can honestly assert. These are skipped
- * unless the suite is pointed at a real deploy:
- *
- *   PLAYWRIGHT_BASE_URL=https://<preview>.netlify.app npm run test:e2e
- *
- * Skipping is the honest option. Asserting against `next start` would either
- * fail permanently or, worse, be softened until it passed against a server that
- * never sends these headers at all.
- */
-test.describe('deployed security and cache headers', () => {
-  test.skip(
-    !process.env.PLAYWRIGHT_BASE_URL,
-    'netlify.toml headers are applied by Netlify — set PLAYWRIGHT_BASE_URL to a deploy to run these',
-  );
-
-  test('security headers are present', async ({ request }) => {
-    const response = await request.get('/ar');
-    const headers = response.headers();
-    expect(headers['x-content-type-options']).toBe('nosniff');
-    expect(headers['referrer-policy']).toBe('strict-origin-when-cross-origin');
-    expect(headers['strict-transport-security']).toContain('max-age=');
-    expect(headers['permissions-policy']).toContain('camera=()');
-    expect(headers['content-security-policy']).toContain("frame-ancestors 'none'");
-  });
-
-  test('static assets are immutably cached', async ({ request }) => {
-    const response = await request.get('/ar');
-    const body = await response.text();
-    const asset = body.match(/\/_next\/static\/[^"']+\.js/)?.[0];
-    if (!asset) throw new Error('no /_next/static asset referenced in the page HTML');
-    const assetResponse = await request.get(asset);
-    expect(assetResponse.headers()['cache-control']).toContain('immutable');
-  });
-
-  /**
-   * A CSP that blocks the theme script is invisible to the assertions above:
-   * the header is present and correct-looking, and the only symptom is a flash
-   * of the wrong theme. The no-flash script sets `color-scheme` on <html>, so
-   * checking that it ran is the cheapest proof the policy did not block it.
-   */
-  test('the no-flash script is not blocked by the CSP', async ({ page }) => {
-    const violations: string[] = [];
-    page.on('console', (message) => {
-      if (/content security policy/i.test(message.text()))
-        violations.push(message.text());
-    });
-    await page.goto('/ar');
-    const colorScheme = await page.evaluate(
-      () => document.documentElement.style.colorScheme,
-    );
-    expect(colorScheme).toMatch(/^(dark|light)$/);
-    expect(violations).toEqual([]);
-  });
-});
-
-/**
  * The bug register from the design spec, §2. Each of these failed before Task
  * 14 and is named after the entry it closes, so a future regression points
  * straight back at the original report.

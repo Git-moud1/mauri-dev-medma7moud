@@ -14,32 +14,18 @@
 [[plugins]]
   package = "@netlify/plugin-nextjs"
 
-# Security headers (task 12, closes B12).
+# CACHE RULES ONLY. Do not add security headers here.
 #
-# script-src carries 'unsafe-inline' and that is a deliberate, measured
-# decision rather than an oversight. The spec asks for a nonce; a nonce must be
-# minted per request, which would make every route render dynamically and throw
-# away the prerendered CDN HTML task 6 exists to produce. The plan's fallback
-# was to hash the inline no-flash script instead — but the built HTML for each
-# route contains 22 inline scripts, 21 of them Next's own RSC flight payload,
-# and a browser ignores 'unsafe-inline' as soon as any hash is present. Hashing
-# only no-flash would therefore block the other 21 and the page would never
-# hydrate.
+# netlify.toml [[headers]] are applied by the CDN to files it serves. HTML
+# documents come from the Next.js runtime's function and never see them.
+# Verified on deploy-preview-1: the identical rule set lived here, was correct,
+# and reached `/_next/static/*` while every page response went out with no CSP,
+# no Referrer-Policy and no Permissions-Policy for the life of the branch.
 #
-# Closing this properly means either generating per-route hashes for all 22 in
-# a post-build step, or moving to a nonce once plan 2 introduces dynamic routes
-# for /admin. Owner decision, recorded in PROGRESS.md.
+# Security headers now live in next.config.mjs `headers()`, which the framework
+# serves on its own responses. Moving them back here silently disables them.
 #
-# Everything else here is strict: no framing, no third-party connections, no
-# camera/microphone/geolocation, HSTS with preload.
-[[headers]]
-  for = "/*"
-  [headers.values]
-    X-Content-Type-Options = "nosniff"
-    Referrer-Policy = "strict-origin-when-cross-origin"
-    Strict-Transport-Security = "max-age=63072000; includeSubDomains; preload"
-    Permissions-Policy = "camera=(), microphone=(), geolocation=(), interest-cohort=()"
-    Content-Security-Policy = "default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self' data:; connect-src 'self'; frame-ancestors 'none'; base-uri 'self'; form-action 'self'; object-src 'none'"
+# Caching is the half that does work from this file, so it stays.
 
 # Build-hashed filenames, so the content behind a URL never changes.
 [[headers]]
