@@ -30,6 +30,11 @@ Every task's requirements implicitly include this section.
 - **Never delete or rewrite an entry in `src/data/projects.ts`** — titles, descriptions, or per-locale copy — without asking the owner first.
 - **`category` and `frame` stay distinct.** `category` (`web`|`app`) drives the filter and lightbox layout; `frame` (`phone`|`browser`) drives only the card cover.
 - **Commit style:** conventional commits, one focused commit per task step where indicated.
+- **PROTECTED TESTS — no task may weaken or remove these.** Each exists because a real regression slipped past a weaker check:
+  - *Computed `font-family` per locale* (`tests/smoke.spec.ts`). Added in Task 9 after an undefined `var()` collapsed the whole font declaration and every latin locale silently rendered in Times New Roman — while fetching **zero** fonts, which looked like a byte-budget win. A byte measurement must never again be able to hide a typography failure.
+  - *Computed `opacity > 0` on at least one reveal per section.* Playwright treats `opacity: 0` as "visible", so a page whose scroll reveals never fire renders blank and still passes every visibility assertion. Added in Task 10b.
+- **Do not chase the 150 KB JS target by removing motion from the remaining islands.** Owner decision: that trades the site's feel for a number set before there was data. Report the real figure. The final target is set in plan 3, after the Prism Stack hero lands and changes the calculation.
+- **Import `m` from `motion/react-m`, never from `motion/react`.** The `motion/react` barrel also exports the full `motion` proxy, so `import { m } from 'motion/react'` keeps every feature and *increases* bundle size — measured at +2.4 KB versus doing nothing at all. Only `import * as m from 'motion/react-m'` actually tree-shakes.
 
 ---
 
