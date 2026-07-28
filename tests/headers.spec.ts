@@ -68,9 +68,21 @@ test.describe('delivered security headers', () => {
   test('the CSP does not block the no-flash theme script', async ({ page }) => {
     const violations: string[] = [];
     page.on('console', (message) => {
-      if (/content security policy|refused to execute/i.test(message.text())) {
-        violations.push(message.text());
-      }
+      const text = message.text();
+      if (!/content security policy|refused to execute/i.test(text)) return;
+
+      /**
+       * A deploy preview injects Netlify's own admin widget, which tries to
+       * frame app.netlify.com and is correctly blocked by `frame-ancestors`
+       * falling back to `default-src 'self'`. That violation is the policy
+       * working, on markup we do not ship — production serves no such frame.
+       *
+       * Narrow on purpose: only a *framing* violation naming netlify.com is
+       * ignored. A blocked script, style or font — including anything from
+       * netlify.com — still fails this test.
+       */
+      const isPreviewFrame = /framing 'https:\/\/[^']*netlify\.com/i.test(text);
+      if (!isPreviewFrame) violations.push(text);
     });
 
     await page.goto('/ar');

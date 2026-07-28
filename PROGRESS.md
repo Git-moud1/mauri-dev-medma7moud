@@ -385,3 +385,40 @@ first load, and v2's `sizes` did not regress it.
 **Next:** plan 2 (admin panel), with the document-headers fix folded in as a
 prerequisite — an `/admin` route with no CSP and no `frame-ancestors` is worse
 to ship than a public page with none.
+
+---
+
+# Plan 2 — security, CLS, admin panel
+
+## Task 1 — security headers that actually arrive (closes B12)
+
+**What changed**
+
+- Full header set moved from `netlify.toml` to `next.config.mjs` `headers()`:
+  CSP, HSTS (`max-age=63072000`, preload), `nosniff`, `Referrer-Policy:
+  strict-origin-when-cross-origin`, `Permissions-Policy` denying camera,
+  microphone and geolocation. Plus `X-Robots-Tag: noindex, nofollow` on
+  `/admin/:path*`.
+- `netlify.toml` keeps only the cache rules, under a comment saying why —
+  moving the security headers back there silently disables them.
+- `tests/headers.spec.ts`, PROTECTED, asserting on delivered responses. The
+  equivalent block in `smoke.spec.ts` was removed rather than duplicated.
+
+**Verified on the deploy: 7/7 pass.** `/ar`, `/en`, `/fr` and `/admin` all carry
+the full set; static assets stay `immutable`; the no-flash script still runs.
+
+**One finding worth keeping.** The CSP test failed on its first deploy run with
+a real violation — Netlify's preview widget trying to frame `app.netlify.com`,
+correctly blocked by `default-src 'self'`. That is the policy working on markup
+we do not ship. The test now ignores *framing* violations naming netlify.com and
+nothing else: a blocked script, style or font still fails it, including from
+that origin.
+
+Local `next start` does apply `headers()` (unlike `netlify.toml`), so unlike
+plan 1 this is locally checkable — which is why the CSP could be verified
+against the full suite before pushing.
+
+**Build status:** tsc clean · lint clean · build passes · 66 passed, 14 skipped
+locally · 7/7 header tests on the deploy.
+
+**Next:** Task 2 — the `/ar` CLS regression.
