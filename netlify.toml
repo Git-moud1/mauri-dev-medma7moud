@@ -2,6 +2,14 @@
   command = "npm run build"
   publish = ".next"
 
+  [build.environment]
+    # Next 16 requires Node 20.9+. This site was created against Next 14, so
+    # whatever default it inherited then is not necessarily new enough — and a
+    # too-old Node fails the build with an error that does not mention Node.
+    # Pinned here so the requirement travels with the repo instead of living in
+    # the Netlify UI.
+    NODE_VERSION = "22.11.0"
+
 # Official Next.js runtime — enables next/image optimization, SSR & API routes.
 [[plugins]]
   package = "@netlify/plugin-nextjs"
