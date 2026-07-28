@@ -33,19 +33,44 @@ by the plan's own prescribed fix for B4.
 
 ## 2. Performance: the honest before/after
 
+### The bottom line first
+
+**Plan 1 did not produce a demonstrated speed win.**
+
+- **Fonts: won.** 111.0 KB on every route → 55.6 KB on `/ar`. Measured, repeatable.
+- **JS: regressed.** 178.5 KB → 236.1 KB. Measured, repeatable.
+- **LCP: unproven.** No improvement can be shown from the data available. See below.
+- **CLS: regressed** on `/ar`, 0.059–0.062. Ours, not preview noise. See §3.
+- **The speed claim is pending a production measurement after merge.** A deploy
+  preview cannot settle it.
+
+What plan 1 did buy, and what it is worth on its own terms: Next 16 / React 19,
+a server-rendered architecture with client islands, real per-language URLs, a
+72-assertion test suite, and 13 closed bugs.
+
 ### Lighthouse, mobile
 
-|                | v1 live `/` | v2 preview `/ar` | v2 preview `/en` |
-| -------------- | ----------- | ---------------- | ---------------- |
-| Performance    | 96          | **96**           | **95**           |
-| Accessibility  | 100         | **100**          | **100**          |
-| Best Practices | 96          | 92 ¹             | 92 ¹             |
-| SEO            | 100         | 66 ²             | 66 ²             |
-| LCP            | 2.7 s       | **2.5 s**        | 2.8 s            |
-| CLS            | 0           | **0.059** ³      | 0                |
-| TBT            | 40 ms       | 60 ms            | 40 ms            |
-| FCP            | 1.1 s       | 1.7 s            | 1.5 s            |
-| Speed Index    | 2.7 s       | 2.7 s            | 2.4 s            |
+Three runs per target, same machine, median of three. Single-run figures are not
+reported — the first pass of this measurement showed `/ar` at LCP 2.5 s against
+v1's 2.7 s and that looked like a win. It was one warm run against a noisy
+target, and it did not survive repetition.
+
+|                    | v1 live `/`          | v2 preview `/ar`         |
+| ------------------ | -------------------- | ------------------------ |
+| LCP, three runs    | 2.89 / 2.80 / 2.64 s | **1.65 / 6.33 / 6.89 s** |
+| LCP median         | **2.80 s**           | **6.33 s**               |
+| Performance median | 93                   | 70                       |
+| CLS median         | 0.000                | **0.062**                |
+| TBT median         | 3 ms                 | 87 ms                    |
+
+Single-run detail for the four categories, taken on the first pass:
+
+|                | v1 live `/` | v2 `/ar` | v2 `/en` |
+| -------------- | ----------- | -------- | -------- |
+| Performance    | 96          | 96       | 95       |
+| Accessibility  | 100         | **100**  | **100**  |
+| Best Practices | 96          | 92 ¹     | 92 ¹     |
+| SEO            | 100         | 66 ²     | 66 ²     |
 
 ¹ Both failing audits are deploy-preview artifacts: a 404 and a cookie warning
 from Netlify's own preview instrumentation (`app.netlify.com/cdp/…`). A direct
@@ -56,7 +81,19 @@ console errors. This should read 96+ on production.
 regression — but it also means the SEO category is **unverified** on this
 deploy, and must be re-run after merge.
 
-³ **A real regression. See §3.**
+**Why the LCP medians are not taken at face value, in either direction.** The
+`<h1>` is the LCP element on both sites, and its breakdown is nearly identical —
+TTFB 248 ms vs 286 ms, element render delay 2276 ms vs 2311 ms. By that measure
+the hero text paints at the same moment. The 6.3–6.9 s figures come from a
+later, larger LCP candidate, and the preview's network log shows the cause: at
+~3.7 s it fetches `pacaembuvar` and `mulishvar` plus `app.netlify.com/cdp/…`,
+which is Netlify's preview instrumentation and is **not served in production**.
+Our own six Tajawal faces all arrive by 775 ms.
+
+So the v1 column is clean and the v2 column is contaminated. The correct
+conclusion is not "v2 is slower" and it is certainly not "v2 is faster" — it is
+that **LCP is unresolved until this is measured on production**. That
+measurement is the first thing to do after merge.
 
 ### Transfer sizes, gzipped
 
@@ -102,15 +139,27 @@ in v1, and v2's `sizes` attributes did not regress it.
 The costs that were real: 111 KB of fonts on every route regardless of locale
 (now locale-scoped), and an entirely client-side tree (now server-rendered with
 islands). And v1 was never broadly slow by Lighthouse's reckoning — it scored 96
-with TBT 40 ms. Only LCP was out of budget at 2.7 s.
+with TBT 40 ms, median 93 across three runs. Only LCP was out of budget, at a
+median 2.80 s against a 2.0 s target.
+
+Worth stating plainly, since it changes what plan 3 should chase: **the site the
+brief described as "noticeably slow on first visit" measures as a fast site with
+one slow element.** Whatever is delaying the `<h1>` — a 2.3 s element render
+delay on _both_ v1 and v2 — is the remaining target, and neither the font work
+nor the JS work moved it.
 
 ---
 
-## 3. Open issue: CLS 0.059 on `/ar`
+## 3. Open defect: CLS 0.059–0.062 on `/ar`
 
-Over the 0.05 budget, on Arabic only. It does not reproduce locally — CLS
-measured 0.0000 on `/ar` and `/en` against `next start` — because a localhost
-font serves too fast to shift anything.
+Over the 0.05 budget, on Arabic only, on 2 of 3 runs. **This one is ours, not
+preview contamination** — the shift is caused by our own Tajawal faces, which
+arrive by 775 ms and swap in after first paint. Scheduled as a task in plan 2:
+tune `size-adjust` / `ascent-override` on the Arabic fallback and assert CLS in
+the suite so it cannot drift back.
+
+It does not reproduce locally — CLS measured 0.0000 on `/ar` and `/en` against
+`next start` — because a localhost font serves too fast to shift anything.
 
 Lighthouse attributes the shift to two `.woff2` loads (the Tajawal faces). The
 cause is task 9's `preload: false`: fonts are discovered through the stylesheet
