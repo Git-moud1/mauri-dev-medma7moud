@@ -16,11 +16,13 @@
     "test:headers": "playwright test tests/headers.spec.ts --project=desktop"
   },
   "dependencies": {
+    "@netlify/blobs": "^10.7.10",
     "motion": "^12.42.2",
     "next": "16.2.12",
     "react": "19.2.8",
     "react-dom": "19.2.8",
-    "sharp": "^0.35.3"
+    "sharp": "^0.35.3",
+    "zod": "^4.4.3"
   },
   "devDependencies": {
     "@playwright/test": "^1.62.0",
