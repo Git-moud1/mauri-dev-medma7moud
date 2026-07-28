@@ -42,9 +42,9 @@
     --brand-3: 56 211 238; /* #38D3EE cyan */
   }
 
-  * {
-    border-color: rgb(var(--border));
-  }
+  /* B18: the universal `border-color` reset that used to live here is gone.
+     Tailwind's preflight already sets a default border colour, so it only
+     duplicated work on every element in the document. */
 
   html {
     scroll-behavior: smooth;

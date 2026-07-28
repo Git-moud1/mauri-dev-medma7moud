@@ -239,16 +239,24 @@ export function ProjectsGrid({
         <p className="py-16 text-center text-muted">{labels.empty}</p>
       )}
 
-      {/* Lightbox */}
-      {active && (
-        <ProjectGallery
-          project={active}
-          startIndex={0}
-          onClose={() => {
-            setActive(null);
-          }}
-        />
-      )}
+      {/*
+        B5. AnimatePresence has to own the lightbox from OUT HERE. It used to
+        sit inside ProjectGallery, wrapping content that unmounted the instant
+        this parent flipped `active` to null — so the exit animation had nothing
+        left to animate and never ran. Presence must be tracked by whoever
+        controls the mounting.
+      */}
+      <AnimatePresence>
+        {active && (
+          <ProjectGallery
+            project={active}
+            startIndex={0}
+            onClose={() => {
+              setActive(null);
+            }}
+          />
+        )}
+      </AnimatePresence>
     </>
   );
 }

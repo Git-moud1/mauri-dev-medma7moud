@@ -13,8 +13,7 @@ const en = {
     cta: 'Let’s Talk',
   },
   theme: {
-    toLight: 'Switch to light mode',
-    toDark: 'Switch to dark mode',
+    toggle: 'Toggle light and dark mode',
   },
   language: {
     switch: 'Change language',

@@ -9,9 +9,15 @@ import Image from 'next/image';
 export function Logo({
   wordmark = true,
   size = 40,
+  // B10: `priority` used to be unconditional, and the logo renders in both the
+  // header and the footer — so the offscreen footer copy was preloaded too and
+  // competed with the hero for early bandwidth. Opt-in, and only the header
+  // opts in.
+  priority = false,
 }: {
   wordmark?: boolean;
   size?: number;
+  priority?: boolean;
 }) {
   return (
     <span className="flex items-center gap-2.5">
@@ -24,7 +30,7 @@ export function Logo({
           alt="Mauri-Dev logo"
           width={size}
           height={size}
-          priority
+          priority={priority}
           className="h-full w-full object-cover"
         />
       </span>

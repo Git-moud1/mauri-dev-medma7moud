@@ -200,3 +200,93 @@ Everything else in the header set is strict; this is the one loose directive.
 need `git push` and a run against the Netlify preview URL.
 
 **Next:** Task 13 — strict TypeScript, flat ESLint, Prettier.
+
+---
+
+## Task 13 — strict TypeScript and type-aware lint
+
+`noUncheckedIndexedAccess`, `typescript-eslint` `strictTypeChecked`, the full
+jsx-a11y recommended set, Prettier. 14 type errors and 41 lint errors, all
+fixed, none suppressed inline.
+
+The type errors were real, not ceremony:
+
+- `ProjectGallery` could pass `undefined` to `next/image`, and its focus trap
+  dereferenced the first and last focusable without checking — a throw there
+  strands the visitor inside the dialog.
+- `ContactForm.encode` indexed a `Record` by key and would have posted the
+  literal `"undefined"` as a field value. Its field lookups were cast to
+  non-null while the optional chains they relied on were the only thing
+  preventing a throw. `FormData` values are `string | File`, and `String(file)`
+  posts `"[object File]"` rather than failing.
+- `i18n/server.ts` walked the dictionary through an `any` cast.
+
+Two config decisions, both in one place rather than scattered inline disables:
+`restrict-template-expressions` allows numbers, and jsx-a11y's rules are spread
+as bare rules because eslint-config-next already registers that plugin.
+
+Prettier was applied repo-wide as a **separate commit** so these fixes stay
+readable.
+
+**Bundle:** unchanged — toolchain only.
+
+**Build status:** tsc clean · lint 0 errors, 1 warning (B4, closed in Task 14) ·
+build passes · 50 e2e pass, 6 skipped.
+
+**`npm audit`:** 12 high, all `sharp`/libvips advisories reached through
+`next`'s own bundled copy. `npm audit fix --force` proposes `next@9.3.3` — a
+six-major-version downgrade — so it is not a fix. Documented, not applied.
+
+**Next:** Task 14 — close the bug register.
+
+---
+
+## Task 14 — bug register closed (B1–B10, B18)
+
+| Bug | Fix |
+|---|---|
+| B1 | Drawer closes when the viewport crosses `lg`, so `open` can never be stranded true while the panel is `lg:hidden` and the body stays scroll-locked. |
+| B2 | Marquee direction follows the locale; `marquee-rtl` was defined in the Tailwind config and never wired up. |
+| B4 | See below — the interesting one. |
+| B5 | `AnimatePresence` moved up into `ProjectsGrid`. Inside `ProjectGallery` it wrapped content the parent unmounted outright, so the exit animation never had anything to animate. |
+| B6 | Already closed: `Footer` is a server component since Task 8, so `getFullYear()` runs once at build. |
+| B7 | Drawer is a real dialog: `role`, `aria-modal`, `aria-controls`, focus moved in on open, Tab trapped inside, focus returned to the toggle on close, Escape closes. Body overflow restores its **previous** value, so a drawer closing over an open lightbox no longer unlocks scrolling. |
+| B8 | Language menu: arrow keys, Home/End, Escape and selection return focus to the trigger, and the document listeners are attached only while it is open. |
+| B9 | Field errors clear on change instead of persisting until the next submit. |
+| B10 | `Logo` takes `priority` as an opt-in; only the header passes it. The offscreen footer copy no longer preloads against the hero. |
+| B18 | The universal `border-color` reset is gone. |
+
+**B4 was not what the plan thought it was**
+
+The plan's fix — derive `ThemeProvider`'s initial state from the class no-flash
+wrote on `<html>` — trades one bug for a worse one. The server cannot know the
+stored theme, so it always renders the dark variant; a light-theme visitor's
+first client render then disagrees with the server HTML. That is a hydration
+mismatch: **React error #418, reproduced on every load**, after which React
+discards the server-rendered tree and re-renders everything. It also broke three
+unrelated tests, which was the first symptom.
+
+The fix is to stop branching on theme in rendered output at all. Both icons are
+now in the DOM and CSS picks one through the `dark:` variant — driven by the
+same class no-flash already set, before React exists. The accessible name became
+one static string describing the action (`theme.toggle`) instead of two
+describing the destination, so it needs no branch either. `theme.toLight` and
+`theme.toDark` were removed from all three dictionaries.
+
+**B18 needed a second half the plan did not mention**
+
+Deleting `* { border-color: rgb(var(--border)) }` alone would have turned every
+bare `border` utility gray: Tailwind's preflight already emits a universal
+border-colour rule, defaulting to `gray-200`. Setting `borderColor.DEFAULT` in
+the Tailwind config makes preflight emit the themed value directly, which is
+what removes the duplicate rather than the theming.
+
+`react-hooks/set-state-in-effect` is back to **error** now that B4 and B11 are
+both closed.
+
+**Bundle:** `/ar` and `/en` — see the final numbers in Task 15.
+
+**Build status:** tsc clean · lint clean, **zero warnings** · build passes ·
+`npm run test:e2e` **66 passed, 6 skipped** (the deploy-only header tests).
+
+**Next:** Task 15 — measure, document, hand off.

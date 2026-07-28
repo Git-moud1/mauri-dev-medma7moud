@@ -15,8 +15,7 @@ const fr: Dictionary = {
     cta: 'Discutons',
   },
   theme: {
-    toLight: 'Passer en mode clair',
-    toDark: 'Passer en mode sombre',
+    toggle: 'Basculer entre le mode clair et sombre',
   },
   language: {
     switch: 'Changer de langue',

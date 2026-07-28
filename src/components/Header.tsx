@@ -35,7 +35,7 @@ export function Header({ locale }: { locale: Locale }) {
       >
         {/* Logo */}
         <a href="#top" className="group flex items-center" aria-label="Mauri-Dev — home">
-          <Logo size={40} />
+          <Logo size={40} priority />
         </a>
 
         {/* Desktop nav */}

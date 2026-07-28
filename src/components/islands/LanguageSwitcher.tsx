@@ -11,31 +11,86 @@ export function LanguageSwitcher() {
   const { locale, setLocale, t, dir } = useI18n();
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
+  const triggerRef = useRef<HTMLButtonElement>(null);
+  const menuRef = useRef<HTMLUListElement>(null);
 
+  /**
+   * B8. Three things were wrong here: the document listeners were attached for
+   * the component's whole lifetime rather than only while the menu was open,
+   * the menu could not be driven from the keyboard at all, and closing it left
+   * focus on <body> — a keyboard visitor was dropped at the top of the document
+   * with no indication of where they had been.
+   */
   useEffect(() => {
-    function onClick(e: MouseEvent) {
-      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
+    if (!open) return;
+
+    function close(restoreFocus: boolean) {
+      setOpen(false);
+      if (restoreFocus) triggerRef.current?.focus();
     }
+
+    function onPointerDown(e: MouseEvent) {
+      if (ref.current && !ref.current.contains(e.target as Node)) close(false);
+    }
+
     function onKey(e: KeyboardEvent) {
-      if (e.key === 'Escape') setOpen(false);
+      const items = [
+        ...(menuRef.current?.querySelectorAll<HTMLElement>('[role="menuitemradio"]') ??
+          []),
+      ];
+      if (items.length === 0) return;
+      const current = items.indexOf(document.activeElement as HTMLElement);
+
+      switch (e.key) {
+        case 'Escape':
+          e.preventDefault();
+          close(true);
+          break;
+        case 'ArrowDown':
+          e.preventDefault();
+          items[current < 0 ? 0 : (current + 1) % items.length]?.focus();
+          break;
+        case 'ArrowUp':
+          e.preventDefault();
+          items[current <= 0 ? items.length - 1 : current - 1]?.focus();
+          break;
+        case 'Home':
+          e.preventDefault();
+          items[0]?.focus();
+          break;
+        case 'End':
+          e.preventDefault();
+          items[items.length - 1]?.focus();
+          break;
+        case 'Tab':
+          // Tabbing out of an open menu closes it, but focus belongs wherever
+          // the browser is taking it — not back on the trigger.
+          close(false);
+          break;
+        default:
+          break;
+      }
     }
-    document.addEventListener('mousedown', onClick);
+
+    document.addEventListener('mousedown', onPointerDown);
     document.addEventListener('keydown', onKey);
     return () => {
-      document.removeEventListener('mousedown', onClick);
+      document.removeEventListener('mousedown', onPointerDown);
       document.removeEventListener('keydown', onKey);
     };
-  }, []);
+  }, [open]);
 
   function choose(l: Locale) {
     setLocale(l);
     setOpen(false);
+    triggerRef.current?.focus();
   }
 
   return (
     <div className="relative" ref={ref}>
       <button
         type="button"
+        ref={triggerRef}
         onClick={() => {
           setOpen((v) => !v);
         }}
@@ -51,6 +106,7 @@ export function LanguageSwitcher() {
       <AnimatePresence>
         {open && (
           <m.ul
+            ref={menuRef}
             role="menu"
             initial={{ opacity: 0, y: -8, scale: 0.96 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}

@@ -38,6 +38,20 @@ export default defineConfig([
         'error',
         { allowNumber: true },
       ],
+
+      /**
+       * A leading underscore marks a binding that exists only to be discarded —
+       * the omit-by-destructuring idiom, `const { [key]: _dropped, ...rest }`,
+       * which is how a key is removed without `delete`.
+       */
+      '@typescript-eslint/no-unused-vars': [
+        'error',
+        {
+          argsIgnorePattern: '^_',
+          varsIgnorePattern: '^_',
+          caughtErrorsIgnorePattern: '^_',
+        },
+      ],
     },
   },
 
@@ -60,21 +74,13 @@ export default defineConfig([
        */
       ...jsxA11y.flatConfigs.recommended.rules,
       /**
-       * TEMPORARY — downgraded from error to warning.
-       *
-       * eslint-config-next@16 pulls in eslint-plugin-react-hooks@7, whose
-       * set-state-in-effect rule correctly flags a bug already tracked in the
-       * register (docs/superpowers/specs/2026-07-27-mauri-dev-v2-design.md §2):
-       *
-       *   B4 — src/theme/ThemeProvider.tsx: initial state hardcoded 'dark',
-       *        then re-set from storage in an effect.
-       *
-       * B11 (I18nProvider) was closed by Task 6, which deleted that effect.
-       * B4 is closed by Task 14, which is also where this returns to "error".
-       * The code is wrong, not the rule; it stays a warning only so the lint
-       * gate keeps catching NEW violations in the meantime.
+       * Back to "error" now that both violations it flagged are gone: B11
+       * (I18nProvider hydrating the locale from storage) in Task 6, and B4
+       * (ThemeProvider guessing 'dark' then correcting itself) in Task 14.
+       * Both were real bugs, and both produced a first render that disagreed
+       * with the DOM the no-flash script had already written.
        */
-      'react-hooks/set-state-in-effect': 'warn',
+      'react-hooks/set-state-in-effect': 'error',
     },
   },
 

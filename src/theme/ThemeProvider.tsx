@@ -1,13 +1,6 @@
 'use client';
 
-import {
-  createContext,
-  useCallback,
-  useContext,
-  useEffect,
-  useMemo,
-  useState,
-} from 'react';
+import { createContext, useCallback, useContext, useMemo, useState } from 'react';
 import { STORAGE_KEY_THEME } from '@/i18n/config';
 
 type Theme = 'light' | 'dark';
@@ -16,7 +9,6 @@ interface ThemeContextValue {
   theme: Theme;
   toggle: () => void;
   setTheme: (t: Theme) => void;
-  ready: boolean;
 }
 
 const ThemeContext = createContext<ThemeContextValue | null>(null);
@@ -28,26 +20,25 @@ function apply(theme: Theme) {
 }
 
 export function ThemeProvider({ children }: { children: React.ReactNode }) {
-  // Default matches the no-flash inline script (dark).
-  const [theme, setThemeState] = useState<Theme>('dark');
-  const [ready, setReady] = useState(false);
-
-  useEffect(() => {
-    let stored: string | null = null;
-    try {
-      stored = localStorage.getItem(STORAGE_KEY_THEME);
-    } catch {
-      /* ignore */
-    }
-    const prefersDark =
-      typeof window !== 'undefined' &&
-      window.matchMedia('(prefers-color-scheme: dark)').matches;
-    const next: Theme =
-      stored === 'light' || stored === 'dark' ? stored : prefersDark ? 'dark' : 'light';
-    setThemeState(next);
-    apply(next);
-    setReady(true);
-  }, []);
+  /**
+   * B4. The state starts from the class the no-flash script has already written
+   * onto <html>, not from a hardcoded 'dark'.
+   *
+   * The old version guessed 'dark', then corrected itself from storage in an
+   * effect. For a visitor who had chosen light that produced a first client
+   * render disagreeing with the DOM — a hydration mismatch, and a toggle icon
+   * showing the wrong state for a frame. Reading the DOM is also what makes the
+   * effect unnecessary: no-flash has already resolved stored-theme-then-OS
+   * preference before React runs, so re-deriving it here would only duplicate
+   * that logic and risk the two drifting apart.
+   *
+   * On the server there is no document; 'dark' matches no-flash's own default,
+   * which keeps the prerendered HTML consistent.
+   */
+  const [theme, setThemeState] = useState<Theme>(() => {
+    if (typeof document === 'undefined') return 'dark';
+    return document.documentElement.classList.contains('dark') ? 'dark' : 'light';
+  });
 
   const setTheme = useCallback((t: Theme) => {
     setThemeState(t);
@@ -64,8 +55,8 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
   }, [theme, setTheme]);
 
   const value = useMemo<ThemeContextValue>(
-    () => ({ theme, toggle, setTheme, ready }),
-    [theme, toggle, setTheme, ready],
+    () => ({ theme, toggle, setTheme }),
+    [theme, toggle, setTheme],
   );
 
   return <ThemeContext.Provider value={value}>{children}</ThemeContext.Provider>;

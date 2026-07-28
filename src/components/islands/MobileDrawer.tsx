@@ -5,6 +5,7 @@ import {
   useContext,
   useEffect,
   useMemo,
+  useRef,
   useState,
   type ReactNode,
 } from 'react';
@@ -28,6 +29,11 @@ interface DrawerContextValue {
 }
 
 const DrawerContext = createContext<DrawerContextValue | null>(null);
+
+/** Shared between the toggle's aria-controls and the panel's id. */
+const DRAWER_ID = 'mobile-drawer';
+/** Lets the panel hand focus back to the toggle without threading a ref. */
+const TOGGLE_ID = 'mobile-drawer-toggle';
 
 function useDrawer(): DrawerContextValue {
   const ctx = useContext(DrawerContext);
@@ -56,11 +62,44 @@ export function HeaderShell({ children }: { children: ReactNode }) {
     };
   }, []);
 
-  // Lock body scroll while the mobile menu is open.
+  /**
+   * B1. Close the drawer when the viewport crosses into `lg`.
+   *
+   * The panel is `lg:hidden`, so above that width it vanishes without the state
+   * changing — leaving `open` true, the body scroll-locked, and nothing on
+   * screen to explain why the page will not move.
+   */
   useEffect(() => {
-    document.body.style.overflow = open ? 'hidden' : '';
+    const mq = window.matchMedia('(min-width: 1024px)');
+    const onChange = (e: MediaQueryListEvent) => {
+      if (e.matches) setOpen(false);
+    };
+    mq.addEventListener('change', onChange);
     return () => {
-      document.body.style.overflow = '';
+      mq.removeEventListener('change', onChange);
+    };
+  }, []);
+
+  /**
+   * Lock body scroll while the drawer is open, and close on Escape (B7).
+   *
+   * Restores the PREVIOUS overflow rather than clearing it: the lightbox locks
+   * scrolling too, and clearing unconditionally let a drawer closing on top of
+   * an open lightbox hand scrolling back to a page the visitor cannot see.
+   */
+  useEffect(() => {
+    if (!open) return;
+    const previous = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') setOpen(false);
+    };
+    document.addEventListener('keydown', onKey);
+
+    return () => {
+      document.body.style.overflow = previous;
+      document.removeEventListener('keydown', onKey);
     };
   }, [open]);
 
@@ -88,11 +127,13 @@ export function DrawerToggle() {
   return (
     <button
       type="button"
+      id={TOGGLE_ID}
       onClick={() => {
         setOpen(!open);
       }}
       aria-label="Menu"
       aria-expanded={open}
+      aria-controls={DRAWER_ID}
       className="grid h-10 w-10 place-items-center rounded-full border border-border bg-surface/60 text-fg lg:hidden"
     >
       {open ? <CloseIcon className="h-5 w-5" /> : <MenuIcon className="h-5 w-5" />}
@@ -111,11 +152,63 @@ export function DrawerPanel({
   ctaLabel: string;
 }) {
   const { open, setOpen } = useDrawer();
+  const panelRef = useRef<HTMLDivElement>(null);
+
+  /**
+   * B7. Move focus into the drawer when it opens, keep Tab inside it while it
+   * is open, and hand focus back to the toggle when it closes — by any route,
+   * including Escape and a link click. Without this a keyboard visitor tabs
+   * straight past the open drawer into the page behind it.
+   */
+  useEffect(() => {
+    if (!open) return;
+    const panel = panelRef.current;
+    if (!panel) return;
+
+    const focusables = () =>
+      [
+        ...panel.querySelectorAll<HTMLElement>(
+          'a[href], button:not([disabled]), [tabindex]:not([tabindex="-1"])',
+        ),
+      ].filter((el) => el.offsetParent !== null);
+
+    focusables()[0]?.focus();
+
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key !== 'Tab') return;
+      const items = focusables();
+      const first = items[0];
+      const last = items[items.length - 1];
+      if (!first || !last) return;
+      if (e.shiftKey && document.activeElement === first) {
+        e.preventDefault();
+        last.focus();
+      } else if (!e.shiftKey && document.activeElement === last) {
+        e.preventDefault();
+        first.focus();
+      }
+    };
+    panel.addEventListener('keydown', onKey);
+
+    return () => {
+      panel.removeEventListener('keydown', onKey);
+      // Only reclaim focus if it is still inside the drawer being unmounted;
+      // otherwise a visitor who clicked elsewhere gets yanked back.
+      if (document.activeElement && panel.contains(document.activeElement)) {
+        document.getElementById(TOGGLE_ID)?.focus();
+      }
+    };
+  }, [open]);
 
   return (
     <AnimatePresence>
       {open && (
         <m.div
+          ref={panelRef}
+          id={DRAWER_ID}
+          role="dialog"
+          aria-modal="true"
+          aria-label="Menu"
           initial={{ opacity: 0, height: 0 }}
           animate={{ opacity: 1, height: 'auto' }}
           exit={{ opacity: 0, height: 0 }}

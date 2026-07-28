@@ -82,6 +82,21 @@ export function ContactForm() {
     }
   }
 
+  /**
+   * B9. Errors were set on submit and never cleared, so a corrected field kept
+   * its red border and its message until the next submit — the form looked
+   * broken while the visitor was actively fixing it.
+   */
+  function clearError(field: keyof Errors) {
+    setErrors((prev) => {
+      if (!prev[field]) return prev;
+      // Rebuilt by omission rather than `delete`: same result, and it keeps the
+      // object shape static instead of mutating a copy.
+      const { [field]: _cleared, ...rest } = prev;
+      return rest;
+    });
+  }
+
   const fieldBase =
     'w-full rounded-2xl border bg-surface px-4 py-3 text-sm text-fg placeholder:text-muted/70 transition-colors focus:outline-none focus:border-gold';
 
@@ -118,6 +133,9 @@ export function ContactForm() {
             name="name"
             type="text"
             autoComplete="name"
+            onChange={() => {
+              clearError('name');
+            }}
             className={`${fieldBase} ${errors.name ? 'border-red-500' : 'border-border'}`}
             aria-invalid={!!errors.name}
             aria-describedby={errors.name ? 'name-error' : undefined}
@@ -138,6 +156,9 @@ export function ContactForm() {
             name="email"
             type="email"
             autoComplete="email"
+            onChange={() => {
+              clearError('email');
+            }}
             className={`${fieldBase} ${errors.email ? 'border-red-500' : 'border-border'}`}
             aria-invalid={!!errors.email}
             aria-describedby={errors.email ? 'email-error' : undefined}
@@ -170,6 +191,9 @@ export function ContactForm() {
           id="message"
           name="message"
           rows={5}
+          onChange={() => {
+            clearError('message');
+          }}
           className={`${fieldBase} resize-y ${errors.message ? 'border-red-500' : 'border-border'}`}
           aria-invalid={!!errors.message}
           aria-describedby={errors.message ? 'message-error' : undefined}

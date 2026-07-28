@@ -1,5 +1,6 @@
 import { getT } from '@/i18n/server';
 import type { Locale } from '@/i18n/config';
+import { dirFor } from '@/i18n/locale';
 import { TECH_STACK } from '@/lib/site';
 
 /** Infinite tech marquee. Duplicated track keeps the loop seamless.
@@ -7,6 +8,10 @@ import { TECH_STACK } from '@/lib/site';
 export function TechMarquee({ locale }: { locale: Locale }) {
   const t = getT(locale);
   const items = [...TECH_STACK, ...TECH_STACK];
+  // B2: the track always slid left, so in Arabic it ran against the reading
+  // direction. `marquee-rtl` was already defined in tailwind.config.ts and
+  // simply never wired up.
+  const rtl = dirFor(locale) === 'rtl';
 
   return (
     <section
@@ -17,7 +22,12 @@ export function TechMarquee({ locale }: { locale: Locale }) {
         {/* edge fades */}
         <div className="pointer-events-none absolute inset-y-0 start-0 z-10 w-16 bg-gradient-to-r from-bg to-transparent rtl:bg-gradient-to-l" />
         <div className="pointer-events-none absolute inset-y-0 end-0 z-10 w-16 bg-gradient-to-l from-bg to-transparent rtl:bg-gradient-to-r" />
-        <div className="flex w-max animate-marquee gap-10 motion-reduce:animate-none">
+        <div
+          data-marquee-track
+          className={`flex w-max gap-10 motion-reduce:animate-none ${
+            rtl ? 'animate-marquee-rtl' : 'animate-marquee'
+          }`}
+        >
           {items.map((tech, i) => (
             <span
               key={`${tech}-${i}`}

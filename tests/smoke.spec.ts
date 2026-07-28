@@ -9,11 +9,15 @@ import { dictionaries } from '../src/i18n/dictionaries';
  */
 const THEME_TOGGLE_NAME = new RegExp(
   `^(${Object.values(dictionaries)
-    .flatMap((dict) => [dict.theme.toLight, dict.theme.toDark])
-    .map((label) => label.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'))
+    .map((dict) => dict.theme.toggle.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'))
     .join('|')})$`,
   'i',
 );
+
+/** Exact-match matcher for one localized label. */
+function label(text: string): RegExp {
+  return new RegExp(`^${text.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}$`, 'i');
+}
 
 test('home page renders a single h1 and the hero CTAs', async ({ page }) => {
   await page.goto('/');
@@ -263,6 +267,138 @@ test.describe('deployed security and cache headers', () => {
     );
     expect(colorScheme).toMatch(/^(dark|light)$/);
     expect(violations).toEqual([]);
+  });
+});
+
+/**
+ * The bug register from the design spec, §2. Each of these failed before Task
+ * 14 and is named after the entry it closes, so a future regression points
+ * straight back at the original report.
+ */
+test.describe('bug register', () => {
+  test('B1: resizing past the lg breakpoint with the drawer open restores scrolling', async ({
+    page,
+  }) => {
+    await page.setViewportSize({ width: 390, height: 844 });
+    await page.goto('/ar');
+    await page.getByRole('button', { name: /menu/i }).click();
+    await expect(page.getByRole('dialog')).toBeVisible();
+
+    await page.setViewportSize({ width: 1280, height: 800 });
+
+    // The drawer is hidden by `lg:hidden` at this width, so a stranded
+    // `overflow: hidden` would lock the page with nothing on screen to explain
+    // why — the visitor simply cannot scroll.
+    await expect
+      .poll(async () => page.evaluate(() => document.body.style.overflow))
+      .not.toBe('hidden');
+  });
+
+  test('B2: the marquee scrolls right-to-left in Arabic', async ({ page }) => {
+    await page.goto('/ar');
+    const name = await page
+      .locator('[data-marquee-track]')
+      .evaluate((el) => getComputedStyle(el).animationName);
+    expect(name).toContain('marquee-rtl');
+  });
+
+  test('B2: the marquee scrolls left-to-right in English', async ({ page }) => {
+    await page.goto('/en');
+    const name = await page
+      .locator('[data-marquee-track]')
+      .evaluate((el) => getComputedStyle(el).animationName);
+    expect(name).toMatch(/^marquee/);
+    expect(name).not.toContain('marquee-rtl');
+  });
+
+  test('B4: the theme toggle icon matches the stored theme on first paint', async ({
+    page,
+    context,
+  }) => {
+    await context.addInitScript(() => {
+      try {
+        window.localStorage.setItem('bc-theme', 'light');
+      } catch {}
+    });
+    const hydrationErrors: string[] = [];
+    page.on('console', (message) => {
+      if (message.type() === 'error' && /hydrat/i.test(message.text())) {
+        hydrationErrors.push(message.text());
+      }
+    });
+
+    await page.goto('/ar');
+
+    // Stored theme is light, so the moon (the move to dark) must be the icon on
+    // screen from the first paint. Both icons are in the DOM and CSS picks one,
+    // so this is a real check of what the visitor sees.
+    await expect(page.locator('button[aria-label] svg.dark\\:hidden')).toBeVisible();
+    await expect(page.locator('button[aria-label] svg.dark\\:block')).toBeHidden();
+
+    // And it must arrive without a hydration mismatch. Deriving the icon from
+    // React state — in either direction — produced React error #418 here,
+    // which makes React discard the server HTML and re-render the whole tree.
+    expect(hydrationErrors).toEqual([]);
+  });
+
+  test('B7: the mobile drawer traps focus and closes on Escape', async ({ page }) => {
+    await page.setViewportSize({ width: 390, height: 844 });
+    await page.goto('/ar');
+    await page.getByRole('button', { name: /menu/i }).click();
+
+    const drawer = page.getByRole('dialog');
+    await expect(drawer).toBeVisible();
+
+    // Focus must be inside the drawer, not left behind on the page underneath.
+    await expect
+      .poll(async () =>
+        page.evaluate(() => document.activeElement?.closest('[role="dialog"]') != null),
+      )
+      .toBe(true);
+
+    await page.keyboard.press('Escape');
+    await expect(drawer).toBeHidden();
+  });
+
+  test('B8: the language menu is keyboard navigable and returns focus', async ({
+    page,
+  }) => {
+    await page.goto('/en');
+    const trigger = page.getByRole('button', {
+      name: label(dictionaries.en.language.switch),
+    });
+    await trigger.click();
+    await expect(page.getByRole('menu')).toBeVisible();
+
+    await page.keyboard.press('ArrowDown');
+    await expect
+      .poll(async () => page.evaluate(() => document.activeElement?.getAttribute('role')))
+      .toBe('menuitemradio');
+
+    await page.keyboard.press('Escape');
+    await expect(page.getByRole('menu')).toBeHidden();
+    // Focus back on the trigger, or a keyboard visitor is dumped at the top of
+    // the document with no idea where they are.
+    await expect(trigger).toBeFocused();
+  });
+
+  test('B9: a field error clears once the field is corrected', async ({ page }) => {
+    await page.goto('/en');
+    await page.locator('#contact').scrollIntoViewIfNeeded();
+    await page
+      .getByRole('button', { name: label(dictionaries.en.contact.form.send) })
+      .click();
+    await expect(page.locator('#name-error')).toBeVisible();
+    await page.locator('#name').fill('Bay Cheikh');
+    await expect(page.locator('#name-error')).toBeHidden();
+  });
+
+  test('B10: only the header logo is preloaded', async ({ page }) => {
+    await page.goto('/ar');
+    // The footer copy is offscreen at load; preloading it competes with the LCP
+    // image for early bandwidth.
+    const preloads = await page.locator('link[rel="preload"][as="image"]').count();
+    expect(preloads).toBeLessThanOrEqual(1);
   });
 });
 

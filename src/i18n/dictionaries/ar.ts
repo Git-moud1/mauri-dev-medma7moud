@@ -15,8 +15,7 @@ const ar: Dictionary = {
     cta: 'لنتحدث',
   },
   theme: {
-    toLight: 'التبديل إلى الوضع الفاتح',
-    toDark: 'التبديل إلى الوضع الداكن',
+    toggle: 'تبديل الوضع الفاتح/الداكن',
   },
   language: {
     switch: 'تغيير اللغة',

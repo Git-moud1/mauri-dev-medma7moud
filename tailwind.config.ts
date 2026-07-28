@@ -33,6 +33,18 @@ const config: Config = {
           3: 'rgb(var(--brand-3) / <alpha-value>)',
         },
       },
+      /**
+       * B18. `globals.css` used to carry `* { border-color: rgb(var(--border)) }`
+       * to theme every bare `border` utility. Tailwind's preflight already
+       * emits a universal border-colour rule — it just defaults to gray-200 —
+       * so the two were fighting over the same declaration on every element in
+       * the document. Setting the default here makes preflight emit the themed
+       * value directly, and the author-level duplicate is gone. Deleting the
+       * reset without this would have turned every bare `border` gray.
+       */
+      borderColor: {
+        DEFAULT: 'rgb(var(--border) / <alpha-value>)',
+      },
       // Nested var() fallbacks, not side-by-side families: only the active
       // locale's variables are defined, and one undefined var() invalidates the
       // entire font-family declaration. See the note in globals.css.
