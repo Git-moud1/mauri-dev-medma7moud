@@ -656,3 +656,91 @@ this path, since local runs have no Blobs runtime.
    affected; they call `updateTag` and expire immediately.
 
 **Next:** Task 11 — secret audit and bundle isolation.
+
+---
+
+## Task 11 — secret audit and bundle isolation
+
+No source changed. One new `test.describe` in `tests/smoke.spec.ts`, and this
+block.
+
+**Secret audit — clean, and the greps are recorded so they can be re-run**
+
+| Check                                                                                        | Result                                                                                                                                     |
+| -------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------ |
+| `NEXT_PUBLIC_` other than `NEXT_PUBLIC_SITE_URL`                                             | none                                                                                                                                       |
+| assigned `ADMIN_PASSWORD_HASH` / `ADMIN_PASSWORD` / `AUTH_SECRET` in tracked files           | test fixtures in `tests/auth.spec.ts`, the plan document, and the generator writing into the gitignored `.env.admin.local`. No real value. |
+| `.env*` tracked by git                                                                       | `.env.example` only, all values empty                                                                                                      |
+| `argon2` / `AUTH_SECRET` / `ADMIN_PASSWORD` in `.next/static/`                               | clean                                                                                                                                      |
+| `jose` / `@netlify/blobs` / `blobStore` / `verifyPassword` / `md-session` in `.next/static/` | clean — no server-only module reached a client chunk at all                                                                                |
+
+**Bundle isolation — the constraint is MISSED by 1.2 KB, and here is exactly why**
+
+Plan 2's global constraint says the admin "must not add a single byte to the
+public page's first load," and the expected figure was 236.1 KB. Measured:
+
+| Build                                         | `/ar` first-load JS, gzipped | chunks |
+| --------------------------------------------- | ---------------------------- | ------ |
+| current `feat/v2`                             | **237.3 KB**                 | 12     |
+| identical tree with `src/app/(admin)` removed | **236.1 KB**                 | 11     |
+
+So the admin does cost the public page 1.2 KB. The plan says find it before
+shipping, so it was found rather than rounded away.
+
+It is **not admin code**. Two independent checks:
+
+1. The admin's UI copy (`Discard unsaved changes?`, `No projects yet`, the
+   category/frame helper text) appears in exactly two chunks,
+   `38pohi52w09tp.js` and `3jr__l5mn6xbh.js`, and `/ar` references neither.
+2. Uncompressed, the same 11 vs 12 chunk sets are **786,200 vs 786,349 bytes** —
+   a difference of **149 bytes**, which is Turbopack's registration preamble for
+   one additional chunk.
+
+149 bytes of real code becomes 1,229 bytes on the wire because gzip compresses
+each chunk independently: an extra chunk boundary is an extra dictionary reset.
+Adding a second client entrypoint changes how Turbopack splits the shared graph,
+and the public page pays the compression overhead of the finer split.
+
+**Recommendation: accept it.** The only ways to recover 1.2 KB are to merge the
+admin into the public chunk graph — which is the failure this constraint exists
+to prevent — or to delete the admin. Recording 236.1 KB would have been the
+easy, false answer; 237.3 KB is the number, and the constraint is stated as
+missed rather than reinterpreted.
+
+**The test, and its red-green**
+
+`admin bundle isolation`, PROTECTED, three tests. It reads every `script[src]`
+the public page loads, fetches each one, and asserts none contains admin-only UI
+copy — string literals rather than identifiers, because a minifier renames
+identifiers and leaves literals alone. Plus: no public locale links to `/admin`.
+
+The plan proposed `expect(await page.content()).not.toContain('/admin')`. That
+was not implemented as written, deliberately: it inspects the hydrated DOM, not
+the delivered JavaScript, so it would pass on a build that shipped the entire
+dashboard to every visitor. It is also a bare substring match on a string
+common enough to false-positive.
+
+Red-green verified rather than assumed: adding
+`data-red-green="Discard unsaved changes?"` to `islands/FloatingWhatsApp.tsx`
+and rebuilding failed the test on both `/ar` and `/en`; reverting turned it
+green. A test that has never been seen to fail is not a gate.
+
+**Found while measuring, not fixed here**
+
+- **`measure-bundle.mjs` reports `Fonts (0 referenced) — 0.0 KB` on `/ar`.**
+  It only counts `/_next/static/media`, and Tajawal has been self-hosted under
+  `/fonts` since task 2. This is the harness biasing a number downward, which is
+  the exact failure `scripts/port.mjs` was written to stop. The e2e suite counts
+  both locations and is unaffected. Carried into task 12, where the font figures
+  get re-stated.
+- **`npm audit` is now 15, not 12** — 12 high (`sharp`/libvips, `next`'s bundled
+  copy) plus 3 moderate: postcss `GHSA-6g55-p6wh-862q` and
+  `GHSA-r28c-9q8g-f849`, also reached through `next`. Top-level `sharp@^0.35.3`
+  is above the vulnerable range; only `next/node_modules/sharp` is flagged.
+  `npm audit fix --force` still proposes `next@9.3.3`. Documented, not applied.
+
+**Build status:** `npx tsc --noEmit` clean · `npm run lint` clean, zero warnings
+· `npm run build` passes, `/[locale]` still SSG · `npm run test:e2e`
+**148 passed, 14 skipped**.
+
+**Next:** Task 12 — deploy verification and documentation.

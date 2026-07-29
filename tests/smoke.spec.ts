@@ -549,3 +549,67 @@ test.describe('font swap layout stability', () => {
     });
   }
 });
+
+/**
+ * PROTECTED TESTS — do not weaken, skip, or delete.
+ *
+ * The admin is a second root layout in its own route group specifically so its
+ * client code never lands on the public critical path. Nothing enforces that
+ * but this test: a single shared `'use client'` module — one primitive, one
+ * toast helper — is enough for Turbopack to hoist admin code into a chunk the
+ * public page already loads, and the only symptom would be a bundle number
+ * nobody re-measures.
+ *
+ * The plan proposed `expect(await page.content()).not.toContain('/admin')`.
+ * That is not this test and it is not equivalent: `page.content()` is the
+ * hydrated DOM, the substring matches any URL that merely contains "/admin",
+ * and it says nothing at all about what is inside the chunks. It would pass on
+ * a build that shipped the entire dashboard to every visitor. So the assertion
+ * reads the delivered JavaScript instead.
+ */
+test.describe('admin bundle isolation', () => {
+  /**
+   * Strings that exist only in admin client components. Deliberately UI copy
+   * rather than identifiers: a minifier renames identifiers and leaves string
+   * literals alone, so these survive a production build.
+   */
+  const ADMIN_ONLY_MARKERS = [
+    'Discard unsaved changes?',
+    'Filter pills and lightbox layout.',
+    'Card cover only. Not the category.',
+    'No projects yet',
+  ] as const;
+
+  for (const locale of ['ar', 'en'] as const) {
+    test(`/${locale} loads no JavaScript containing admin code`, async ({ page }) => {
+      await page.goto(`/${locale}`);
+
+      const sources = await page.evaluate(() =>
+        [...document.querySelectorAll('script[src]')].map(
+          (s) => s.getAttribute('src') ?? '',
+        ),
+      );
+      // A public page with no scripts would pass every assertion below while
+      // proving nothing, so establish that there is something to inspect.
+      expect(sources.length, 'no scripts on the page to inspect').toBeGreaterThan(0);
+
+      for (const src of sources) {
+        const body = await (await page.request.get(src)).text();
+        for (const marker of ADMIN_ONLY_MARKERS) {
+          // Asserted on the boolean, not on `body`, so a failure reports the
+          // chunk name and the marker instead of printing the whole bundle.
+          expect(body.includes(marker), `${src} carries admin code: ${marker}`).toBe(
+            false,
+          );
+        }
+      }
+    });
+  }
+
+  test('the public pages never link to the admin', async ({ page }) => {
+    for (const locale of ['ar', 'en', 'fr'] as const) {
+      await page.goto(`/${locale}`);
+      await expect(page.locator('a[href^="/admin"], a[href*="/admin/"]')).toHaveCount(0);
+    }
+  });
+});
