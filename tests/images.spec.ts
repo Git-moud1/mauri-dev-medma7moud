@@ -1,4 +1,6 @@
 import { test, expect } from '@playwright/test';
+import { readFileSync } from 'node:fs';
+import { resolve } from 'node:path';
 import sharp from 'sharp';
 import {
   sniffImageType,
@@ -100,5 +102,77 @@ test.describe('upload processing', () => {
 
   test('media keys are namespaced by project and width', () => {
     expect(mediaKey('skin-beauty', 'cover', 800)).toBe('skin-beauty/cover-800.webp');
+  });
+
+  /**
+   * `.jfif` is not a format. JFIF is the ordinary JPEG container, so a `.jfif`
+   * file is a JPEG with a less common extension — which is why the sniffer must
+   * never have been the thing rejecting it, and why nothing here passes a name.
+   */
+  test('a JFIF-marked JPEG sniffs as jpeg regardless of its extension', async () => {
+    const jpeg = await sharp(await png()).jpeg().toBuffer();
+    expect(sniffImageType(jpeg)).toBe('jpeg');
+
+    // The APP0 'JFIF\0' segment spelled out, in case sharp ever stops emitting
+    // it: this is the exact byte sequence a `.jfif` from an old camera carries.
+    const app0 = Buffer.concat([
+      Buffer.from([0xff, 0xd8, 0xff, 0xe0, 0x00, 0x10]),
+      Buffer.from('JFIF\0', 'ascii'),
+      jpeg.subarray(2),
+    ]);
+    expect(sniffImageType(app0)).toBe('jpeg');
+  });
+
+  test('a JFIF-marked JPEG processes end to end', async () => {
+    const result = await processUpload(await sharp(await png()).jpeg().toBuffer());
+    expect(result.widths.length).toBeGreaterThan(0);
+    expect(result.blurDataURL).toMatch(/^data:image\/webp;base64,/);
+  });
+
+  test('sniffs a real AVIF', async () => {
+    expect(
+      sniffImageType(await sharp(await png(64, 64)).avif({ effort: 0 }).toBuffer()),
+    ).toBe('avif');
+  });
+
+  test('a buffer too short to hold a signature is not an image', () => {
+    expect(sniffImageType(Buffer.from([0xff, 0xd8, 0xff]))).toBeNull();
+  });
+
+  /** A genuinely unsupported format must say what *is* supported. */
+  test('rejects a GIF with a message naming the accepted formats', async () => {
+    const gif = await sharp(await png(32, 32)).gif().toBuffer();
+    await expect(processUpload(gif)).rejects.toThrow(/JPEG, PNG, WebP or AVIF/);
+  });
+});
+
+/**
+ * Three limits have to agree or uploads fail in a way the app cannot report.
+ *
+ * This is the regression guard for the bug this suite was extended for. Next
+ * rejects a Server Action body over `serverActions.bodySizeLimit` with a 413
+ * raised *before* the action runs, and Netlify drops a buffered function
+ * request over 6 MB — base64 on the way in, so ~4.5 MB of actual file. Either
+ * one fires and `uploadImage` never returns `{ ok: false }`; the caller gets a
+ * rejected promise instead of a message. So the app's own ceiling must be the
+ * lowest of the three, and that is what is asserted here rather than assumed.
+ */
+test.describe('upload size limits agree', () => {
+  const NETLIFY_BINARY_REQUEST_CEILING = 4.5 * 1024 * 1024;
+
+  function configuredBodySizeLimitBytes(): number {
+    const source = readFileSync(resolve(process.cwd(), 'next.config.mjs'), 'utf8');
+    const match = /bodySizeLimit:\s*'(\d+(?:\.\d+)?)(kb|mb)'/i.exec(source);
+    if (!match) throw new Error('no serverActions.bodySizeLimit found in next.config.mjs');
+    const [, size, unit] = match;
+    return Number(size) * 1024 * (unit?.toLowerCase() === 'mb' ? 1024 : 1);
+  }
+
+  test("the app's limit is below Next's Server Action body limit", () => {
+    expect(MAX_UPLOAD_BYTES).toBeLessThan(configuredBodySizeLimitBytes());
+  });
+
+  test("the app's limit is below Netlify's buffered binary request ceiling", () => {
+    expect(MAX_UPLOAD_BYTES).toBeLessThan(NETLIFY_BINARY_REQUEST_CEILING);
   });
 });

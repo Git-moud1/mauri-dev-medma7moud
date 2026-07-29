@@ -5,6 +5,7 @@ import Image from 'next/image';
 import { uploadImage } from '../upload/actions';
 import { useToast } from '../ui/Toaster';
 import { Button, IconButton, EmptyState } from '../ui/primitives';
+import { MAX_UPLOAD_BYTES, MAX_UPLOAD_LABEL } from '@/lib/images/limits';
 
 /**
  * The media section.
@@ -97,23 +98,49 @@ export function MediaGrid({ projectId, items, cover, onChange }: Props) {
           const id = nextPendingId.current++;
           setPending((current) => [...current, { id, name: file.name }]);
 
+          // The failure stays on screen against the filename that caused it,
+          // rather than vanishing into a toast that names no file.
+          const fail = (error: string) => {
+            setPending((current) =>
+              current.map((item) => (item.id === id ? { ...item, error } : item)),
+            );
+          };
+
+          // Checked here as well as on the server, because over the limit the
+          // server never gets to answer: the request dies in the framework or
+          // at the CDN and the call below throws instead of returning. Catching
+          // that is the fix directly beneath; refusing to send it is the fix
+          // that gives an accurate message.
+          if (file.size > MAX_UPLOAD_BYTES) {
+            fail(
+              `${(file.size / 1024 / 1024).toFixed(1)} MB — the limit is ${MAX_UPLOAD_LABEL}.`,
+            );
+            return;
+          }
+
           const formData = new FormData();
           formData.set('projectId', projectId);
           formData.set('file', file);
 
-          const result = await uploadImage(formData);
+          let result;
+          try {
+            result = await uploadImage(formData);
+          } catch {
+            // A Server Action can reject rather than return: a 413 or 502 from
+            // an oversized body, a dropped connection, a cold-start timeout.
+            // Without this the rejection escaped through `Promise.all` into the
+            // un-awaited `void upload(…)` and the row span "Uploading…" for
+            // ever — a silent failure, which is a worse bug than the upload
+            // failing.
+            fail('Upload failed — the server did not respond. Try again.');
+            return;
+          }
 
           if (result.ok) {
             accepted.push({ path: result.path, blurDataURL: result.blurDataURL });
             setPending((current) => current.filter((item) => item.id !== id));
           } else {
-            // The failure stays on screen against the filename that caused it,
-            // rather than vanishing into a toast that names no file.
-            setPending((current) =>
-              current.map((item) =>
-                item.id === id ? { ...item, error: result.error } : item,
-              ),
-            );
+            fail(result.error);
           }
         }),
       );
@@ -148,7 +175,7 @@ export function MediaGrid({ projectId, items, cover, onChange }: Props) {
       >
         <p className="text-sm text-fg">Drop images here</p>
         <p className="mt-1 text-xs text-muted">
-          JPEG, PNG, WebP or AVIF · up to 5 MB each
+          JPEG, PNG, WebP or AVIF · up to {MAX_UPLOAD_LABEL} each
         </p>
         <Button
           className="mt-4"
@@ -163,7 +190,20 @@ export function MediaGrid({ projectId, items, cover, onChange }: Props) {
         <input
           ref={inputRef}
           type="file"
-          accept="image/jpeg,image/png,image/webp,image/avif"
+          /**
+           * `image/*`, not a list of the four types this accepts.
+           *
+           * `accept` filters the OS picker by the MIME the *operating system*
+           * maps an extension to, and that mapping is full of holes: on the
+           * Windows box this was found on, `.jfif` maps to `image/jpeg` but
+           * `.webp` and `.avif` map to nothing at all, so a precise list grays
+           * out real WebP files while a `.jfif` JPEG was blocked on other
+           * machines. The whitelist was never the security boundary anyway —
+           * `sniffImageType` reads the leading bytes server-side and the picker
+           * cannot be trusted for anything. So let anything image-shaped be
+           * chosen and let the sniffer give a straight answer about it.
+           */
+          accept="image/*"
           multiple
           className="hidden"
           onChange={(event) => {

@@ -100,6 +100,23 @@ const PUBLIC_CSP = [
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   reactStrictMode: true,
+  experimental: {
+    serverActions: {
+      /**
+       * Image uploads go through a Server Action, and this limit defaults to
+       * 1 MB — well under the size the media grid advertised. Over it, Next
+       * rejects the request with a 413 *before* the action body runs, so
+       * `uploadImage` never returns its `{ ok: false }` and the caller sees a
+       * thrown response instead of an error message. Reproduced on
+       * deploy-preview-1 with a 3.41 MB JPEG.
+       *
+       * Set above `MAX_UPLOAD_BYTES` so the app's own check is the one that
+       * reports, not the framework's. The real ceiling above this is Netlify's
+       * 6 MB buffered-request cap; see src/lib/images/limits.ts.
+       */
+      bodySizeLimit: '5mb',
+    },
+  },
   images: {
     // Next 16 defaults images.qualities to [75] and returns 400 for a direct
     // API request with an unlisted quality. The project renders cards at 70,

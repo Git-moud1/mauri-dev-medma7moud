@@ -18,11 +18,8 @@ import { verify } from '@node-rs/argon2';
  * which is exactly what makes this a nasty bug to find: it breaks locally and
  * works in production. A raw value is therefore still accepted, so a variable
  * set by hand in the dashboard does not silently fail.
- *
- * TEMPORARY: `export` is for `./diagnostics`. Make this private again when the
- * diagnostics are removed.
  */
-export function storedHash(): string | null {
+function storedHash(): string | null {
   const raw = process.env.ADMIN_PASSWORD_HASH;
   if (!raw) return null;
   if (raw.startsWith('$argon2')) return raw;

@@ -2,12 +2,8 @@
 
 import { getStore } from '@netlify/blobs';
 import { requireSession } from '../actions';
-import {
-  processUpload,
-  mediaKey,
-  slugifyFilename,
-  MAX_UPLOAD_BYTES,
-} from '@/lib/images/process';
+import { processUpload, mediaKey, slugifyFilename } from '@/lib/images/process';
+import { MAX_UPLOAD_BYTES, MAX_UPLOAD_LABEL } from '@/lib/images/limits';
 import { MEDIA_STORE } from '@/lib/images/store';
 
 /** FormDataEntryValue is `string | File`; a File stringifies to "[object File]". */
@@ -43,7 +39,7 @@ export async function uploadImage(formData: FormData): Promise<UploadResult> {
   if (file.size > MAX_UPLOAD_BYTES) {
     return {
       ok: false,
-      error: `${file.name} is ${(file.size / 1024 / 1024).toFixed(1)} MB — the limit is 5 MB.`,
+      error: `${file.name} is ${(file.size / 1024 / 1024).toFixed(1)} MB — the limit is ${MAX_UPLOAD_LABEL}.`,
     };
   }
 
