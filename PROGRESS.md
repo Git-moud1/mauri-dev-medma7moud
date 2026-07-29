@@ -837,14 +837,72 @@ needs a deploy).
 **Build status:** tsc clean · lint clean, zero warnings · build passes,
 `/[locale]` still SSG · `npm run test:e2e` **148 passed, 14 skipped**.
 
-**Task 12b — NOT DONE. Needs a push and a rebuilt preview:**
+---
 
-1. The full admin flow on the preview, each change appearing on the public site
-   with no redeploy.
-2. `PLAYWRIGHT_BASE_URL=<preview> npm run test:headers`, including the two
-   `/admin` tests that were expected-red in task 1.
-3. `node scripts/measure-cls.mjs <preview>/ar`, recorded against the 0.059.
-4. The rate limit: six wrong passwords from one IP, on the preview only.
+## Task 12b — deploy verification
 
-Steps 1 and 4 also need `ADMIN_PASSWORD_HASH` and `AUTH_SECRET` set in the
-Netlify dashboard, which is an owner action.
+Branch pushed (`7fa7ae9`), preview rebuilt and green:
+https://deploy-preview-1--medmoudsite.netlify.app
+
+**Step 2 — the header suite: 7/7 pass.**
+
+Including the two `/admin` tests that task 1 recorded as expected-red until the
+admin existed. `/ar`, `/en`, `/fr` and `/admin` all carry CSP, HSTS, nosniff,
+`Referrer-Policy` and `Permissions-Policy`; static assets stay `immutable`; the
+no-flash script still runs under the policy. Nothing was weakened to get here.
+
+**Step 3 — CLS on the deploy, three runs.**
+
+| Route | plan 1 (the defect)   | now                          |
+| ----- | --------------------- | ---------------------------- |
+| `/ar` | 0.059 / 0.062 / 0.000 | **0.0000 / 0.0000 / 0.0000** |
+| `/en` | 0.000                 | 0.0004                       |
+
+Zero shift entries recorded on `/ar` on all three runs. Task 2's fix holds on a
+real deploy, which is the only place this defect was ever visible.
+
+**Steps 1 and 4 — NOT VERIFIED, and stated as such.**
+
+`ADMIN_PASSWORD_HASH` and `AUTH_SECRET` are not set in Netlify (owner action,
+task 4 step 10). Without them no sign-in can succeed, so the full admin flow and
+the rate-limit lockout could not be exercised. They are not "probably fine" —
+they are untested on a deploy.
+
+Note that this cannot be detected from outside, and that is the auth working as
+designed: `verifyPassword` fails closed on a missing hash, so an unset variable
+and a wrong password are indistinguishable to a client. Do not read a rejected
+login on the preview as evidence either way.
+
+What _was_ verified without credentials:
+
+| Probe                  | Result                                                   |
+| ---------------------- | -------------------------------------------------------- |
+| `GET /admin`           | 200, `x-robots-tag: noindex, nofollow, noindex`          |
+| `GET /admin/dashboard` | **307 → `/admin`** — the proxy guard works on the deploy |
+| `GET /robots.txt`      | 200, allows `/`, disallows `/admin` and `/api/`          |
+
+The doubled `noindex` is ours plus Netlify's own preview header. Harmless, and
+it disappears on production where only ours applies.
+
+**One real defect found while probing, not fixed here.**
+
+`robots.txt` advertises `https://medmoudsite.netlify.app/sitemap.xml` and that
+URL **404s** — on the preview and on the live site. `robots.ts` was written in
+task 5 pointing at a sitemap that plan 2 was never going to generate. It is
+harmless in the sense that no crawler is misled about content, but it is a
+broken reference in a file whose entire job is telling crawlers the truth.
+`sitemap.ts` is plan 3 work (the rest of B13); this is one more reason it should
+not slip.
+
+**Still unverified after all of plan 2, and only production can settle it:**
+
+- **Lighthouse SEO.** The preview carries `X-Robots-Tag: noindex`, so its score
+  of 66 is an artifact and says nothing. Re-run after merge.
+- **LCP.** `MIGRATION.md` §2 has never resolved this against a clean target.
+- Steps 1 and 4 above, once the two environment variables exist.
+
+**Owner action outstanding:** two verification form submissions from
+2026-07-28 15:52 UTC still need deleting from Netlify → Forms → contact.
+
+**Plan 2 is complete**, with tasks 12b steps 1 and 4 explicitly outstanding on
+the owner's side rather than silently skipped.

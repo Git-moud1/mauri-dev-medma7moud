@@ -343,21 +343,53 @@ flattering direction.
 
 ---
 
-## 10. Still requiring a deploy
+## 10. Deploy verification — what passed, and what is still untested
 
-Everything below needs `git push`, a rebuilt Netlify preview, and
-`ADMIN_PASSWORD_HASH` / `AUTH_SECRET` set in the Netlify dashboard.
+Measured against the rebuilt preview at commit `7fa7ae9`:
+https://deploy-preview-1--medmoudsite.netlify.app
 
-1. The full admin flow against the preview: sign in, create a project with images in all three
-   languages, reorder it, edit the WhatsApp number, add a social link, delete the project —
-   each change appearing on the public site **without a redeploy**.
-2. `PLAYWRIGHT_BASE_URL=<preview> npm run test:headers`, including the two `/admin` tests that
-   were expected-red in task 1.
-3. `node scripts/measure-cls.mjs <preview>/ar`, recorded next to the 0.059 task 2 set out to fix.
-4. The rate limit: six wrong passwords from one IP, the sixth returning the lockout message and
-   a correct password refused until the window expires. **On the preview, not production** — it
-   locks that IP out for fifteen minutes.
-5. **Lighthouse SEO on production after merge.** The preview carries `X-Robots-Tag: noindex`, so
-   the 66 it scores there is an artifact and the category remains genuinely unverified.
+| Check                             | Result                                                               |
+| --------------------------------- | -------------------------------------------------------------------- |
+| `npm run test:headers` (preview)  | **7/7 pass**, including both `/admin` tests — see §4                 |
+| CLS on `/ar`, three runs          | **0.0000 / 0.0000 / 0.0000** against plan 1's 0.059 / 0.062 — see §3 |
+| CLS on `/en`                      | 0.0004                                                               |
+| `GET /admin/dashboard` signed out | **307 → `/admin`** — the proxy guard works on the deploy             |
+| `GET /admin`                      | 200 with `x-robots-tag: noindex, nofollow`                           |
+| `GET /robots.txt`                 | 200, disallows `/admin` and `/api/`                                  |
+| Full admin CRUD flow              | **NOT VERIFIED** — see below                                         |
+| Rate-limit lockout                | **NOT VERIFIED** — see below                                         |
+
+**Why two checks are unverified.** `ADMIN_PASSWORD_HASH` and `AUTH_SECRET` are not set in the
+Netlify dashboard (owner action). No sign-in can succeed without them, so neither the CRUD flow
+nor the lockout could be exercised. This is not detectable from outside, and that is the auth
+working as designed: `verifyPassword` fails closed on a missing hash, so an unset variable and a
+wrong password look identical to a client. A rejected login on the preview is evidence of
+neither.
+
+To finish them, set both variables (all deploy contexts), then:
+
+1. Sign in on the preview, create a project with images in all three languages, reorder it, edit
+   the WhatsApp number, add a social link, delete the project — each change appearing on the
+   public site **without a redeploy**.
+2. Six wrong passwords in a row from one IP: the sixth returns the lockout message and a correct
+   password is refused until the window expires. **On the preview, not production** — it locks
+   that IP out for fifteen minutes.
+
+**A broken reference found while probing.** `robots.txt` advertises
+`https://medmoudsite.netlify.app/sitemap.xml`, and that URL **404s** on the preview and on the
+live site. `robots.ts` shipped in task 5 pointing at a sitemap plan 2 was never going to
+generate. `sitemap.ts` is plan 3 work; this is one more reason not to let it slip.
+
+**Superseded by the results above, kept for the record:**
+
+1. ~~`PLAYWRIGHT_BASE_URL=<preview> npm run test:headers`, including the two `/admin` tests that
+   were expected-red in task 1.~~ Done — 7/7.
+2. ~~`node scripts/measure-cls.mjs <preview>/ar`.~~ Done — 0.0000 on three runs.
+
+**Only production can settle these:**
+
+- **Lighthouse SEO.** The preview carries `X-Robots-Tag: noindex`, so the 66 it scores there is
+  an artifact and the category remains genuinely unverified. Re-run after merge.
+- **LCP.** §2 has never resolved this against an uncontaminated target.
 
 Full list with context in `docs/superpowers/baseline/2026-07-27-after-plan-1.md`.
