@@ -1157,8 +1157,13 @@ Then:
 
 Report what you saw and this section gets updated from it.
 
-## Pre-existing, untouched
+## The one pre-existing lint error, now fixed
 
-`npm run lint` reports one error in `tests/images.spec.ts:168`
-(`@typescript-eslint/no-base-to-string`). It predates this work and is in a
-file this branch does not modify.
+`npm run lint` reported one error in `tests/images.spec.ts:168`
+(`@typescript-eslint/no-base-to-string`): `String(out)` on an `ArrayBuffer`,
+which has no meaningful `toString`.
+
+The assertion wanted the object tag — `[object SharedArrayBuffer]` is the exact
+string that got written to every media key — so it now reads that tag
+explicitly via `Object.prototype.toString.call(out)`. Same assertion, no
+implicit stringification. `npm run lint` is clean across the repo.

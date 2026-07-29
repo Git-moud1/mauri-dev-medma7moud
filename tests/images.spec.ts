@@ -165,7 +165,9 @@ test.describe('blob payload conversion', () => {
 
     expect(out).toBeInstanceOf(ArrayBuffer);
     expect(out.constructor.name).toBe('ArrayBuffer');
-    expect(String(out)).not.toContain('Shared');
+    // The object tag, read explicitly: `[object SharedArrayBuffer]` is the
+    // exact string that got written to every media key.
+    expect(Object.prototype.toString.call(out)).not.toContain('Shared');
   });
 
   test('survives a Buffer backed by a SharedArrayBuffer', () => {
