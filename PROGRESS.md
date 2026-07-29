@@ -1167,3 +1167,79 @@ The assertion wanted the object tag — `[object SharedArrayBuffer]` is the exac
 string that got written to every media key — so it now reads that tag
 explicitly via `Object.prototype.toString.call(out)`. Same assertion, no
 implicit stringification. `npm run lint` is clean across the repo.
+
+---
+
+# Plan 3 — pre-build investigation
+
+Nothing was built in this block. Two questions were answered before touching the
+hero, because building a heavier hero on top of an unexplained LCP fault hides
+the fault rather than fixing it.
+
+## CORRECTION: the `<h1>` "2.3 s element render delay" is not a fault
+
+`MIGRATION.md` §2 carried this from plan 1 as an open, unexplained defect. It is
+not one. **Do not chase it.** Full measurements and the ruled-out hypotheses are
+in `MIGRATION.md` §11; the short version:
+
+`2.3 s` was **LCP minus TTFB**, and for a text LCP with no image that is just
+time-from-first-byte-to-first-paint — there is no resource to load, so there is
+no resource phase to blame. Naming it an "element render delay on the `<h1>`"
+attributed a whole-document cost to one element. In 4 of 7 runs on `/en` the
+`<h1>` _is_ the FCP element.
+
+Ruled out with evidence: the old `opacity: 0` reveal (gone), font blocking
+(`document.fonts.ready` at ~550 ms; the `<h1>` paints before its webfonts
+finish), main-thread blocking (first long task lands _after_ LCP), the inlined
+RSC payload (all 21 `__next_f.push` scripts sit after the `<h1>`), and byte
+position (7,356 B between header and `<h1>` = 35 ms at 1.6 Mbps).
+
+It is CPU. Same network, only the CPU rate changed:
+
+| Route | CPU  | median LCP − TTFB |
+| ----- | ---- | ----------------- |
+| `/ar` | 4×   | 1750 ms           |
+| `/ar` | none | 549 ms            |
+| `/en` | 4×   | 1402 ms           |
+| `/en` | none | 490 ms            |
+
+**Two consequences for the hero work.** Run-to-run variance exceeds 1 s under
+identical conditions, so A-vs-B must be compared on medians over **≥7 runs** or
+the comparison is noise. And the bottleneck is main-thread time rather than
+bytes, which is worse for three.js than its KB figure suggests.
+
+## B23 — a statically prerendered route is served by a function, and cold-starts at 6.5 s
+
+**Not fixed in plan 3. Logged so it is not forgotten.** This is the largest real
+LCP risk on the site and it dwarfs anything the hero will do: a cold `/ar` was
+measured at **TTFB 6506 ms** against **~370 ms warm**, an 18× spread on a route
+the build reports as SSG (`● /[locale]`).
+
+**Evidence.** `/ar` responds with `Cache-Control: public,max-age=0,must-revalidate`
+and a `Netlify-Vary` listing 8 headers, 3 cookies and 2 query parameters. That is
+the Next.js runtime function answering, not a plain CDN static hit. The build
+output also lists `ƒ Proxy (Middleware)`.
+
+**Hypothesis, in confidence order.**
+
+1. **The proxy matcher is over-broad, and this part looks like plain
+   misconfiguration.** `src/proxy.ts` has only two jobs — redirect exactly `/`,
+   and guard `/admin/*` — but its matcher is
+   `'/((?!api|_next/static|_next/image|favicon.ico|.*\..*).*)'`, which also
+   matches `/ar`, `/en` and `/fr`. Every locale page therefore involves a Node
+   runtime function invocation whose only outcome is `NextResponse.next()`. A
+   matcher of `['/', '/admin/:path*']` would express the same two jobs and take
+   the locale routes out of the function path entirely.
+2. **`Netlify-Vary` fragments the cache.** Each distinct combination of those 13
+   vary keys is its own cache entry, so a first request against any unseen
+   combination misses and pays a cold start. This is emitted by
+   `@netlify/plugin-nextjs` and is structural to the runtime rather than ours.
+
+**Untested, and stated as untested:** narrowing the matcher was not tried, so it
+is not proven that doing so removes the cold TTFB. Hypothesis 1 is a
+misconfiguration and is cheap to test; hypothesis 2 is not ours to configure. The
+honest position is that (1) is very likely contributing and may not be the whole
+story.
+
+**Also still open from plan 2:** `robots.txt` advertises a `sitemap.xml` that
+404s. Both belong to the SEO pass, not here.

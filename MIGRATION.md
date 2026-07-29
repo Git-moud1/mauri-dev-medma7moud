@@ -84,7 +84,10 @@ deploy, and must be re-run after merge.
 **Why the LCP medians are not taken at face value, in either direction.** The
 `<h1>` is the LCP element on both sites, and its breakdown is nearly identical —
 TTFB 248 ms vs 286 ms, element render delay 2276 ms vs 2311 ms. By that measure
-the hero text paints at the same moment. The 6.3–6.9 s figures come from a
+the hero text paints at the same moment. (**Those two figures are whole-document
+time-to-paint, not an `<h1>` defect — see §11.** They are near-identical on v1
+and v2 for the ordinary reason that both parse a similar document on a similarly
+throttled CPU.) The 6.3–6.9 s figures come from a
 later, larger LCP candidate, and the preview's network log shows the cause: at
 ~3.7 s it fetches `pacaembuvar` and `mulishvar` plus `app.netlify.com/cdp/…`,
 which is Netlify's preview instrumentation and is **not served in production**.
@@ -143,10 +146,14 @@ with TBT 40 ms, median 93 across three runs. Only LCP was out of budget, at a
 median 2.80 s against a 2.0 s target.
 
 Worth stating plainly, since it changes what plan 3 should chase: **the site the
-brief described as "noticeably slow on first visit" measures as a fast site with
-one slow element.** Whatever is delaying the `<h1>` — a 2.3 s element render
-delay on _both_ v1 and v2 — is the remaining target, and neither the font work
-nor the JS work moved it.
+brief described as "noticeably slow on first visit" measures as a fast site.**
+Only LCP is out of budget.
+
+> **CORRECTED (plan 3).** This section previously read "a fast site with **one
+> slow element**", and named a "2.3 s element render delay" on the `<h1>` as an
+> unexplained fault to chase. **That was a misreading of the LCP breakdown and
+> there is no `<h1>` fault.** Do not go looking for one. See §11 for the
+> measurements that closed it.
 
 ---
 
@@ -393,3 +400,73 @@ generate. `sitemap.ts` is plan 3 work; this is one more reason not to let it sli
 - **LCP.** §2 has never resolved this against an uncontaminated target.
 
 Full list with context in `docs/superpowers/baseline/2026-07-27-after-plan-1.md`.
+
+---
+
+## 11. CLOSED: the "2.3 s `<h1>` element render delay" was never an `<h1>` fault
+
+§2 carried this as an open, unexplained defect from plan 1 onward, and it was
+about to become the justification for design decisions in plan 3. It is closed
+here, with the measurements, because a wrong open bug is more expensive than no
+bug: it makes future sessions chase a fault that does not exist.
+
+### What the number actually was
+
+`2.3 s` was **LCP minus TTFB**. For a _text_ LCP with no image, that quantity has
+no resource-load phase in it at all — there is nothing to load. It is simply the
+time from the first byte to the first paint, and it includes the render-blocking
+CSS round trip, HTML parse, style, layout and raster. Calling it an "element
+render delay on the `<h1>`" attributed a whole-document cost to one element.
+
+In 4 of 7 runs on `/en`, the `<h1>` **is** the FCP element. There is nothing to
+explain.
+
+### Ruled out, each with evidence
+
+- **The `opacity: 0` reveal.** Gone. `Hero.tsx` is server-rendered with no
+  client JS; the `motion` entrance that once held the `<h1>` at `opacity: 0` was
+  removed and its header comment records why.
+- **Font blocking.** `document.fonts.ready` resolves at ~550 ms, long before
+  paint. On `/en` the `<h1>` paints at 1968 ms while its two webfonts do not
+  finish until 2432 ms and 2505 ms — so it painted in the metric-matched
+  fallback, which is `display: swap` working exactly as intended.
+- **Main-thread blocking.** The first long task lands at 2132 ms on `/ar`,
+  _after_ LCP. There are no long tasks before LCP on either locale.
+- **The inlined RSC flight payload.** It is 59,632 B across 21 `__next_f.push`
+  scripts — 42.6% of a 140 KB document, which is worth knowing — but **all 21
+  sit after the `<h1>`** (h1 at byte 8,918; first push at byte 74,135). None of
+  it blocks the headline.
+- **Byte position.** Only 7,356 B separate the header logo from the `<h1>`: 35 ms
+  of transfer at 1.6 Mbps. It cannot account for a 300–600 ms gap.
+
+### What it is: CPU
+
+Live preview, 390×844, slow-4G in every row. **Only the CPU rate changes.**
+
+| Route | CPU         | median LCP − TTFB | median FCP→`<h1>` gap |
+| ----- | ----------- | ----------------- | --------------------- |
+| `/ar` | 4× throttle | **1750 ms**       | 284 ms                |
+| `/ar` | none        | **549 ms**        | 0 ms                  |
+| `/en` | 4× throttle | **1402 ms**       | 0 ms                  |
+| `/en` | none        | **490 ms**        | 0 ms                  |
+
+Roughly 70% of the figure is CPU: parsing and rasterising a 140 KB document on a
+throttled main thread. The remainder is one render-blocking CSS round trip —
+9.1 KB, referenced at byte 449, so it is discovered immediately and that part is
+already optimal.
+
+### Two things this changes for plan 3
+
+1. **Run-to-run variance exceeds 1 second** under identical conditions — the
+   FCP→`<h1>` gap ranged 0→1832 ms across 7 runs. Any single-run before/after
+   number is noise. Hero concepts must be compared on medians over **≥7 runs**.
+2. **The bottleneck is main-thread time, not bytes.** A three.js hero costs most
+   in parse/compile on the exact resource that is already the constraint, which
+   is worse for this site than its KB figure suggests.
+
+Measured with an ad-hoc Playwright + CDP probe (`Emulation.setCPUThrottlingRate`
+
+- `Network.emulateNetworkConditions`, `PerformanceObserver` on
+  `largest-contentful-paint`, `paint` and `longtask`). The probe was not kept — it
+  is reproducible from this description, and a script that only ever answered one
+  question is not worth maintaining.
