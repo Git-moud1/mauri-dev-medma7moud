@@ -3,6 +3,8 @@ import { dirFor } from '@/i18n/locale';
 import type { Locale } from '@/i18n/config';
 
 import { ArrowRightIcon, WhatsAppIcon, CodeIcon, SmartphoneIcon } from './Icons';
+import { HeroCanvas } from './hero/HeroCanvas';
+import { LatticePoster } from './hero/LatticePoster';
 
 /**
  * Above-the-fold hero — fully server-rendered, no client JS.
@@ -38,11 +40,28 @@ export function Hero({
 
   return (
     <section id="top" className="relative overflow-hidden pt-32 pb-20 sm:pt-40 sm:pb-28">
-      {/* Ambient background */}
+      {/*
+        The hero's animated layer, and the reason it cannot hurt the headline.
+
+        Everything in here is `absolute inset-0` inside this `relative` section,
+        so the layer has no size of its own to contribute: the box is reserved by
+        construction and no concept can shift the text, whatever it renders.
+
+        Order matters. `LatticePoster` is server-rendered and therefore paints
+        with the `<h1>`; `HeroCanvas` mounts over it after hydration and fades in
+        only once it has drawn a frame. A visitor whose device declines WebGL,
+        asks for reduced motion, or has save-data on keeps the poster and never
+        learns there was supposed to be a canvas.
+
+        The two 120px-blur circles that used to live here are gone. They were a
+        second and third light source, which is exactly what the brief's "one
+        light source, used sparingly" rules out — the glow now comes from inside
+        the composition, where it can actually be attributed to the structure.
+      */}
       <div className="pointer-events-none absolute inset-0 -z-10">
-        <div className="absolute inset-0 grain opacity-60" />
-        <div className="absolute -top-24 start-1/4 h-96 w-96 rounded-full bg-gold/20 blur-[120px]" />
-        <div className="absolute bottom-0 end-1/4 h-80 w-80 rounded-full bg-gold-soft/10 blur-[120px]" />
+        <LatticePoster dir={dir} />
+        <HeroCanvas dir={dir} />
+        <div className="grain absolute inset-0 opacity-60" />
       </div>
 
       <div className="container-x">

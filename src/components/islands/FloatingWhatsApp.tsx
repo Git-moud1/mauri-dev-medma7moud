@@ -27,7 +27,10 @@ export function FloatingWhatsApp({ whatsappUrl }: { whatsappUrl?: string }) {
       transition={{ delay: 0.8, type: 'spring', stiffness: 260, damping: 20 }}
       whileHover={{ scale: 1.08 }}
       whileTap={{ scale: 0.94 }}
-      className={`group fixed bottom-5 z-40 grid h-14 w-14 place-items-center rounded-full bg-[#25D366] text-white shadow-[0_10px_30px_-6px_rgba(37,211,102,0.6)] ${
+      // Same measured fix as the WhatsApp pill: the white mark on this green is
+      // 1.98:1, which fails even the 3:1 bar for non-text graphics. Charcoal on
+      // the same green is 9.86:1.
+      className={`group fixed bottom-5 z-40 grid h-14 w-14 place-items-center rounded-full bg-wa text-wa-fg shadow-[0_10px_30px_-6px_rgb(var(--wa)/0.6)] ${
         dir === 'rtl' ? 'left-5' : 'right-5'
       }`}
     >
