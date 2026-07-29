@@ -3,9 +3,10 @@
  *
  * Next 16's Turbopack build no longer prints the "First Load JS" column, so
  * bundle-budget checks read the real thing instead: fetch the HTML, pull out
- * every script and font it references, and sum their gzipped transfer sizes.
- * That is closer to the number that matters than the old build-table figure,
- * which counted parsed bytes rather than bytes on the wire.
+ * every script it references, load the page in a real browser to see which
+ * fonts it actually downloads, and sum their gzipped transfer sizes. That is
+ * closer to the number that matters than the old build-table figure, which
+ * counted parsed bytes rather than bytes on the wire.
  *
  * For a localhost target this script OWNS the server: it frees the port, starts
  * `next start` itself, measures, and tears it down. It does not measure against
@@ -25,6 +26,7 @@
 import { spawn } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
 import { gzipSync } from 'node:zlib';
+import { chromium } from '@playwright/test';
 import { ensurePortFree } from './port.mjs';
 
 const NEXT_BIN = fileURLToPath(
@@ -58,6 +60,39 @@ async function transferSize(url) {
 
 function unique(values) {
   return [...new Set(values)];
+}
+
+/**
+ * The woff2 files a real browser fetches for this page.
+ *
+ * Scanning the HTML is not enough and scanning the CSS is worse. Since plan 2
+ * task 2 the Arabic faces are self-hosted and discovered through `@font-face`
+ * rules in globals.css, so the HTML mentions only the single preloaded hero
+ * face — which is why this script reported `Fonts (0 referenced) — 0.0 KB` on
+ * /ar while the page was transferring 55.6 KB of Tajawal. Reading the
+ * stylesheet instead would swing the error the other way: globals.css declares
+ * all six Tajawal faces on every route, and /en downloads none of them.
+ *
+ * Only the browser knows which declared faces a page actually uses, so ask it.
+ * A number that is silently zero is the same failure class as a number taken
+ * against a stale server: wrong, and wrong in the flattering direction.
+ */
+async function fontsFetchedBy(url) {
+  const browser = await chromium.launch();
+  try {
+    const page = await browser.newPage();
+    const fetched = new Set();
+    page.on('response', (response) => {
+      if (response.url().endsWith('.woff2') && response.status() === 200) {
+        fetched.add(response.url());
+      }
+    });
+    await page.goto(url, { waitUntil: 'networkidle' });
+    await page.evaluate(() => document.fonts.ready);
+    return [...fetched];
+  } finally {
+    await browser.close();
+  }
 }
 
 const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
@@ -124,7 +159,7 @@ async function main() {
   const html = await pageResponse.text();
 
   const scripts = unique(html.match(/\/_next\/static\/chunks\/[^"'\\\s]+?\.js/g) ?? []);
-  const fonts = unique(html.match(/\/_next\/static\/media\/[^"'\\\s]+?\.woff2/g) ?? []);
+  const fonts = await fontsFetchedBy(target);
   const preloadedFonts = unique(
     [...html.matchAll(/<link[^>]+rel="preload"[^>]+href="([^"]+\.woff2)"/g)].map(
       (m) => m[1],
@@ -132,7 +167,7 @@ async function main() {
   );
 
   const scriptSizes = await Promise.all(scripts.map((p) => transferSize(origin + p)));
-  const fontSizes = await Promise.all(fonts.map((p) => transferSize(origin + p)));
+  const fontSizes = await Promise.all(fonts.map((url) => transferSize(url)));
 
   const jsTotal = scriptSizes.reduce((sum, r) => sum + r.bytes, 0);
   const fontTotal = fontSizes.reduce((sum, r) => sum + r.bytes, 0);
@@ -152,7 +187,7 @@ async function main() {
   console.log(`  ${fmt(jsTotal).padStart(10)}  TOTAL JS`);
 
   console.log(
-    `\nFonts (${fontSizes.length} referenced, ${preloadedFonts.length} preloaded)`,
+    `\nFonts (${fontSizes.length} fetched by the browser, ${preloadedFonts.length} preloaded)`,
   );
   for (const r of [...fontSizes].sort((a, b) => b.bytes - a.bytes)) {
     const name = r.url.split('/').pop();

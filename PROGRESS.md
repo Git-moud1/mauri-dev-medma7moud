@@ -744,3 +744,107 @@ green. A test that has never been seen to fail is not a gate.
 **148 passed, 14 skipped**.
 
 **Next:** Task 12 — deploy verification and documentation.
+
+---
+
+## Task 12a — documentation, and a measurement bug it uncovered
+
+Task 12 has two halves. This is the half that does not need a deploy. The four
+verification steps are listed at the end and are **not done**.
+
+**`scripts/measure-bundle.mjs` was lying about fonts, and had been all plan**
+
+It reported `Fonts (0 referenced) — 0.0 KB` on `/ar`. The scan looked for
+`/_next/static/media/*.woff2` in the HTML, and since task 2 the Arabic faces are
+self-hosted under `/fonts` and discovered through `@font-face` rules in CSS, so
+the HTML mentions only the single preloaded face. Every font figure quoted for
+`/ar` during plan 2 came from the e2e suite instead, which is why nothing
+downstream was wrong — but the harness itself was reporting zero for 55.7 KB of
+transfer. That is the same failure class `scripts/port.mjs` exists to prevent: a
+number that is silently wrong in the flattering direction.
+
+Scanning the stylesheet would have been worse, not better. `globals.css`
+declares all six Tajawal faces on every route and `/en` downloads none of them,
+so a static CSS scan swings the error the other way. Only the browser knows
+which declared faces a page uses, so the script now loads the page in chromium
+and counts what it actually fetches.
+
+| Route | Before this fix  | After           | Cross-check                          |
+| ----- | ---------------- | --------------- | ------------------------------------ |
+| `/ar` | 0.0 KB (0 files) | **55.7 KB** (6) | 55.6 KB recorded in plan 1           |
+| `/en` | 84.8 KB (2)      | **84.8 KB** (2) | unchanged — latin was never affected |
+
+`/ar` also reports 1 preloaded face and `/en` 0, matching the e2e assertion.
+
+**Documentation, verified against the code rather than against the brief**
+
+`README.md`:
+
+- **§2** — `npm run lint` is `eslint .` on ESLint 9 flat, not `next lint`. Node
+  is **20.9+ required**, not "18+ recommended". Added the scripts that existed
+  but were undocumented: `test:e2e`, `test:headers`, `format`, both measurement
+  scripts, `gen-admin-secrets`.
+- **§4/§5** — the admin tree, `src/lib/{content,auth,images}`, `api/media`,
+  `robots.ts`, `public/fonts`, the five new spec files, `.env.example`. Plus the
+  two architectural decisions behind them: content from a tagged, cached store
+  with the bundled data as fallback, and the admin as a second root layout.
+- **§7** — Tajawal is self-hosted with a hand-written metric-matched fallback.
+  The old text credited `next/font/google` for all three families.
+- **§9** — **`dangerouslyAllowSVG` is not in `next.config.mjs`.** Checked rather
+  than assumed: it is absent, and the README describing it as "enabled and
+  fenced" was stale. Recorded as removed, with a note not to reintroduce it.
+- **§11 (new)** — the admin panel and content store: the two content paths and
+  why the bundled files are not dead code, `npx netlify dev` vs `npm run dev`,
+  credential generation, the base64 hash trap, and the security model.
+- **§12** — `robots.ts` **exists**; the README and MIGRATION both still listed it
+  as missing. OG images, JSON-LD and `sitemap.ts` remain open, and the SEO
+  category is still genuinely unverified behind the preview's `noindex`.
+- **§13** — `adjustFontFallback` no longer credited; task 2 proved it does not
+  suppress the bad generated fallback on Next 16. Font figures corrected to the
+  freshly measured 55.7 / 84.8 KB.
+- **§14** — the header split, with the reason stated so it does not get "tidied"
+  back into `netlify.toml`, plus the env-var table and the `unsafe-inline` note.
+- **§15** — the cookbook's "add a project = edit `projects.ts` then `gen:blur`"
+  is no longer the mechanism. Both paths are documented, and the fallback path
+  now says to bump `CACHE_VERSION`, which the old recipe would have missed.
+- **§16** — five gotchas added, each one a defect that actually shipped.
+
+`MIGRATION.md`: §4 rewritten from "open issue" to closed with the 7/7 result;
+§6 gains the admin variables and the dotenv-expand trap; §7's verification table
+and audit figures updated; §8 turned into a status table for the deferred items;
+new §9 (what plan 2 delivered, including the 1.2 KB miss) and §10 (what still
+needs a deploy).
+
+**Two corrections to the brief, both verified before writing**
+
+- `robots.ts` was described as outstanding. It shipped in task 5.
+- `dangerouslyAllowSVG` was described as "still enabled per README §9". It is
+  not in the config; only the README was stale.
+
+**Carried through, unchanged in substance**
+
+- **CSP `script-src 'unsafe-inline'`** — still the one loose directive, and
+  `/admin` exists now. Recommendation is stated in the handoff, not silently
+  left.
+- **`npm audit` is 15, not 12** — 12 high (`sharp`/libvips) plus 3 moderate
+  (postcss), all through `next`'s bundled copies. Still no fix short of
+  `next@9.3.3`.
+- **B16 and B17** are `tsconfig`'s `noUncheckedIndexedAccess` and the flat
+  ESLint + `typescript-eslint`/jsx-a11y setup (spec lines 82–83). Both were
+  **closed by plan 1 task 13**, which never cited the numbers — hence their
+  apparent absence from this log. Nothing outstanding.
+
+**Build status:** tsc clean · lint clean, zero warnings · build passes,
+`/[locale]` still SSG · `npm run test:e2e` **148 passed, 14 skipped**.
+
+**Task 12b — NOT DONE. Needs a push and a rebuilt preview:**
+
+1. The full admin flow on the preview, each change appearing on the public site
+   with no redeploy.
+2. `PLAYWRIGHT_BASE_URL=<preview> npm run test:headers`, including the two
+   `/admin` tests that were expected-red in task 1.
+3. `node scripts/measure-cls.mjs <preview>/ar`, recorded against the 0.059.
+4. The rate limit: six wrong passwords from one IP, on the preview only.
+
+Steps 1 and 4 also need `ADMIN_PASSWORD_HASH` and `AUTH_SECRET` set in the
+Netlify dashboard, which is an owner action.
