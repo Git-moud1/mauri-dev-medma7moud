@@ -906,3 +906,122 @@ not slip.
 
 **Plan 2 is complete**, with tasks 12b steps 1 and 4 explicitly outstanding on
 the owner's side rather than silently skipped.
+
+---
+
+## Task 12c — login verified, and the two upload bugs behind it
+
+Closes 12b step 1. Step 4 (the rate-limit lockout) is still unexercised.
+
+### Login works on the preview
+
+`ADMIN_PASSWORD_HASH` and `AUTH_SECRET` **did not exist on the project at all**
+— `getEnvVars` returned `[]` for every deploy context. They had been entered in
+the dashboard but never saved, so 12b's "not set" note was still accurate. Set
+via CLI as secrets, scoped `builds,functions,runtime`, in `production`,
+`deploy-preview` and `branch-deploy`. Owner confirmed sign-in on
+deploy-preview-1.
+
+The scope matters as much as the context and is easy to lose: a Netlify secret
+must be assigned explicit contexts _and_ scopes, and the Next.js server runs as
+a **function**. Builds-only would have looked identical from outside — a hash
+missing at request time and a wrong password are the same "Incorrect password."
+by design.
+
+Two things this cost time and are worth not rediscovering:
+
+- **`console.log` from the Next.js handler never reaches Netlify's function log
+  stream.** Only the platform's own `Duration:` lines appear. The build log is
+  not exposed through the public API either (404). Neither is a usable debugging
+  channel on this stack — an error has to come back in a response.
+- Netlify records **several client IPs for one person** (three in one session,
+  all AWS Frankfurt), which is its own entry below.
+
+### B19 — uploads stored the string `[object SharedArrayBuffer]`
+
+**Every upload that reported success wrote 26 bytes of text under every media
+key.** `store.set` accepts `string | ArrayBuffer | Blob` and stringifies
+anything else. On the Netlify Linux runtime sharp's output Buffer is backed by a
+`SharedArrayBuffer`; `.slice()` preserves that type and the `as ArrayBuffer`
+cast asserted it away, so the value fell through to `String()`. Every stored
+blob had an identical ETag and served `200 image/webp`.
+
+Local sharp returns a plain `ArrayBuffer`. The code was correct on Windows and
+wrong on the deploy, the cast stopped the compiler objecting, and no local test
+could have caught it. `toArrayBuffer` now copies element-wise into a fresh,
+unshared, exactly-sized buffer; the tests construct the shared case by hand.
+
+### B20 — uploads over ~1 MB failed silently
+
+Three limits disagreed:
+
+| Limit                           | Was     | Now       |
+| ------------------------------- | ------- | --------- |
+| `serverActions.bodySizeLimit`   | 1 MB    | 5 MB      |
+| `MAX_UPLOAD_BYTES` / UI copy    | 5 MB    | 3.5 MB    |
+| Netlify buffered binary request | ~4.5 MB | unchanged |
+
+Over the framework limit the request is rejected **before the action body
+runs**, so `uploadImage` never returns `{ ok: false }` — the call _rejects_.
+`MediaGrid` had no `try/catch`, so it escaped through `Promise.all` into an
+un-awaited `void upload(…)` and the row span "Uploading…" for ever. Measured on
+the preview: 3.41 MB → `502`, 17.3 MB → `413`, neither reaching the UI.
+
+Netlify's ceiling is the real one: 6 MB buffered, base64 on the way in, so
+~4.5 MB of actual file. 5 MB was never deliverable. 3.5 MB now sits below both
+and is the limit that reports.
+
+### B21 — `.jfif` was never a sniffer problem
+
+JFIF _is_ the ordinary JPEG container, so `.jfif` bytes always matched the
+`FF D8 FF` branch. What rejected it was the file input's `accept` list, which
+filters by the MIME the **operating system** maps an extension to — a mapping
+full of holes. On the machine this was found on, `.jfif` → `image/jpeg` but
+`.webp` and `.avif` → nothing at all, so the precise list was graying out real
+WebP files too. `accept` is now `image/*` and `sniffImageType` is the only thing
+deciding.
+
+### Verified on deploy-preview-1, through the real admin UI
+
+Driven with Playwright against the deployed preview, checking `naturalWidth`
+rather than element count — counting `<img>` elements is what let B19 past a
+first pass.
+
+| Upload               | Result                                                                   |
+| -------------------- | ------------------------------------------------------------------------ |
+| `small.jpg` 0.15 MB  | uploaded, decodes 1600px                                                 |
+| `small.png` 0.69 MB  | uploaded, decodes                                                        |
+| `small.webp` 0.16 MB | uploaded, decodes                                                        |
+| `small.jfif` 0.15 MB | uploaded, decodes                                                        |
+| `mid.jpg` 3.41 MB    | uploaded, decodes — previously a silent `502`                            |
+| `over-limit` 4.19 MB | refused client-side: "4.2 MB — the limit is 3.5 MB."                     |
+| `huge.jpg` 17.3 MB   | refused client-side: "17.3 MB — the limit is 3.5 MB."                    |
+| `nonimage.png`       | "not a JPEG, PNG, WebP or AVIF image — the contents are what is checked" |
+
+Stored blobs re-fetched and decoded with sharp: real WebP at the expected
+dimensions. Probe project and its 28 blobs deleted afterwards.
+
+### B22 — OPEN: the rate limiter's IP key is not stable per user
+
+`x-nf-client-connection-ip` gave **three distinct addresses for one person in a
+single session**. `checkRateLimit` keys on it, so five attempts per ten minutes
+is effectively five _per address_ — the ceiling is however many addresses the
+CDN routes someone through. The lockout is far weaker than it reads, and 12b
+step 4 has still never been exercised.
+
+Not fixed here, deliberately — it needs a design decision, not a patch. The real
+fix is to stop keying brute-force protection on client identity, since the admin
+is a **single account**: count failures against the account itself, in one blob,
+with the lockout applying globally. That makes the limit exact and unspoofable.
+Its cost is that anyone can lock the owner out by failing five times, so it
+needs a second factor the attacker does not control — a longer window with
+exponential backoff rather than a flat lockout, and a bypass the owner holds.
+An IP key can stay as a secondary, narrower limit, never as the only one.
+
+### Still outstanding
+
+- **The rest of the admin CRUD flow is unverified.** Create, edit, reorder,
+  delete and settings have not been exercised on a deploy; only login and
+  uploads have. The owner will test now that uploads work.
+- Task 12b step 4 — the rate-limit lockout, unexercised, and see B22.
+- Everything under "Still unverified after all of plan 2" above.
