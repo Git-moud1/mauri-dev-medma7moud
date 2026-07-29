@@ -32,6 +32,22 @@ const config: Config = {
           2: 'rgb(var(--brand-2) / <alpha-value>)',
           3: 'rgb(var(--brand-3) / <alpha-value>)',
         },
+        // Gradient *surfaces* under white text — dark in both themes. Distinct
+        // from `brand`, which is gradient *text* and inverts by theme. See the
+        // three-gradient note in globals.css.
+        pill: {
+          1: 'rgb(var(--pill-1) / <alpha-value>)',
+          2: 'rgb(var(--pill-2) / <alpha-value>)',
+          3: 'rgb(var(--pill-3) / <alpha-value>)',
+        },
+        glow: {
+          1: 'rgb(var(--glow-1) / <alpha-value>)',
+          2: 'rgb(var(--glow-2) / <alpha-value>)',
+        },
+        wa: {
+          DEFAULT: 'rgb(var(--wa) / <alpha-value>)',
+          fg: 'rgb(var(--wa-fg) / <alpha-value>)',
+        },
       },
       /**
        * B18. `globals.css` used to carry `* { border-color: rgb(var(--border)) }`
@@ -78,6 +94,10 @@ const config: Config = {
       backgroundImage: {
         'gold-grad':
           'linear-gradient(135deg, rgb(var(--brand-1)) 0%, rgb(var(--brand-2)) 50%, rgb(var(--brand-3)) 100%)',
+        // For white text. `gold-grad` is the text gradient and is far too light
+        // on dark to sit behind white — that is the 3.68:1 Email pill.
+        'pill-grad':
+          'linear-gradient(135deg, rgb(var(--pill-1)) 0%, rgb(var(--pill-2)) 50%, rgb(var(--pill-3)) 100%)',
       },
       keyframes: {
         marquee: {

@@ -51,9 +51,22 @@ export function followLinks(settings: SiteSettings): ResolvedLink[] {
 const HEADING = 'mb-3 text-xs font-semibold uppercase tracking-[0.18em] text-gold';
 
 /** WhatsApp keeps its brand green; Email takes the site's own brand gradient. */
+/**
+ * Both tones are measured, not picked by eye.
+ *
+ * WhatsApp green is a fixed brand colour, and white on it is 1.98:1 — a plain
+ * WCAG AA failure on the site's most prominent contact control. The charcoal
+ * foreground is 9.86:1 and keeps the green itself recognisable, which swapping
+ * to a darker green would not.
+ *
+ * Email uses `pill-grad`, not `gold-grad`. The latter is the gradient *text*
+ * ramp, which on dark is light violet→blue tints: white on those measured
+ * 3.68–4.23:1. `pill-grad` is the dark ramp reserved for white text, 5.17:1 at
+ * its lightest stop. See the three-gradient note in globals.css.
+ */
 const PILL_TONE: Partial<Record<SocialKey, string>> = {
-  whatsapp: 'bg-[#25D366] text-white hover:brightness-95',
-  email: 'bg-gold-grad text-white hover:brightness-110',
+  whatsapp: 'bg-wa text-wa-fg hover:brightness-95',
+  email: 'bg-pill-grad text-white hover:brightness-110',
 };
 
 /**
