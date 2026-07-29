@@ -107,6 +107,31 @@ export async function processUpload(buffer: Buffer): Promise<ProcessedImage> {
 }
 
 /**
+ * Copy a Node Buffer into a standalone `ArrayBuffer` for Netlify Blobs.
+ *
+ * Two traps, and the second one only ever fires in production.
+ *
+ * A Node Buffer is a view into a larger pooled allocation, so handing over
+ * `buffer.buffer` uploads the whole pool — bigger than the image and full of
+ * unrelated bytes. That much was already known here.
+ *
+ * The one that bit: slicing `.buffer` preserves its *type*, and on the Netlify
+ * Linux runtime sharp's output is backed by a `SharedArrayBuffer`, not an
+ * `ArrayBuffer`. `store.set` accepts `string | ArrayBuffer | Blob`, has no
+ * branch for `SharedArrayBuffer`, and so fell through to `String(value)` —
+ * writing the 26-byte text `[object SharedArrayBuffer]` under every media key
+ * while reporting success. Locally the same code path yields a plain
+ * `ArrayBuffer` and works, which is why no local test could have caught it.
+ *
+ * `new Uint8Array(view)` copies element-wise into a freshly allocated, always
+ * unshared, exactly-sized `ArrayBuffer`. It solves both at once — and a cast
+ * cannot be substituted for it, because a cast is what hid this.
+ */
+export function toArrayBuffer(view: Buffer): ArrayBuffer {
+  return new Uint8Array(view).buffer;
+}
+
+/**
  * Blob key for one width of one image.
  *
  * Content-addressed by project, slug and width, so replacing an image produces

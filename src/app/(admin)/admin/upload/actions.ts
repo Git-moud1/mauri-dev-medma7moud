@@ -2,7 +2,12 @@
 
 import { getStore } from '@netlify/blobs';
 import { requireSession } from '../actions';
-import { processUpload, mediaKey, slugifyFilename } from '@/lib/images/process';
+import {
+  processUpload,
+  mediaKey,
+  slugifyFilename,
+  toArrayBuffer,
+} from '@/lib/images/process';
 import { MAX_UPLOAD_BYTES, MAX_UPLOAD_LABEL } from '@/lib/images/limits';
 import { MEDIA_STORE } from '@/lib/images/store';
 
@@ -63,15 +68,13 @@ export async function uploadImage(formData: FormData): Promise<UploadResult> {
     const store = getStore(MEDIA_STORE);
     await Promise.all(
       processed.widths.map(async (variant) => {
-        // Blobs takes an ArrayBuffer, not a Node Buffer. `.slice()` on the
-        // underlying buffer copies exactly this view's bytes — passing
-        // `variant.data.buffer` directly would upload sharp's whole pooled
-        // allocation, which is larger than the image and full of other data.
-        const bytes = variant.data.buffer.slice(
-          variant.data.byteOffset,
-          variant.data.byteOffset + variant.data.byteLength,
-        ) as ArrayBuffer;
-        await store.set(mediaKey(projectId, slug, variant.width), bytes);
+        // Blobs takes an ArrayBuffer, not a Node Buffer, and specifically not
+        // the SharedArrayBuffer sharp's output is backed by on Netlify — see
+        // toArrayBuffer, which exists entirely for that distinction.
+        await store.set(
+          mediaKey(projectId, slug, variant.width),
+          toArrayBuffer(variant.data),
+        );
       }),
     );
   } catch (error) {

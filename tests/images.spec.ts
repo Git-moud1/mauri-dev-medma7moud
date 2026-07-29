@@ -7,6 +7,7 @@ import {
   processUpload,
   slugifyFilename,
   mediaKey,
+  toArrayBuffer,
   MAX_UPLOAD_BYTES,
 } from '../src/lib/images/process';
 
@@ -143,6 +144,47 @@ test.describe('upload processing', () => {
   test('rejects a GIF with a message naming the accepted formats', async () => {
     const gif = await sharp(await png(32, 32)).gif().toBuffer();
     await expect(processUpload(gif)).rejects.toThrow(/JPEG, PNG, WebP or AVIF/);
+  });
+});
+
+/**
+ * The bytes actually handed to Netlify Blobs.
+ *
+ * `store.set` takes `string | ArrayBuffer | Blob` and stringifies anything
+ * else. On the Netlify Linux runtime sharp's output Buffer is backed by a
+ * `SharedArrayBuffer`, which slicing preserves, so every media key was written
+ * as the text `[object SharedArrayBuffer]` while the upload reported success.
+ * Local sharp produces a plain `ArrayBuffer`, so the shared case is constructed
+ * by hand here — otherwise this suite would pass on a machine where the bug is
+ * invisible, which is exactly how it shipped.
+ */
+test.describe('blob payload conversion', () => {
+  test('produces a real, unshared ArrayBuffer', async () => {
+    const webp = await sharp(await png(64, 64)).webp().toBuffer();
+    const out = toArrayBuffer(webp);
+
+    expect(out).toBeInstanceOf(ArrayBuffer);
+    expect(out.constructor.name).toBe('ArrayBuffer');
+    expect(String(out)).not.toContain('Shared');
+  });
+
+  test('survives a Buffer backed by a SharedArrayBuffer', () => {
+    const shared = new SharedArrayBuffer(8);
+    new Uint8Array(shared).set([1, 2, 3, 4, 5, 6, 7, 8]);
+    // The production shape: a view over shared memory, offset into the pool.
+    const view = Buffer.from(shared as unknown as ArrayBuffer, 2, 4);
+    expect(view.buffer.constructor.name).toBe('SharedArrayBuffer');
+
+    const out = toArrayBuffer(view);
+    expect(out.constructor.name).toBe('ArrayBuffer');
+    expect(out.byteLength).toBe(4);
+    expect([...new Uint8Array(out)]).toEqual([3, 4, 5, 6]);
+  });
+
+  test('copies only this view, not the whole pooled allocation', async () => {
+    const webp = await sharp(await png(64, 64)).webp().toBuffer();
+    expect(toArrayBuffer(webp).byteLength).toBe(webp.byteLength);
+    expect(Buffer.from(toArrayBuffer(webp)).equals(webp)).toBe(true);
   });
 });
 
