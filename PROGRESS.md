@@ -1243,3 +1243,215 @@ story.
 
 **Also still open from plan 2:** `robots.txt` advertises a `sitemap.xml` that
 404s. Both belong to the SEO pass, not here.
+
+---
+
+# Plan 3 — the hero, the motion, the palette
+
+Concept A of the three metaphors offered was chosen: **one blueprint, two frames**
+— a single luminous lattice bent twice, once into a wide viewport and once into a
+phone, with the fold continuous and the grid pitch shared so it reads as one
+surface seen from two angles rather than two objects. A site and an app as two
+views of one system, which is the offer, stated without a caption.
+
+Both technical versions were built and both are live on the preview.
+
+## The palette
+
+Charcoal near-black base, violet bleeding into electric blue as the accent and
+light source. Designed as a token set, not lifted from a catalogue — the 21st.dev
+theme catalogue was checked and has effectively one entry.
+
+The substantive decision is that there are now **three gradients, not one**,
+because a gradient's stops depend on what sits on it:
+
+| Token set       | Duty                                     | Stops                                         |
+| --------------- | ---------------------------------------- | --------------------------------------------- |
+| `--brand-1/2/3` | gradient **text** on the page background | light tints on charcoal, dark shades on paper |
+| `--pill-1/2/3`  | gradient **surfaces** under white text   | dark in both themes                           |
+| `--glow-1/2`    | the hero's single light source           | vivid; never behind text at strength          |
+
+Only `--brand` inverts role between themes, and it inverts _role_, not values —
+light mode stays a genuine second palette (cool paper, not flipped charcoal).
+
+Measured contrast, all AA:
+
+| Pair                                       | Ratio |
+| ------------------------------------------ | ----- |
+| dark `--fg` on `--bg`                      | 17.01 |
+| dark `--muted` on `--bg`                   | 7.49  |
+| dark accent `#A78BFA` on `--bg`            | 7.18  |
+| light `--fg` on `--bg`                     | 16.68 |
+| light accent `#6D28D9` on `--bg`           | 6.69  |
+| `--fg` over the glow at its worst frame    | 10.85 |
+| `--muted` over the glow at its worst frame | 4.78  |
+
+The worst frame was checked rather than the average, per the brief: the glow's
+strongest point behind text is `#332A6B`, and both foregrounds clear AA on it.
+
+**Two WCAG failures fixed, both pre-existing.** White on WhatsApp green measured
+**1.98:1** — a plain AA failure on the site's most prominent contact control, and
+below even the 3:1 bar for the floating button's non-text mark. WhatsApp green is
+a fixed brand colour, so the foreground moved instead: charcoal on the same green
+is **9.86:1** and the green stays recognisable, which a darker green would not.
+The Email pill was on the _text_ ramp at **3.68:1** and is now on the pill ramp at
+**5.17:1** at its lightest stop.
+
+`btn-gold` stopped hardcoding its own violet-to-indigo hexes and uses the pill
+ramp. It and the Email pill had independently reached the same decision, and two
+copies of one decision is how they drift apart.
+
+## Concept weight, gzipped
+
+|                              | chunk        | vs target                             |
+| ---------------------------- | ------------ | ------------------------------------- |
+| **A1** raw GLSL, no three.js | **3.1 KB**   | target was 15 KB — came in at a fifth |
+| **A2** three.js + r3f        | **229.0 KB** | 74x A1                                |
+
+A2's chunk is within 10 KB of the site's entire first-load bundle, for a
+decorative background layer.
+
+**First-load JS is 238.5 KB either way** — byte-identical with A2 present and
+absent, so three.js is genuinely code-split and shipping the switch costs a
+visitor who never types `?hero=a2` nothing. That is what makes deploying both
+honest rather than a tax on the default. Against the 236.1 KB baseline the whole
+hero adds **2.4 KB** to first load, all of it the host island.
+
+## Runtime, measured on the deploy preview
+
+Nine runs per cell, 390x844, 4x CPU throttle, slow 4G (1.6 Mbps / 150 ms),
+medians. Every URL warmed first — B23 makes a cold hit 6.5 s of TTFB, and one
+cold run inside a set moves the median by seconds.
+
+Only runs where the intended concept actually engaged are counted, verified per
+run via `data-hero-layer`. All cells were 9/9; an earlier pass had a cell fall
+back to the poster, which would have compared A1-with-a-canvas against
+A2-without-one and made A2 look free.
+
+| route | concept | runs used | LCP - TTFB | LCP     | FCP to h1 | CLS    | TBT        | JS transferred |
+| ----- | ------- | --------- | ---------- | ------- | --------- | ------ | ---------- | -------------- |
+| `/ar` | A1      | 9/9       | **746 ms** | 1012 ms | 0 ms      | 0.0009 | **87 ms**  | 195 KB         |
+| `/ar` | A2      | 9/9       | **757 ms** | 1032 ms | 0 ms      | 0.0009 | **333 ms** | 411 KB         |
+| `/en` | A1      | 9/9       | **666 ms** | 940 ms  | 0 ms      | 0.0004 | **75 ms**  | 195 KB         |
+| `/en` | A2      | 9/9       | **686 ms** | 952 ms  | 0 ms      | 0.0004 | **292 ms** | 411 KB         |
+
+`LCP - TTFB` is the comparable column: TTFB on these routes swings 20x with cold
+starts and has nothing to do with the hero.
+
+**Three things this says.**
+
+1. **Neither concept touches LCP.** 746 vs 757 ms on `/ar`, 666 vs 686 on `/en` —
+   an 11-20 ms difference, well inside the run-to-run spread. The animated layer
+   loading after first paint is not a claim here, it is the measurement.
+2. **`FCP to h1` is 0 ms on every cell.** The `<h1>` is the first contentful
+   paint, and the canvas never displaces it as the LCP element.
+3. **A2 costs ~4x the blocking time.** 333 ms against 87 ms on `/ar`, 292 against
+   75 on `/en`. Main-thread time is this site's scarce resource (`MIGRATION.md`
+   §11), and A2 spends it.
+
+**A pre-hero control was measured with the identical harness**, against the
+`5e2cd0d` deploy permalink, so the hero's cost is a difference and not an
+assertion:
+
+| route | build    | LCP - TTFB | TBT   | JS transferred |
+| ----- | -------- | ---------- | ----- | -------------- |
+| `/ar` | pre-hero | 749 ms     | 66 ms | 191 KB         |
+| `/ar` | A1       | 746 ms     | 87 ms | 195 KB         |
+| `/en` | pre-hero | 660 ms     | 65 ms | 191 KB         |
+| `/en` | A1       | 666 ms     | 75 ms | 195 KB         |
+
+**A1 costs 4 KB of transfer, ~15 ms of blocking time, and nothing measurable in
+LCP.** That control also corrected a claim this session had already written down —
+see the correction appended to `MIGRATION.md` §11.
+
+CLS is 0.0009 / 0.0004 — the reserved box works; the canvas contributes no shift.
+
+## Recommendation: ship A1, delete A2
+
+A2 is the better-looking object. Extruded frames with an inner wall genuinely
+catch the single light source, the fold foreshortens correctly in perspective
+where A1's 2D shear is convincing head-on and wrong at the extremes, and depth
+ordering lets the phone pass in front of the viewport. Those are real
+differences, not marketing.
+
+They cost 226 KB of extra transfer and quadruple the blocking time on the metric
+this site is already worst at, for a layer nobody looks at directly. At a normal
+viewing size the two are hard to tell apart in a still frame; the difference shows
+up in motion, at the extremes of the fold, for a second or two per 26-second
+cycle.
+
+A1 hits every hard rule with room to spare and came in at a fifth of its own
+budget. **Ship A1.** The honest answer to "what does the extra weight buy" is: a
+better fold at the extremes, and nothing a client would notice.
+
+## 21st.dev — surveyed, nothing retrieved
+
+Four searches, ~36 components reviewed. **No retrievals spent**, on the reasoning
+the owner accepted:
+
+- A large share of the WebGL results are auto-generated by 21st.dev's own Shader
+  Builder — identical boilerplate descriptions, four-colour presets, mesh-drift /
+  aurora / silk variants. These are the gradient blobs the brief rules out.
+- Nothing in the catalogue does Concept A. Every candidate is an ambient
+  _background_ — dots, waves, blooms, gradients. A's geometry _is_ the idea, so
+  that part was original work either way.
+- Of the four shortlisted, only one states a licence: `paper-design/dot-grid`,
+  Apache-2.0, adapted from Paper Shaders. The brief says write from scratch when a
+  licence is not clearly permissive, which disqualifies the other three from being
+  adapted at all. And the one that is licensed is public on GitHub, so its mount
+  pattern needed no metered call.
+
+Shortlisted and rejected, for the record: `paper-design/dot-grid` (licence clear,
+wrong shape), `chamaac/grid-bloom` (closest mechanic, licence unstated),
+`easemize/isometric-wave-grid-background` (closest geometry, canvas-2D, licence
+unstated), `cult-ui/grid-beam` (reputable, licence unstated).
+
+**Nothing was adapted from any of them.** Both concepts are written from scratch
+against our tokens, our RTL rules and our bundle budget.
+
+## Arabic and RTL
+
+Designed Arabic-first, then checked against latin.
+
+- The poster composition mirrors via `scaleX(-1)` on Arabic, asserted in tests for
+  both directions.
+- A1 mirrors **in shader space**, not with a CSS transform on the canvas:
+  mirroring the element would also mirror the lighting, and the fold and its light
+  source have to mirror together.
+- A2 mirrors the fold, the light position and the depth offsets together.
+- The stats row keeps its digits in reading order under Arabic — asserted, since a
+  reversed run would render `+5`.
+
+## Tests
+
+30 new assertions across both device profiles, in `tests/hero.spec.ts`, covering
+guarantees rather than looks: the headline renders without JavaScript and is not
+inside the animated layer, its box is unchanged before and after the layer mounts,
+every documented fallback engages with the right reason, the switch works, and the
+composition mirrors. Suite is **260 passed, 14 skipped**.
+
+Writing them found two real problems, one in the tests and one in the code:
+
+- **In the tests.** `waitFor({ state: 'attached' })` resolves against the server
+  HTML, where the layer host honestly reports `poster`/`ssr` because no browser API
+  has been read yet. A one-shot `getAttribute` therefore reads `poster` whatever
+  the device supports, and three of the four fallback assertions were passing for
+  that reason rather than on their merits. They now use retrying matchers.
+- **In the code.** The WebGL probe ran before the reduced-motion check, so a
+  visitor who had asked for reduced motion on a machine without WebGL was told the
+  reason was `no-webgl`. The preference now wins: it is the more truthful answer,
+  it holds whatever the hardware supports, and such a visitor no longer pays for a
+  probe that creates and destroys a real GL context to settle a question their
+  preference has already answered.
+
+## What was not done
+
+- `sitemap.ts`, `robots.ts`, OG images and JSON-LD stay out, per the brief — a
+  design change and an indexing change do not share a commit.
+- B23 (the cold-start TTFB) is logged, not fixed.
+- Lighthouse category scores are not reported. The preview carries
+  `X-Robots-Tag: noindex`, which makes its SEO score an artifact, and the
+  Performance number on a deploy preview is contaminated by Netlify's own
+  instrumentation — `MIGRATION.md` §2 records both. The field metrics above are
+  measured directly and are the honest substitute; a production Lighthouse run
+  after merge is what settles the category scores.

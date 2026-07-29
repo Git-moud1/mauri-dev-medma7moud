@@ -464,6 +464,44 @@ already optimal.
    in parse/compile on the exact resource that is already the constraint, which
    is worse for this site than its KB figure suggests.
 
+### CORRECTION to the numbers above, from later in the same session
+
+The conclusion of §11 stands: **there is no `<h1>` fault.** Every piece of
+evidence that established it is independent of how the measurement was run, and
+all of it was re-confirmed warm — the `<h1>` is the first contentful paint with a
+0 ms FCP-to-LCP gap, on both the pre-hero and post-hero builds, on `/ar` and
+`/en`.
+
+**The magnitudes in the table above are wrong, and the "roughly 70% is CPU"
+attribution with them.** Those runs did not warm the URL first, so each set
+included requests against a cold or partly-cold edge cache, which inflated
+time-to-paint. Warmed, nine runs, `/ar`, same 4x CPU throttle and slow 4G:
+
+| Condition                    | LCP - TTFB | TBT   |
+| ---------------------------- | ---------- | ----- |
+| 4x CPU throttle (unwarmed)   | 1750 ms    | —     |
+| **4x CPU throttle (warmed)** | **732 ms** | 74 ms |
+| **no CPU throttle (warmed)** | **452 ms** | 0 ms  |
+
+So of a warm 732 ms, CPU throttling accounts for ~280 ms — **about 38%, not
+70%.** The remaining ~452 ms is the render-blocking CSS round trip plus parse at
+full speed, and that is close to the floor for this document.
+
+**What this reframes.** Lighthouse's original 2.3 s figure is not the warm number
+and it is not the CPU number — it is the _cold_ path. That points the remaining
+LCP work at **B23** (a statically prerendered route answered by a function, 6.5 s
+cold against ~0.37 s warm) rather than at the main thread. B23 was already logged
+as the largest real LCP risk on the site; this is the measurement that says so
+quantitatively.
+
+**What this does not change.** A2 still costs ~4x A1's blocking time (333 ms vs
+87 ms on `/ar`), so main-thread time is still the resource worth protecting in a
+hero — the ranking of the two concepts is unaffected.
+
+Recorded rather than quietly edited: the earlier figures were used in this
+session's own reasoning, and a corrected document that hides its correction
+teaches the next session nothing.
+
 Measured with an ad-hoc Playwright + CDP probe (`Emulation.setCPUThrottlingRate`
 
 - `Network.emulateNetworkConditions`, `PerformanceObserver` on
