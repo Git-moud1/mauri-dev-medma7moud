@@ -1,5 +1,35 @@
 # Mauri-Dev Portfolio — Upgrade & Rebuild Brief
 
+> ## Read this header before acting on any Phase below
+>
+> This file is the **original** brief. Parts of it have been superseded by later
+> instructions. A Phase number is not a Plan number — the work was delivered in
+> three plans that do not map one-to-one onto the seven Phases here, and
+> confusing the two numberings has already caused a session to act on a
+> cancelled instruction.
+>
+> **What actually delivered what:**
+>
+> | Delivered by | Covers | Recorded in |
+> | --- | --- | --- |
+> | **Plan 1** | Phase 1 (Next 16 / React 19), Phase 2 (first-load performance), Phase 5's localized-routes decision, Phase 6 (security, strict TS, tests) | `PROGRESS.md` tasks 10b–15, `MIGRATION.md` §1–§8 |
+> | **Plan 2** | Phase 3 (`/admin` panel, content store, auth, uploads), the security headers and CLS items left open by plan 1 | `PROGRESS.md` "Plan 2" tasks 1–12c, `MIGRATION.md` §9–§10 |
+> | **Social links rebuild** | The Phase 3 "social links" bullet, replaced with eight fixed per-platform fields. **Also cancelled Phase 7's email removal.** | `PROGRESS.md` "Fixed per-platform social fields", commit `549a61b` |
+> | **Plan 3** | **Replaces Phase 4 entirely.** Hero, motion, palette. | `docs/plan-3-brief.md` |
+>
+> **Superseded — do not act on these Phases as written:**
+>
+> - **Phase 4** — superseded in full by `docs/plan-3-brief.md`. See the Phase 4
+>   section below, which now contains only that pointer.
+> - **Phase 7, first bullet** — the instruction to remove the email address was
+>   **cancelled**. See Phase 7 below.
+> - **Definition of done, "No email address anywhere on the public site"** —
+>   cancelled by the same decision. The email is a published contact channel.
+>
+> **Still open, not yet delivered:** the remaining Phase 5 SEO items —
+> `sitemap.ts`, `robots.ts`, OG images, JSON-LD. These get their own pass after
+> the hero lands.
+
 You are working on the **Mauri-Dev** portfolio (Next.js 14 App Router, React 18, TypeScript strict, Tailwind 3, Framer Motion, deployed on Netlify). The repo README documents the current architecture — **read it fully before touching anything**, plus `src/app/page.tsx`, `src/app/providers.tsx`, `src/app/no-flash.tsx`, `src/data/projects.ts`, `src/lib/site.ts`, `src/i18n/**`, `src/components/**`, `next.config.mjs`, `netlify.toml`, `scripts/**`.
 
 **Live site:** https://medmoudsite.netlify.app
@@ -127,23 +157,18 @@ Right now every content change requires a code edit and a redeploy. Build a real
 
 ---
 
-## Phase 4 — New hero: elegant, premium, 3D
+## Phase 4 — SUPERSEDED. The hero brief now lives at `docs/plan-3-brief.md`
 
-The current hero is competent but plain. It's the first thing a prospective client sees and it should immediately say "this developer is expensive and worth it."
+**Do not implement anything from the old Phase 4. Read `docs/plan-3-brief.md`
+instead — it replaces this Phase entirely.**
 
-- **Run `/find-skills` and use the design/3D skills** for the aesthetic direction. Give me **2–3 distinct concepts** (short description + the key visual mechanic of each) before you build. I'll pick one.
-- It must be **original and bespoke** — not a template, not a generic particle field, not an AI-slop gradient blob. Something with a real idea behind it: layered glass panes carrying actual project screenshots, a subtle device-shard composition, pointer-reactive parallax depth, an animated mesh/aurora in the brand violet→indigo→cyan range, grain, kinetic Arabic typography that respects RTL.
-- Keep and restyle: the availability badge, headline, sub-headline, both CTAs, the stats row (5+ / 120+ / 10+).
-- **RTL-correct.** Every directional element mirrors properly in Arabic. Test all three languages.
+Nothing of the old Phase 4 survives. Its 3D framing, its ≤120 KB chunk budget
+and its "2–3 concepts" instruction are all void; the replacement brief sets its
+own direction, its own budgets and its own process, and they differ. Quoting the
+old text back at the owner is a bug, not diligence.
 
-### Non-negotiable performance rules for the 3D layer
-
-- Never blocks or becomes the LCP element. Text paints first, always.
-- Loads via `dynamic(..., { ssr: false })` after hydration/idle, ≤ ~120 KB gzipped in its own chunk.
-- Static poster/gradient fallback renders instantly underneath it.
-- Fully disabled (fallback only) under `prefers-reduced-motion: reduce`, on `navigator.connection.saveData`, and on low-end devices (`hardwareConcurrency` / `deviceMemory` heuristics).
-- DPR capped (~1.5–2), render loop paused when the tab is hidden or the hero scrolls out of view, all listeners `{ passive: true }` and cleaned up on unmount.
-- If it can't hit these budgets with WebGL, use CSS 3D transforms + canvas instead. **Performance wins over spectacle.**
+If `docs/plan-3-brief.md` is missing from the working tree, stop and ask rather
+than falling back to this section.
 
 ---
 
@@ -180,9 +205,24 @@ Regardless of that decision:
 
 ## Phase 7 — Contact section changes
 
-- **Remove the email address from the public site entirely** — the email card in `Contact.tsx`, the `mailto:` in `Footer.tsx`, and any other reference. Grep for `baymed000@gmail.com` and `mailto:` and make sure nothing survives, including in all three dictionaries (remove the keys from `ar`, `en` **and** `fr` so they stay structurally identical, or the build fails).
-- Contact channels become: the contact form, WhatsApp, and the new social links from the admin panel. Redesign the section so it doesn't look like something was cut out of it — it should feel intentionally composed around those channels.
-- Keep the contact form working. It uses Netlify Forms via the `public/__forms.html` static decoy; verify that still works on Next 16 with the current Netlify runtime and that field names still mirror `ContactForm.tsx` exactly. If Netlify Forms proves unreliable with Next 16, tell me before switching to an alternative (server action + transactional email) so I can decide — the owner still needs to receive submissions by email even though the address is no longer public.
+- **THE EMAIL STAYS. Do not remove it.** This bullet previously ordered the
+  email address stripped from the public site and its keys deleted from the
+  three dictionaries. **That instruction is cancelled and stays cancelled.** The
+  owner reversed it deliberately.
+
+  The email is now a **settings field**, editable in the admin panel, rendered on
+  the public site as a **contact pill** alongside WhatsApp, in both the footer
+  and the contact section, in all three locales. It is a published contact
+  channel and part of the delivered design.
+
+  This is not a preference, a default, or something to re-raise. Do not remove
+  `baymed000@gmail.com`, do not remove the `mailto:`, do not delete the email
+  keys from `ar`, `en` or `fr`, and do not "tidy" the email pill out of
+  `Contact.tsx` or `Footer.tsx` as part of unrelated work. A future session that
+  reads this bullet as optional, or as merely deferred, has misread it. If a
+  task appears to require removing the email, that task is wrong — stop and ask.
+- Contact channels are: the contact form, WhatsApp, **email**, and the social links from the admin panel. The section should feel intentionally composed around those channels.
+- Keep the contact form working. It uses Netlify Forms via the `public/__forms.html` static decoy; verify that still works on Next 16 with the current Netlify runtime and that field names still mirror `ContactForm.tsx` exactly. If Netlify Forms proves unreliable with Next 16, tell me before switching to an alternative (server action + transactional email) so I can decide — the owner still needs to receive submissions by email.
 
 ---
 
@@ -192,7 +232,7 @@ Regardless of that decision:
 - Deployed preview on Netlify works in all three languages, both themes, on a real phone.
 - Lighthouse mobile: Performance ≥ 95, Accessibility ≥ 95, Best Practices ≥ 95, SEO 100. Before/after numbers in `MIGRATION.md`.
 - Admin panel: log in, add a project with images in three languages, reorder it, edit the WhatsApp number, add social links, delete a project — all visible on the public site **without a redeploy**.
-- No email address anywhere on the public site.
+- ~~No email address anywhere on the public site.~~ **Cancelled** — see Phase 7. The email is a published contact channel with its own pill.
 - Hero looks like premium bespoke work and doesn't cost more than its budget.
 - README and `MIGRATION.md` updated, with the exact list of env vars to set in Netlify.
 
