@@ -118,6 +118,31 @@ async function probeBlobs(): Promise<Record<string, unknown>> {
   }
 }
 
+/**
+ * Everything the request-time environment can be asked about without touching a
+ * value. Shared by the login action's log line and the `/api/authdiag` route.
+ */
+export async function collectAuthDiagnostics(): Promise<Record<string, unknown>> {
+  const [argon2, stored, blobs] = await Promise.all([
+    probeArgon2(),
+    probeStoredHash(),
+    probeBlobs(),
+  ]);
+
+  return {
+    // Confirms which build is answering, so a stale published deploy is visible
+    // rather than assumed away.
+    context: process.env.CONTEXT ?? 'none',
+    commit: process.env.COMMIT_REF?.slice(0, 7) ?? 'none',
+    deployId: process.env.DEPLOY_ID ?? 'none',
+    hash: describeHash(),
+    secret: describeVariable(process.env.AUTH_SECRET),
+    ...argon2,
+    ...stored,
+    ...blobs,
+  };
+}
+
 export interface LoginDiagnosticsInput {
   /** Which header supplied the rate-limit key. Never the address itself. */
   ipSource: string;
@@ -127,26 +152,7 @@ export interface LoginDiagnosticsInput {
 }
 
 export async function logLoginDiagnostics(input: LoginDiagnosticsInput): Promise<void> {
-  const [argon2, stored, blobs] = await Promise.all([
-    probeArgon2(),
-    probeStoredHash(),
-    probeBlobs(),
-  ]);
-
   console.log(
-    '[authdiag:runtime] ' +
-      JSON.stringify({
-        // Confirms which build is answering, so a stale published deploy is
-        // visible rather than assumed away.
-        context: process.env.CONTEXT ?? 'none',
-        commit: process.env.COMMIT_REF?.slice(0, 7) ?? 'none',
-        deployId: process.env.DEPLOY_ID ?? 'none',
-        hash: describeHash(),
-        secret: describeVariable(process.env.AUTH_SECRET),
-        ...argon2,
-        ...stored,
-        ...blobs,
-        ...input,
-      }),
+    '[authdiag:runtime] ' + JSON.stringify({ ...(await collectAuthDiagnostics()), ...input }),
   );
 }
