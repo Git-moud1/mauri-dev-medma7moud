@@ -21,10 +21,23 @@ const CTA_MESSAGE = "Hi Mauri-Dev, I'd like to discuss a project.";
  * class + drawer state), the language switcher, and the theme toggle. Nav
  * labels are resolved here and handed to the drawer as plain strings.
  */
-export function Header({ locale, whatsappUrl }: { locale: Locale; whatsappUrl: string }) {
+export function Header({
+  locale,
+  whatsappUrl,
+}: {
+  locale: Locale;
+  whatsappUrl?: string;
+}) {
   const t = getT(locale);
   const links = NAV.map((item) => ({ id: item.id, label: t(item.key) }));
-  const ctaHref = `${whatsappUrl}?text=${encodeURIComponent(CTA_MESSAGE)}`;
+  // With no published number the CTA still has somewhere useful to go: the
+  // contact section, which holds the form and whatever channels do exist.
+  const ctaHref = whatsappUrl
+    ? `${whatsappUrl}?text=${encodeURIComponent(CTA_MESSAGE)}`
+    : '#contact';
+  // `target="_blank"` belongs to the WhatsApp link only. On the `#contact`
+  // fallback it would open a second tab of the page you are already on.
+  const ctaExternal = Boolean(whatsappUrl);
   const ctaLabel = t('nav.cta');
 
   return (
@@ -58,8 +71,7 @@ export function Header({ locale, whatsappUrl }: { locale: Locale; whatsappUrl: s
           <ThemeToggle />
           <a
             href={ctaHref}
-            target="_blank"
-            rel="noopener noreferrer"
+            {...(ctaExternal ? { target: '_blank', rel: 'noopener noreferrer' } : {})}
             className="hidden items-center gap-2 rounded-full bg-[#25D366] px-4 py-2.5 text-sm font-semibold text-white transition-transform hover:-translate-y-0.5 sm:inline-flex"
           >
             <WhatsAppIcon className="h-4 w-4" />
@@ -71,7 +83,12 @@ export function Header({ locale, whatsappUrl }: { locale: Locale; whatsappUrl: s
       </nav>
 
       {/* Mobile menu */}
-      <DrawerPanel links={links} ctaHref={ctaHref} ctaLabel={ctaLabel} />
+      <DrawerPanel
+        links={links}
+        ctaHref={ctaHref}
+        ctaLabel={ctaLabel}
+        ctaExternal={ctaExternal}
+      />
     </HeaderShell>
   );
 }

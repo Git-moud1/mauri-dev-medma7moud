@@ -1,16 +1,17 @@
 import { getT } from '@/i18n/server';
 import type { Locale } from '@/i18n/config';
-import { SITE } from '@/lib/site';
 import { Reveal } from './Reveal';
 import { ContactForm } from './islands/ContactForm';
-import { MailIcon, WhatsAppIcon } from './Icons';
+import { ContactPills, FollowTiles, type ResolvedLink } from './SocialLinks';
 
 export function Contact({
   locale,
-  whatsappUrl,
+  contact,
+  follow,
 }: {
   locale: Locale;
-  whatsappUrl: string;
+  contact: ResolvedLink[];
+  follow: ResolvedLink[];
 }) {
   const t = getT(locale);
 
@@ -39,42 +40,9 @@ export function Contact({
           </Reveal>
 
           <Reveal delay={3}>
-            <div className="mt-8 space-y-3">
-              <a
-                href={`${whatsappUrl}?text=${encodeURIComponent("Hi Mauri-Dev, I'd like to discuss a project.")}`}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="flex items-center gap-4 rounded-2xl border border-border bg-surface/50 p-4 transition-colors hover:border-[#25D366]"
-              >
-                <span className="grid h-11 w-11 place-items-center rounded-xl bg-[#25D366]/15 text-[#25D366]">
-                  <WhatsAppIcon className="h-5 w-5" />
-                </span>
-                <span>
-                  <span className="block text-sm font-semibold">
-                    {t('contact.whatsapp')}
-                  </span>
-                  <span className="block text-sm text-muted" dir="ltr">
-                    +{whatsappUrl.replace('https://wa.me/', '')}
-                  </span>
-                </span>
-              </a>
-
-              <a
-                href={`mailto:${SITE.email}`}
-                className="flex items-center gap-4 rounded-2xl border border-border bg-surface/50 p-4 transition-colors hover:border-gold"
-              >
-                <span className="grid h-11 w-11 place-items-center rounded-xl bg-gold/15 text-gold">
-                  <MailIcon className="h-5 w-5" />
-                </span>
-                <span>
-                  <span className="block text-sm font-semibold">
-                    {t('contact.emailLabel')}
-                  </span>
-                  <span className="block text-sm text-muted" dir="ltr">
-                    {SITE.email}
-                  </span>
-                </span>
-              </a>
+            <div className="mt-8 max-w-md space-y-8">
+              <ContactPills locale={locale} links={contact} />
+              <FollowTiles locale={locale} links={follow} />
             </div>
           </Reveal>
         </div>

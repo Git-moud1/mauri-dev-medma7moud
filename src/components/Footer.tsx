@@ -1,8 +1,7 @@
 import { getT } from '@/i18n/server';
 import type { Locale } from '@/i18n/config';
 import { SITE } from '@/lib/site';
-import type { Social } from '@/lib/content/types';
-import { MailIcon, WhatsAppIcon } from './Icons';
+import { ContactPills, FollowTiles, type ResolvedLink } from './SocialLinks';
 import { Logo } from './Logo';
 
 const NAV = [
@@ -14,13 +13,13 @@ const NAV = [
 
 export function Footer({
   locale,
-  whatsappUrl,
-  socials,
+  contact,
+  follow,
 }: {
   locale: Locale;
-  whatsappUrl: string;
-  /** Admin-managed. Empty until the owner adds any, and simply not rendered then. */
-  socials: Social[];
+  /** Admin-managed, already filtered: an unfilled platform never arrives here. */
+  contact: ResolvedLink[];
+  follow: ResolvedLink[];
 }) {
   const t = getT(locale);
   // Server-rendered, so this is the build date. The stale-year problem is B6,
@@ -31,7 +30,13 @@ export function Footer({
   return (
     <footer className="defer-paint defer-footer border-t border-border bg-surface/40">
       <div className="container-x py-14">
-        <div className="grid gap-10 md:grid-cols-[1.5fr_1fr_1fr]">
+        {/*
+          The connect column carries six 44px tiles plus their gaps — about
+          320px — and the old `1fr` third gave it 293, so the last tile wrapped
+          onto a line of its own. Widened until the row fits whole, which also
+          stops the longer Arabic labels wrapping inside the pills.
+        */}
+        <div className="grid gap-10 md:grid-cols-[1.2fr_0.8fr_1.4fr]">
           {/* Brand */}
           <div>
             <a href="#top" className="flex items-center">
@@ -61,38 +66,14 @@ export function Footer({
             </ul>
           </nav>
 
-          {/* Connect */}
-          <div>
-            <h3 className="mb-3 text-xs font-semibold uppercase tracking-[0.18em] text-gold">
-              {t('footer.connect')}
-            </h3>
-            <div className="flex flex-col gap-3">
-              <a
-                href={whatsappUrl}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="inline-flex items-center gap-2 text-sm text-muted transition-colors hover:text-fg"
-              >
-                <WhatsAppIcon className="h-4 w-4" /> WhatsApp
-              </a>
-              <a
-                href={`mailto:${SITE.email}`}
-                className="inline-flex items-center gap-2 text-sm text-muted transition-colors hover:text-fg"
-              >
-                <MailIcon className="h-4 w-4" /> {SITE.email}
-              </a>
-              {socials.map((social) => (
-                <a
-                  key={social.url}
-                  href={social.url}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="inline-flex items-center gap-2 text-sm text-muted transition-colors hover:text-fg"
-                >
-                  {social.label}
-                </a>
-              ))}
-            </div>
+          {/*
+            Connect. Two independent blocks, each of which disappears entirely
+            when the owner has published nothing in it — heading included, so
+            an empty group leaves no orphaned title behind.
+          */}
+          <div className="space-y-6">
+            <ContactPills locale={locale} links={contact} />
+            <FollowTiles locale={locale} links={follow} />
           </div>
         </div>
 

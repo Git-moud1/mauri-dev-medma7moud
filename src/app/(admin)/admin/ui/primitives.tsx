@@ -117,7 +117,11 @@ export const IconButton = forwardRef<HTMLButtonElement, IconButtonProps>(
 /* ------------------------------------------------------------------- Field */
 
 interface FieldShellProps {
-  label: string;
+  /**
+   * `ReactNode`, not `string`: the social fields label each row with the
+   * platform's mark beside its name, and an icon is not a string.
+   */
+  label: ReactNode;
   hint?: string;
   error?: string;
   required?: boolean;

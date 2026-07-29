@@ -25,7 +25,7 @@ export function Hero({
   /** Admin-managed. Falls back to the bundled values when the store is cold. */
   stats: { years: number; projects: number; stacks: number };
   availableForWork: boolean;
-  whatsappUrl: string;
+  whatsappUrl?: string;
 }) {
   const t = getT(locale);
   const dir = dirFor(locale);
@@ -83,15 +83,23 @@ export function Hero({
                 className={`h-4 w-4 ${dir === 'rtl' ? 'rotate-180' : ''}`}
               />
             </a>
-            <a
-              href={`${whatsappUrl}?text=${encodeURIComponent("Hi Mauri-Dev, I'd like to discuss a project.")}`}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="btn-outline w-full sm:w-auto"
-            >
-              <WhatsAppIcon className="h-4 w-4" />
-              {t('hero.ctaWhatsapp')}
-            </a>
+            {/*
+              Dropped entirely when no number is published — unlike the header
+              CTA there is already a second button beside it, so falling back
+              to `#contact` here would be two buttons pointing at the same
+              place.
+            */}
+            {whatsappUrl ? (
+              <a
+                href={`${whatsappUrl}?text=${encodeURIComponent("Hi Mauri-Dev, I'd like to discuss a project.")}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="btn-outline w-full sm:w-auto"
+              >
+                <WhatsAppIcon className="h-4 w-4" />
+                {t('hero.ctaWhatsapp')}
+              </a>
+            ) : null}
           </div>
 
           {/* Web + App emphasis chips */}

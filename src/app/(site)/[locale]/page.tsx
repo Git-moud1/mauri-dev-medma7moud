@@ -10,6 +10,7 @@ import { Projects } from '@/components/Projects';
 import { Process } from '@/components/Process';
 import { Contact } from '@/components/Contact';
 import { Footer } from '@/components/Footer';
+import { contactLinks, followLinks } from '@/components/SocialLinks';
 import { FloatingWhatsApp } from '@/components/islands/FloatingWhatsApp';
 
 /**
@@ -31,6 +32,12 @@ export default async function Home(props: { params: Promise<{ locale: string }> 
 
   const [projects, settings] = await Promise.all([getProjects(), getSettings()]);
 
+  // Resolved once and passed to both blocks: the footer and the contact
+  // section render the same published set, so deriving it twice would be two
+  // chances to disagree.
+  const contact = contactLinks(settings);
+  const follow = followLinks(settings);
+
   return (
     <Providers locale={locale}>
       <Header locale={locale} whatsappUrl={settings.whatsappUrl} />
@@ -45,13 +52,9 @@ export default async function Home(props: { params: Promise<{ locale: string }> 
         <About locale={locale} />
         <Projects locale={locale} projects={projects} />
         <Process locale={locale} />
-        <Contact locale={locale} whatsappUrl={settings.whatsappUrl} />
+        <Contact locale={locale} contact={contact} follow={follow} />
       </main>
-      <Footer
-        locale={locale}
-        whatsappUrl={settings.whatsappUrl}
-        socials={settings.socials}
-      />
+      <Footer locale={locale} contact={contact} follow={follow} />
       <FloatingWhatsApp whatsappUrl={settings.whatsappUrl} />
     </Providers>
   );

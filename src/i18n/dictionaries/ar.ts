@@ -133,6 +133,21 @@ const ar: Dictionary = {
     rights: 'جميع الحقوق محفوظة.',
     built: 'صُمّم وبُني بعناية.',
   },
+  social: {
+    contact: 'تواصل',
+    follow: 'تابعني',
+    whatsappPrefill: 'مرحباً موري-ديف، أودّ مناقشة مشروع.',
+    names: {
+      whatsapp: 'واتساب',
+      email: 'البريد الإلكتروني',
+      linkedin: 'لينكدإن',
+      github: 'غيت هب',
+      instagram: 'إنستغرام',
+      facebook: 'فيسبوك',
+      tiktok: 'تيك توك',
+      x: 'إكس',
+    },
+  },
   whatsappFloat: 'محادثة واتساب',
 };
 

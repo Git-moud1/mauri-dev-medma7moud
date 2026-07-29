@@ -13,6 +13,7 @@ import {
 } from '@/lib/auth/session';
 import { checkRateLimit, recordFailure, clearAttempts } from '@/lib/auth/rate-limit';
 import { blobStore, CONTENT_TAG, projectSchema, settingsSchema } from '@/lib/content';
+import { FOLLOW_KEYS } from '@/lib/social';
 
 /**
  * One message for every authentication failure.
@@ -81,7 +82,16 @@ export async function logout(): Promise<void> {
   redirect('/admin');
 }
 
-export type Result = { ok: true } | { ok: false; error: string };
+export type Result =
+  | { ok: true }
+  /**
+   * `fieldErrors` is keyed by the form's input name. A settings form with
+   * eight independent fields cannot report "one of these is wrong" at the top
+   * of the page and expect the owner to find which — every issue is carried
+   * back to the input that caused it. `error` stays for failures that belong
+   * to no single field (an unreachable store, a lost session).
+   */
+  | { ok: false; error: string; fieldErrors?: Record<string, string> };
 
 /**
  * Run a store write, turning an unreachable store into a message instead of a
@@ -252,19 +262,14 @@ export async function moveProject(id: string, direction: -1 | 1): Promise<Result
 export async function updateSettings(formData: FormData): Promise<Result> {
   if (!(await requireSession())) return { ok: false, error: 'Not signed in.' };
 
-  const socials: { platform: string; url: string; label: string }[] = [];
-  const platforms = formData.getAll('social.platform').map(String);
-  const urls = formData.getAll('social.url').map(String);
-  const labels = formData.getAll('social.label').map(String);
-  for (const [index, platform] of platforms.entries()) {
-    const url = urls[index] ?? '';
-    if (!platform.trim() && !url.trim()) continue;
-    socials.push({
-      platform: platform.trim(),
-      url: url.trim(),
-      label: (labels[index] ?? platform).trim(),
-    });
-  }
+  /**
+   * Each platform posts under its own name, so the parallel-array reassembly
+   * this used to do — three `getAll` calls zipped by index — is gone, and with
+   * it the chance of a row's URL landing against another row's platform.
+   */
+  const socials = Object.fromEntries(
+    FOLLOW_KEYS.map((key) => [key, fieldString(formData, `social.${key}`)]),
+  );
 
   const number = (key: string): number => {
     const value = Number(formData.get(key));
@@ -273,6 +278,7 @@ export async function updateSettings(formData: FormData): Promise<Result> {
 
   const parsed = settingsSchema.safeParse({
     whatsappNumber: fieldString(formData, 'whatsappNumber'),
+    email: fieldString(formData, 'email'),
     socials,
     heroStats: {
       years: number('heroStats.years'),
@@ -283,22 +289,26 @@ export async function updateSettings(formData: FormData): Promise<Result> {
   });
 
   if (!parsed.success) {
-    const issue = parsed.error.issues[0];
-    const path = issue?.path.join('.') ?? '';
-    if (path.startsWith('socials')) {
-      return {
-        ok: false,
-        error: 'Social links must be full https:// URLs with a platform name.',
-      };
+    // `socials.github` is the schema path; `social.github` is the input name.
+    // Every other path is already its own input name.
+    const fieldErrors: Record<string, string> = {};
+    for (const issue of parsed.error.issues) {
+      const path = issue.path.join('.');
+      const name = path.startsWith('socials.')
+        ? path.replace(/^socials\./, 'social.')
+        : path;
+      fieldErrors[name] ??= issue.message;
     }
-    if (path === 'whatsappNumber') {
-      return {
-        ok: false,
-        error:
-          'WhatsApp number must be digits only, including the country code (e.g. 22231317501).',
-      };
-    }
-    return { ok: false, error: issue?.message ?? 'Invalid settings.' };
+
+    const count = Object.keys(fieldErrors).length;
+    return {
+      ok: false,
+      error:
+        count === 1
+          ? 'One field needs fixing — see the message under it.'
+          : `${count} fields need fixing — see the messages under them.`,
+      fieldErrors,
+    };
   }
 
   const saved = await withStore(async () => {

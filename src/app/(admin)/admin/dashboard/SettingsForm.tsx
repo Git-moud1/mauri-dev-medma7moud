@@ -3,15 +3,99 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import type { SiteSettings } from '@/lib/content/types';
+import {
+  CONTACT_PLATFORMS,
+  FOLLOW_PLATFORMS,
+  socialFieldName,
+  type SocialKey,
+  type SocialPlatform,
+} from '@/lib/social';
+import { SOCIAL_ICONS } from '@/components/SocialIcons';
 import { updateSettings } from '../actions';
-import { Button, Field, IconButton, Section, TextInput } from '../ui/primitives';
+import { Button, Field, Section, TextInput } from '../ui/primitives';
 import { useToast } from '../ui/Toaster';
 
-interface SocialDraft {
-  key: number;
-  platform: string;
-  url: string;
-  label: string;
+/** English admin copy. The public site translates these; the admin does not. */
+const PLATFORM_NAMES: Record<SocialKey, string> = {
+  whatsapp: 'WhatsApp',
+  email: 'Email',
+  linkedin: 'LinkedIn',
+  github: 'GitHub',
+  instagram: 'Instagram',
+  facebook: 'Facebook',
+  tiktok: 'TikTok',
+  x: 'X',
+};
+
+/**
+ * One labelled row: the platform's mark, its name, the input, and the link the
+ * input currently resolves to.
+ *
+ * The preview runs the same `toStored`/`toHref` the schema will run on save,
+ * so what it shows is what gets stored — it is not a second implementation of
+ * "make this a URL" that could drift. While the value is unparseable it says
+ * so in place of a link, which means the owner sees the problem before
+ * pressing Save rather than after.
+ */
+function PlatformField({
+  platform,
+  value,
+  error,
+  onChange,
+}: {
+  platform: SocialPlatform;
+  value: string;
+  error: string | undefined;
+  onChange: (next: string) => void;
+}) {
+  const Icon = SOCIAL_ICONS[platform.key];
+  const trimmed = value.trim();
+  const stored = trimmed ? platform.toStored(trimmed) : null;
+
+  return (
+    <Field
+      label={
+        <span className="flex items-center gap-2">
+          <Icon className="h-4 w-4 shrink-0 text-muted" />
+          {PLATFORM_NAMES[platform.key]}
+        </span>
+      }
+      error={error}
+    >
+      {({ id, describedBy }) => (
+        <>
+          <TextInput
+            id={id}
+            name={socialFieldName(platform.key)}
+            aria-describedby={describedBy}
+            inputMode={platform.key === 'whatsapp' ? 'numeric' : undefined}
+            placeholder={platform.placeholder}
+            invalid={Boolean(error)}
+            value={value}
+            onChange={(event) => {
+              onChange(event.target.value);
+            }}
+          />
+          {/*
+            Empty is a state, not a failure — the row stays, and the line below
+            says the field simply is not published rather than showing an error
+            or an empty link.
+          */}
+          <p className="mt-1.5 break-all text-xs text-muted">
+            {!trimmed ? (
+              'Not published.'
+            ) : stored ? (
+              <>
+                Link: <span className="font-mono text-fg">{platform.toHref(stored)}</span>
+              </>
+            ) : (
+              <span className="text-red-400">Not a link yet.</span>
+            )}
+          </p>
+        </>
+      )}
+    </Field>
+  );
 }
 
 export function SettingsForm({ settings }: { settings: SiteSettings }) {
@@ -19,15 +103,22 @@ export function SettingsForm({ settings }: { settings: SiteSettings }) {
   const toast = useToast();
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [whatsapp, setWhatsapp] = useState(settings.whatsappNumber);
-  const [socials, setSocials] = useState<SocialDraft[]>(
-    settings.socials.map((social, index) => ({ key: index, ...social })),
-  );
-  const [nextKey, setNextKey] = useState(settings.socials.length);
+  const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
+  const [values, setValues] = useState<Record<SocialKey, string>>({
+    whatsapp: settings.whatsappNumber ?? '',
+    email: settings.email ?? '',
+    linkedin: settings.socials.linkedin ?? '',
+    github: settings.socials.github ?? '',
+    instagram: settings.socials.instagram ?? '',
+    facebook: settings.socials.facebook ?? '',
+    tiktok: settings.socials.tiktok ?? '',
+    x: settings.socials.x ?? '',
+  });
 
   async function save(formData: FormData) {
     setSaving(true);
     setError(null);
+    setFieldErrors({});
     const result = await updateSettings(formData);
     setSaving(false);
     if (result.ok) {
@@ -35,164 +126,48 @@ export function SettingsForm({ settings }: { settings: SiteSettings }) {
       router.refresh();
     } else {
       setError(result.error);
+      setFieldErrors(result.fieldErrors ?? {});
     }
   }
 
-  function moveSocial(from: number, to: number) {
-    if (to < 0 || to >= socials.length) return;
-    const next = [...socials];
-    const [moved] = next.splice(from, 1);
-    if (moved) next.splice(to, 0, moved);
-    setSocials(next);
+  function fieldProps(platform: SocialPlatform) {
+    const name = socialFieldName(platform.key);
+    return {
+      platform,
+      value: values[platform.key],
+      error: fieldErrors[name],
+      onChange: (next: string) => {
+        setValues((current) => ({ ...current, [platform.key]: next }));
+        // Clear this field's error as soon as it is edited. Leaving a stale
+        // message under a field the owner has already corrected reads as if
+        // the correction did not take.
+        setFieldErrors(({ [name]: _cleared, ...rest }) => rest);
+      },
+    };
   }
 
   return (
     <form action={(formData) => void save(formData)} className="space-y-8">
-      <Section title="Contact" description="Where the site's WhatsApp buttons point.">
-        <div className="max-w-sm">
-          <Field
-            label="WhatsApp number"
-            required
-            hint="Digits only, including the country code."
-          >
-            {({ id, describedBy }) => (
-              <TextInput
-                id={id}
-                name="whatsappNumber"
-                aria-describedby={describedBy}
-                inputMode="numeric"
-                value={whatsapp}
-                onChange={(event) => {
-                  setWhatsapp(event.target.value);
-                }}
-              />
-            )}
-          </Field>
-          {/*
-            Derived, not stored — one field to edit, so the number and the URL
-            cannot drift apart. Shown read-only so it is obvious where it comes
-            from rather than looking like a second thing to maintain.
-          */}
-          <p className="mt-2 text-xs text-muted">
-            Link:{' '}
-            <span className="font-mono text-fg">https://wa.me/{whatsapp || '…'}</span>
-          </p>
+      <Section
+        title="Contact"
+        description="Wide buttons in the footer and the contact section. Both optional — leave one blank and it is not published."
+      >
+        <div className="grid gap-5 sm:grid-cols-2">
+          {CONTACT_PLATFORMS.map((platform) => (
+            <PlatformField key={platform.key} {...fieldProps(platform)} />
+          ))}
         </div>
       </Section>
 
       <Section
-        title="Social"
-        description="Rendered in the footer and the contact section, in this order."
+        title="Follow"
+        description="Icon tiles under their own heading, in this order. Every one is optional; blank fields render nothing at all."
       >
-        {socials.length === 0 ? (
-          <p className="text-sm text-muted">No links yet.</p>
-        ) : (
-          <ul className="space-y-3">
-            {socials.map((social, index) => (
-              <li key={social.key} className="flex items-end gap-2">
-                <div className="grid flex-1 gap-3 sm:grid-cols-3">
-                  <Field label="Platform">
-                    {({ id }) => (
-                      <TextInput
-                        id={id}
-                        name="social.platform"
-                        placeholder="GitHub"
-                        value={social.platform}
-                        onChange={(event) => {
-                          setSocials(
-                            socials.map((entry) =>
-                              entry.key === social.key
-                                ? { ...entry, platform: event.target.value }
-                                : entry,
-                            ),
-                          );
-                        }}
-                      />
-                    )}
-                  </Field>
-                  <Field label="URL">
-                    {({ id }) => (
-                      <TextInput
-                        id={id}
-                        name="social.url"
-                        type="url"
-                        placeholder="https://github.com/…"
-                        value={social.url}
-                        onChange={(event) => {
-                          setSocials(
-                            socials.map((entry) =>
-                              entry.key === social.key
-                                ? { ...entry, url: event.target.value }
-                                : entry,
-                            ),
-                          );
-                        }}
-                      />
-                    )}
-                  </Field>
-                  <Field label="Label">
-                    {({ id }) => (
-                      <TextInput
-                        id={id}
-                        name="social.label"
-                        placeholder="Shown to visitors"
-                        value={social.label}
-                        onChange={(event) => {
-                          setSocials(
-                            socials.map((entry) =>
-                              entry.key === social.key
-                                ? { ...entry, label: event.target.value }
-                                : entry,
-                            ),
-                          );
-                        }}
-                      />
-                    )}
-                  </Field>
-                </div>
-                <div className="flex pb-1">
-                  <IconButton
-                    label={`Move ${social.platform || 'link'} up`}
-                    disabled={index === 0}
-                    onClick={() => {
-                      moveSocial(index, index - 1);
-                    }}
-                  >
-                    ↑
-                  </IconButton>
-                  <IconButton
-                    label={`Move ${social.platform || 'link'} down`}
-                    disabled={index === socials.length - 1}
-                    onClick={() => {
-                      moveSocial(index, index + 1);
-                    }}
-                  >
-                    ↓
-                  </IconButton>
-                  <IconButton
-                    label={`Remove ${social.platform || 'link'}`}
-                    tone="danger"
-                    onClick={() => {
-                      setSocials(socials.filter((entry) => entry.key !== social.key));
-                    }}
-                  >
-                    ×
-                  </IconButton>
-                </div>
-              </li>
-            ))}
-          </ul>
-        )}
-
-        <Button
-          className="mt-4"
-          onClick={() => {
-            setSocials([...socials, { key: nextKey, platform: '', url: '', label: '' }]);
-            setNextKey(nextKey + 1);
-          }}
-        >
-          Add social link
-        </Button>
+        <div className="grid gap-5 sm:grid-cols-2">
+          {FOLLOW_PLATFORMS.map((platform) => (
+            <PlatformField key={platform.key} {...fieldProps(platform)} />
+          ))}
+        </div>
       </Section>
 
       <Section

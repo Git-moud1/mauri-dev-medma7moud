@@ -146,10 +146,13 @@ export function DrawerPanel({
   links,
   ctaHref,
   ctaLabel,
+  ctaExternal,
 }: {
   links: readonly DrawerLink[];
   ctaHref: string;
   ctaLabel: string;
+  /** False when no WhatsApp number is published and `ctaHref` is `#contact`. */
+  ctaExternal: boolean;
 }) {
   const { open, setOpen } = useDrawer();
   const panelRef = useRef<HTMLDivElement>(null);
@@ -232,8 +235,7 @@ export function DrawerPanel({
             <li>
               <a
                 href={ctaHref}
-                target="_blank"
-                rel="noopener noreferrer"
+                {...(ctaExternal ? { target: '_blank', rel: 'noopener noreferrer' } : {})}
                 onClick={() => {
                   setOpen(false);
                 }}

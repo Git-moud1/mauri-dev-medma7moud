@@ -8,8 +8,13 @@ import { WhatsAppIcon } from '../Icons';
 const PREFILL = "Hi Mauri-Dev, I saw your portfolio and I'd like to discuss a project.";
 
 /** Floating WhatsApp button, fixed to the bottom corner (respects RTL). */
-export function FloatingWhatsApp({ whatsappUrl }: { whatsappUrl: string }) {
+export function FloatingWhatsApp({ whatsappUrl }: { whatsappUrl?: string }) {
   const { t, dir } = useI18n();
+  // Every platform is optional now, WhatsApp included. With no number there is
+  // nowhere for this to point, and a floating button linking to `undefined` is
+  // worse than no button — so it does not render.
+  if (!whatsappUrl) return null;
+
   return (
     <m.a
       href={`${whatsappUrl}?text=${encodeURIComponent(PREFILL)}`}

@@ -136,6 +136,25 @@ const en = {
     rights: 'All rights reserved.',
     built: 'Designed & built with care.',
   },
+  /**
+   * Platform names are keyed because they are translated — an Arabic pill
+   * reads «واتساب · +222…» — while the value printed beside them never is.
+   */
+  social: {
+    contact: 'Contact',
+    follow: 'Follow',
+    whatsappPrefill: "Hi Mauri-Dev, I'd like to discuss a project.",
+    names: {
+      whatsapp: 'WhatsApp',
+      email: 'Email',
+      linkedin: 'LinkedIn',
+      github: 'GitHub',
+      instagram: 'Instagram',
+      facebook: 'Facebook',
+      tiktok: 'TikTok',
+      x: 'X',
+    },
+  },
   whatsappFloat: 'Chat on WhatsApp',
 };
 

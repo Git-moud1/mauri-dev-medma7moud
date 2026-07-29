@@ -138,6 +138,21 @@ const fr: Dictionary = {
     rights: 'Tous droits réservés.',
     built: 'Conçu et développé avec soin.',
   },
+  social: {
+    contact: 'Contact',
+    follow: 'Me suivre',
+    whatsappPrefill: 'Bonjour Mauri-Dev, je souhaite discuter d’un projet.',
+    names: {
+      whatsapp: 'WhatsApp',
+      email: 'E-mail',
+      linkedin: 'LinkedIn',
+      github: 'GitHub',
+      instagram: 'Instagram',
+      facebook: 'Facebook',
+      tiktok: 'TikTok',
+      x: 'X',
+    },
+  },
   whatsappFloat: 'Discuter sur WhatsApp',
 };
 

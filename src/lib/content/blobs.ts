@@ -27,7 +27,12 @@ function bundledFallbackProjects(): StoredProject[] {
 function bundledFallbackSettings(): SiteSettings {
   return settingsSchema.parse({
     whatsappNumber: SITE.whatsappNumber,
-    socials: [],
+    // Seeded, not blank: the email used to be hardcoded in `SITE` and rendered
+    // unconditionally, so a cold store that published no address would be a
+    // regression the owner never asked for. It is editable from the admin now,
+    // and clearing it there is the only way to unpublish it.
+    email: SITE.email,
+    socials: {},
     heroStats: {
       years: SITE.yearsExperience,
       projects: SITE.projectsDelivered,

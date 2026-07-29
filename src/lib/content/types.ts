@@ -1,5 +1,11 @@
 import { z } from 'zod';
 import type { Project } from '@/data/projects';
+import {
+  FOLLOW_KEYS,
+  socialPlatform,
+  type FollowKey,
+  type SocialKey,
+} from '@/lib/social';
 
 /**
  * Every locale is required.
@@ -51,20 +57,99 @@ export const projectSchema = z.object({
 
 export type StoredProject = z.infer<typeof projectSchema>;
 
-const socialSchema = z.object({
-  platform: z.string().min(1),
-  url: z.url().startsWith('https://'),
-  label: z.string().min(1),
-});
+/**
+ * One optional field per platform.
+ *
+ * The normaliser in `@/lib/social` is the validator: it returns the canonical
+ * value or `null`, and `null` is the only way this can fail. Running it here
+ * rather than only in the admin action means every writer gets the same
+ * treatment — including the migration below, which pushes legacy rows through
+ * it and canonicalises them on the way past.
+ *
+ * Blank is `undefined`, never an issue. An empty field means "not published";
+ * making it an error would stop the owner saving the seven fields they did
+ * fill because of the one they did not.
+ */
+function platformField(key: SocialKey) {
+  const platform = socialPlatform(key);
+  return z
+    .string()
+    .trim()
+    .optional()
+    .transform((raw, ctx) => {
+      if (!raw) return undefined;
+      const stored = platform.toStored(raw);
+      if (stored === null) {
+        ctx.addIssue({ code: 'custom', message: platform.invalid });
+        return z.NEVER;
+      }
+      return stored;
+    });
+}
 
-export type Social = z.infer<typeof socialSchema>;
+/**
+ * Fold the pre-v2 `{platform, url, label}[]` into the keyed object.
+ *
+ * The owner's stored links predate the fixed platform set, so they arrive as
+ * an array with a free-text platform name. Matching that name case-insensitively
+ * against the known keys preserves everything recognisable; a row naming a
+ * platform the site no longer renders is dropped rather than kept as data
+ * nothing reads. Anything already in the new shape passes straight through, so
+ * this is idempotent and safe to leave in place.
+ */
+function migrateSocials(value: unknown): unknown {
+  if (!Array.isArray(value)) return value ?? {};
+
+  const aliases: Record<string, FollowKey> = {
+    twitter: 'x',
+    'x (twitter)': 'x',
+  };
+  const known = new Set<string>(FOLLOW_KEYS);
+  const migrated: Record<string, string> = {};
+
+  for (const entry of value) {
+    if (typeof entry !== 'object' || entry === null) continue;
+    const row = entry as { platform?: unknown; url?: unknown };
+    if (typeof row.platform !== 'string' || typeof row.url !== 'string') continue;
+    const name = row.platform.trim().toLowerCase();
+    const key = aliases[name] ?? (known.has(name) ? name : undefined);
+    // First row wins: a duplicated platform in the old list is ambiguous, and
+    // silently taking the last one would look like the edit had been lost.
+    if (key && !migrated[key]) migrated[key] = row.url;
+  }
+
+  return migrated;
+}
+
+const socialsSchema = z.preprocess(
+  migrateSocials,
+  z.object({
+    linkedin: platformField('linkedin'),
+    github: platformField('github'),
+    instagram: platformField('instagram'),
+    facebook: platformField('facebook'),
+    tiktok: platformField('tiktok'),
+    x: platformField('x'),
+  }),
+);
+
+export type Socials = z.infer<typeof socialsSchema>;
 
 export const settingsSchema = z
   .object({
-    whatsappNumber: z
-      .string()
-      .regex(/^\d{8,15}$/, 'Digits only, including the country code.'),
-    socials: z.array(socialSchema),
+    /**
+     * Optional like every other platform: an owner who has not published a
+     * number should not be blocked from saving the rest. Consumers treat the
+     * derived `whatsappUrl` as possibly absent and fall back to the contact
+     * section.
+     */
+    whatsappNumber: platformField('whatsapp'),
+    /**
+     * Moved out of `SITE` so it is editable from the admin. The blob fallback
+     * seeds it from `SITE.email`, so a cold store still publishes an address.
+     */
+    email: platformField('email'),
+    socials: socialsSchema,
     heroStats: z.object({
       years: z.number().int().min(0),
       projects: z.number().int().min(0),
@@ -79,7 +164,9 @@ export const settingsSchema = z
    */
   .transform((settings) => ({
     ...settings,
-    whatsappUrl: `https://wa.me/${settings.whatsappNumber}`,
+    whatsappUrl: settings.whatsappNumber
+      ? socialPlatform('whatsapp').toHref(settings.whatsappNumber)
+      : undefined,
   }));
 
 export type SiteSettings = z.infer<typeof settingsSchema>;

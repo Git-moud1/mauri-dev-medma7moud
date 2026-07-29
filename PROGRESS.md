@@ -1025,3 +1025,140 @@ An IP key can stay as a secondary, narrower limit, never as the only one.
   uploads have. The owner will test now that uploads work.
 - Task 12b step 4 — the rate-limit lockout, unexercised, and see B22.
 - Everything under "Still unverified after all of plan 2" above.
+
+---
+
+# Fixed per-platform social fields
+
+Spec: `docs/superpowers/specs/2026-07-29-social-links-design.md`.
+
+The admin's generic "Add social link" list is gone. Eight named platform
+fields replace it — WhatsApp, Email, LinkedIn, GitHub, Instagram, Facebook,
+TikTok, X — and the public site renders them as a **Contact** group of wide
+pills and a **Follow** group of icon tiles, in the footer and the contact
+section.
+
+## What changed
+
+- **`src/lib/social.ts`** (new). The closed platform set in render order, and
+  the single source of truth for the admin form, the schema and the public
+  components. Each entry carries a placeholder, an error message, and
+  `toStored`/`toHref`/`toDisplay`. `toStored` returns the canonical value or
+  `null`, and `null` is the only validation signal — the live preview in the
+  admin and the check on save run the same function, so they cannot disagree.
+- **`src/components/SocialIcons.tsx`** (new). Six brand marks from Simple
+  Icons (CC0), inline single-path SVG, no dependency. WhatsApp and Mail reuse
+  the existing exports in `Icons.tsx`.
+- **Storage.** `email` moved out of `SITE` and into settings so it is editable;
+  `SITE.email` is now the seed in the blob fallback. `socials` went from
+  `{platform, url, label}[]` to an object keyed by the six follow platforms.
+- **`whatsappNumber` is now optional**, like every other field. `Header` and
+  `MobileDrawer` fall back to `#contact` (and drop `target="_blank"` when they
+  do), `Hero` drops its WhatsApp button, `FloatingWhatsApp` renders nothing.
+- **Per-field errors.** `Result` gained `fieldErrors`, keyed by input name.
+  Every zod issue lands under the field that caused it instead of the first
+  one becoming a page-level banner.
+- **`updateSettings` no longer zips three `getAll` arrays by index.** Each
+  platform posts under its own name, so a row's URL can no longer land against
+  another row's platform.
+
+## Two deliberate behaviour changes
+
+Both had tests asserting the old behaviour; both tests were rewritten.
+
+1. **An `http://` social link is upgraded, not rejected.** The host is checked
+   against that platform's own domains first, so an `http://github.com` link is
+   known to be GitHub. Project `link` fields still reject http — that rule is
+   untouched, and the reasoning there (an arbitrary client site) does not apply
+   to a known social host.
+2. **A WhatsApp number with punctuation is normalised, not rejected.**
+   `+222 31-31-75-01` stores as `22231317501`.
+
+## Icon budget
+
+Measured path bytes: X 147, Instagram 264, Facebook 286, LinkedIn 429,
+TikTok 597, GitHub 712. All under the 1 KB bar; 2,435 bytes total.
+
+Instagram is the one mark not taken verbatim — the official path is 1,489
+bytes, almost all of it squircle corner geometry that is invisible at the 20px
+these render at. Replaced with the same camera glyph on plain 5px/3px arcs.
+
+## Verified locally
+
+`npx tsc --noEmit` clean · `npm run build` clean, `/ar` `/en` `/fr` still
+prerendered · **`npx playwright test` 230 passed, 14 skipped** (the deploy-only
+header tests).
+
+New coverage: 16 normalisation cases across all eight platforms (bare handle,
+full URL, wrong platform, `javascript:`, junk, empty), the legacy array→object
+migration including the `twitter`→`x` alias and an unknown platform, blank
+fields on every platform, and one bad field producing exactly one issue against
+exactly its own path. Plus `tests/social.spec.ts`: both pills in both regions
+across all three locales, the follow block absent when nothing is published,
+and the phone number's `<bdi dir="ltr">` isolation under `/ar`.
+
+Rendering was checked against a temporarily seeded fallback — all eight filled,
+`/ar` and `/en`, footer and contact, light and dark. The seed was reverted; the
+committed fallback publishes WhatsApp and Email only.
+
+**Two layout bugs found that way and fixed:**
+
+- The footer's connect column was `1fr` of `[1.5fr_1fr_1fr]` — 293px against
+  the ~320px six 44px tiles need, so the last tile wrapped onto its own line in
+  both locales. Column widened to `[1.2fr_0.8fr_1.4fr]`.
+- The Email pill's label wrapped to two lines in Arabic, where «البريد
+  الإلكتروني» is far longer than «واتساب», making it taller than the WhatsApp
+  pill beside it. The label now holds its line and the value truncates.
+
+RTL confirmed on `/ar`: tiles read right-to-left with LinkedIn rightmost, the
+pill mark sits on the right, and `+22231317501` reads in stored order.
+
+## Not verified here — the owner's preview pass
+
+The admin form itself has not been seen rendered: it needs a login, and
+credentials were not shared. Everything below needs a deploy.
+
+### Checklist
+
+On the deploy preview, signed in, **Settings** tab:
+
+1. Eight rows are present in two groups — Contact (WhatsApp, Email) then
+   Follow (LinkedIn, GitHub, Instagram, Facebook, TikTok, X). Every row shows
+   its logo, its name, an input, and a line underneath. Empty rows read
+   "Not published." and are **not** errors.
+2. Existing links survived the migration: whatever was in the old list is
+   already filled into its platform's row.
+3. Type a **bare handle** into GitHub (`baycheikh`) — the line underneath
+   becomes `Link: https://github.com/baycheikh` as you type.
+4. Type an `@handle` into TikTok and into X — same, resolving to
+   `https://tiktok.com/@…` and `https://x.com/…`.
+5. Paste a **twitter.com** URL into X — it resolves to `x.com`.
+6. Paste a **GitHub** URL into the Instagram row — the line reads "Not a link
+   yet." Press Save: the error appears **under that row**, not at the top, and
+   nothing else is lost. Correct it; the error clears as you type.
+7. Fill all eight, Save. Toast says "Settings saved."
+
+Then on the public site, for `/ar`, `/en` and `/fr`, in **both** the footer and
+the contact section, in **both** dark and light:
+
+8. Two pills: WhatsApp green, Email in the violet→cyan brand gradient. Each
+   shows logo + name + the actual value.
+9. Six tiles under a separate "Follow" heading, rounded squares, logo only.
+10. On `/ar`: the phone number reads `+222…` and is **not** reversed; the mark
+    sits on the right of each pill; tiles read right-to-left.
+11. Every tile is reachable by keyboard and announces its platform name.
+
+Then:
+
+12. Clear **two** fields — say Facebook and TikTok — and Save. Those two tiles
+    vanish with no gap and no placeholder left behind.
+13. Clear **all six** follow fields and Save. The entire Follow block goes,
+    heading included.
+
+Report what you saw and this section gets updated from it.
+
+## Pre-existing, untouched
+
+`npm run lint` reports one error in `tests/images.spec.ts:168`
+(`@typescript-eslint/no-base-to-string`). It predates this work and is in a
+file this branch does not modify.
