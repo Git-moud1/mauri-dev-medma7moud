@@ -36,9 +36,19 @@ const SECURITY_HEADERS = [
  * request, which forfeits the static prerendering the whole architecture exists
  * to produce.
  *
- * /admin is the opposite case: dynamic by nature, and the surface worth
- * spending strictness on because a session cookie lives there. It gets its own
- * policy below with no 'unsafe-inline' at all.
+ * OPEN, and stated plainly because an earlier version of this comment claimed
+ * otherwise: /admin currently receives this SAME policy, 'unsafe-inline' and
+ * all. The stricter admin policy the comment described was never written, and
+ * the delivered headers on /ar and /admin are byte-identical — verified with
+ * curl against `next start`, not inferred from this file.
+ *
+ * The fix, when it is scheduled: a nonce scoped to /admin only, minted in
+ * proxy.ts. /admin/dashboard is already dynamic, so the only cost is the login
+ * page losing its prerender, which is worth nothing next to a strict CSP on the
+ * one surface that holds a session cookie. A site-wide nonce is still refused —
+ * it would forfeit the prerendering the public routes exist for. Hashing is not
+ * an option at all: the hashes would have to ship in this file, which is
+ * evaluated before the HTML they would need to hash exists.
  *
  * Everything else is strict on both: no framing, no third-party connections,
  * no plugins, no base-tag hijacking, forms submit to this origin only.
