@@ -12,6 +12,8 @@ import {
   SESSION_COOKIE_OPTIONS,
 } from '@/lib/auth/session';
 import { checkRateLimit, recordFailure, clearAttempts } from '@/lib/auth/rate-limit';
+// TEMPORARY: remove with src/lib/auth/diagnostics.ts.
+import { logLoginDiagnostics } from '@/lib/auth/diagnostics';
 import { blobStore, CONTENT_TAG, projectSchema, settingsSchema } from '@/lib/content';
 
 /**
@@ -41,6 +43,18 @@ async function clientIp(): Promise<string> {
 }
 
 /**
+ * TEMPORARY: which header the rate-limit key came from, never the address.
+ * `unknown` would mean every visitor shares one bucket, so anyone else's failed
+ * attempts would count against the owner's.
+ */
+async function clientIpSource(): Promise<string> {
+  const store = await headers();
+  if (store.get('x-nf-client-connection-ip')) return 'x-nf-client-connection-ip';
+  if (store.get('x-forwarded-for')) return 'x-forwarded-for';
+  return 'unknown';
+}
+
+/**
  * Re-verify the session inside the action itself.
  *
  * The proxy guard is a first pass and nothing more: a matcher change, a route
@@ -61,12 +75,23 @@ export async function login(
   const ip = await clientIp();
 
   const limit = await checkRateLimit(ip);
+
+  // TEMPORARY: runs before the early return so a lockout is still reported.
+  // Logs to the function log only; nothing here reaches the response.
+  const accepted = limit.allowed ? await verifyPassword(parsed.data.password) : false;
+  await logLoginDiagnostics({
+    ipSource: await clientIpSource(),
+    rateLimitAllowed: limit.allowed,
+    retryAfterSeconds: limit.retryAfterSeconds,
+    passwordAccepted: accepted,
+  });
+
   if (!limit.allowed) {
     const minutes = Math.max(1, Math.ceil(limit.retryAfterSeconds / 60));
     return { error: `Too many attempts. Try again in ${minutes} minutes.` };
   }
 
-  if (!(await verifyPassword(parsed.data.password))) {
+  if (!accepted) {
     await recordFailure(ip);
     return { error: GENERIC_ERROR };
   }

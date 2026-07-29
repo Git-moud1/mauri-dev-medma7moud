@@ -6,7 +6,7 @@
   "scripts": {
     "gen:blur": "node scripts/gen-blur.mjs",
     "dev": "next dev",
-    "prebuild": "node scripts/gen-blur.mjs",
+    "prebuild": "node scripts/gen-blur.mjs && node scripts/env-diagnostics.mjs",
     "build": "next build",
     "start": "next start",
     "lint": "eslint .",
