@@ -97,6 +97,22 @@ function isLowEnd(): boolean {
 let hardBlock: HeroCapability | null | undefined;
 
 function getSnapshot(): HeroCapability {
+  /*
+   * Reduced motion is checked first, ahead of the device probes, for two
+   * reasons.
+   *
+   * It is the more truthful answer: a visitor who has asked for reduced motion
+   * gets the still frame because they asked, and that stays the operative reason
+   * whatever their hardware happens to support — reporting `no-webgl` to someone
+   * who would have been given a still frame anyway is just wrong. And it means
+   * such a visitor never pays for the WebGL probe, which creates and destroys a
+   * real context to answer a question the preference has already settled.
+   *
+   * It is also read live rather than cached, because unlike the three device
+   * facts below it can change mid-session.
+   */
+  if (window.matchMedia(REDUCED_MOTION).matches) return STILL;
+
   if (hardBlock === undefined) {
     hardBlock = wantsSaveData()
       ? SAVE_DATA
@@ -106,10 +122,7 @@ function getSnapshot(): HeroCapability {
           ? null
           : NO_WEBGL;
   }
-  if (hardBlock !== null) return hardBlock;
-  // Reduced motion *can* change mid-session, which is why it is read live here
-  // rather than folded into the cached probe above.
-  return window.matchMedia(REDUCED_MOTION).matches ? STILL : ANIMATE;
+  return hardBlock ?? ANIMATE;
 }
 
 function getServerSnapshot(): HeroCapability {
