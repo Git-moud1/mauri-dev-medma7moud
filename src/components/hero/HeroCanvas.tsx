@@ -1,19 +1,31 @@
 'use client';
 
 import dynamic from 'next/dynamic';
-import { useRef } from 'react';
+import { useRef, useState } from 'react';
 
-import { useHeroCapability, useIsRenderable } from './capability';
+import {
+  conceptFromLocation,
+  useHeroCapability,
+  useIsRenderable,
+  type HeroConcept,
+} from './capability';
 import type { Direction } from './LatticePoster';
 
 /**
- * The concept is code-split and is not in the page bundle. It is fetched only
- * after this island has mounted and decided the device can take it — so the
- * download cannot compete with the headline's paint.
+ * Both concepts are code-split and neither is in the page bundle. Only the one a
+ * visitor's URL selects is ever fetched, and only after this island has mounted
+ * and decided the device can take it — so neither download can compete with the
+ * headline's paint, and choosing A2 cannot make A1's first load worse.
  */
 const ShaderLattice = dynamic(
   () => import('./ShaderLattice').then((mod) => mod.ShaderLattice),
   { ssr: false },
+);
+const MeshLattice = dynamic(
+  () => import('./MeshLattice').then((mod) => mod.MeshLattice),
+  {
+    ssr: false,
+  },
 );
 
 export interface HeroLayerProps {
@@ -40,6 +52,13 @@ export function HeroCanvas({ dir }: { dir: Direction }) {
   const capability = useHeroCapability();
   const hostRef = useRef<HTMLDivElement>(null);
   const active = useIsRenderable(hostRef);
+  // Read once, in the initialiser rather than in an effect. It is safe for this
+  // to differ from the server because nothing renders until `capability` says
+  // `animate`, and the server's capability is always `poster` — so the value
+  // cannot reach the first commit and cannot cause a hydration mismatch.
+  const [concept] = useState<HeroConcept>(() =>
+    typeof window === 'undefined' ? 'a1' : conceptFromLocation(window.location.search),
+  );
   const animating = capability.kind === 'animate';
 
   return (
@@ -48,11 +67,17 @@ export function HeroCanvas({ dir }: { dir: Direction }) {
       // Exposed so a measurement run can tell *why* it got the poster instead
       // of inferring it. A fallback that cannot be distinguished from a broken
       // canvas is a fallback you cannot verify.
-      data-hero-layer={animating ? 'a1' : capability.kind}
+      data-hero-layer={animating ? concept : capability.kind}
       data-hero-reason={capability.kind === 'animate' ? undefined : capability.reason}
       className="absolute inset-0"
     >
-      {animating ? <ShaderLattice dir={dir} active={active} /> : null}
+      {animating ? (
+        concept === 'a2' ? (
+          <MeshLattice dir={dir} active={active} />
+        ) : (
+          <ShaderLattice dir={dir} active={active} />
+        )
+      ) : null}
     </div>
   );
 }
