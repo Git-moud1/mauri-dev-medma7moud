@@ -3,8 +3,6 @@ import { dirFor } from '@/i18n/locale';
 import type { Locale } from '@/i18n/config';
 
 import { ArrowRightIcon, WhatsAppIcon, CodeIcon, SmartphoneIcon } from './Icons';
-import { HeroCanvas } from './hero/HeroCanvas';
-import { LatticePoster } from './hero/LatticePoster';
 
 /**
  * Above-the-fold hero — fully server-rendered, no client JS.
@@ -12,10 +10,13 @@ import { LatticePoster } from './hero/LatticePoster';
  * The staggered `motion` entrance this used to have was deliberately dropped:
  * it started the h1 (the LCP element) at opacity 0 and only revealed it once
  * the animation library had loaded and hydrated, which is exactly the cost this
- * plan is trying to remove. Keeping a client island purely for that would also
- * be throwaway work — the Prism Stack hero replaces this markup wholesale in a
- * later plan. Ambient blur/grain layers and the pulsing status dot are CSS and
+ * plan is trying to remove. Ambient grain and the pulsing status dot are CSS and
  * are untouched.
+ *
+ * The animated background layer is gone as of this commit — concepts A1, A2 and
+ * A3 were all removed at the owner's request. They are recoverable from git at
+ * `a6a2996` / `fbe2e2a` if any of them is ever wanted back; the measured case
+ * against A3 is in MIGRATION.md §12.
  */
 export function Hero({
   locale,
@@ -41,26 +42,11 @@ export function Hero({
   return (
     <section id="top" className="relative overflow-hidden pt-32 pb-20 sm:pt-40 sm:pb-28">
       {/*
-        The hero's animated layer, and the reason it cannot hurt the headline.
-
-        Everything in here is `absolute inset-0` inside this `relative` section,
-        so the layer has no size of its own to contribute: the box is reserved by
-        construction and no concept can shift the text, whatever it renders.
-
-        Order matters. `LatticePoster` is server-rendered and therefore paints
-        with the `<h1>`; `HeroCanvas` mounts over it after hydration and fades in
-        only once it has drawn a frame. A visitor whose device declines WebGL,
-        asks for reduced motion, or has save-data on keeps the poster and never
-        learns there was supposed to be a canvas.
-
-        The two 120px-blur circles that used to live here are gone. They were a
-        second and third light source, which is exactly what the brief's "one
-        light source, used sparingly" rules out — the glow now comes from inside
-        the composition, where it can actually be attributed to the structure.
+        The grain, and nothing else. `absolute inset-0` inside this `relative`
+        section, so it contributes no size of its own and cannot move the
+        headline.
       */}
       <div className="pointer-events-none absolute inset-0 -z-10">
-        <LatticePoster dir={dir} />
-        <HeroCanvas dir={dir} locale={locale} />
         <div className="grain absolute inset-0 opacity-60" />
       </div>
 

@@ -16,23 +16,6 @@ export default defineConfig({
   use: {
     baseURL: process.env.PLAYWRIGHT_BASE_URL ?? 'http://localhost:3000',
     trace: 'on-first-retry',
-    /**
-     * A software rasteriser, so the hero concepts actually run.
-     *
-     * Headless Chromium has no GPU by default, which makes every WebGL and WebGPU
-     * context request fail — so the capability probe returns `no-webgl`, every
-     * concept falls back to the poster, and `hero.spec.ts`'s concept assertions
-     * either skip or pass on the fallback branch without ever observing the thing
-     * they name. Five of them were skipping for exactly that reason.
-     *
-     * These flags affect only the GPU-backed paths. Layout, fonts and the CLS
-     * measurements are untouched, and the tests that deliberately probe the
-     * *absence* of WebGL still work: that one patches `getContext` to return null,
-     * which is a stronger simulation than an absent GPU anyway.
-     */
-    launchOptions: {
-      args: ['--enable-unsafe-swiftshader', '--use-gl=angle', '--use-angle=swiftshader'],
-    },
   },
   projects: [
     { name: 'mobile', use: { ...devices['Pixel 7'] } },
