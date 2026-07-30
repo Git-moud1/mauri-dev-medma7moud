@@ -498,6 +498,13 @@ quantitatively.
 87 ms on `/ar`), so main-thread time is still the resource worth protecting in a
 hero — the ranking of the two concepts is unaffected.
 
+**Superseded by §12 for concept comparison.** Those two figures were taken against
+the deploy preview with an ad-hoc probe that no longer exists. §12 re-measures A1
+and A2 alongside A3 on the same kind of URL, with a kept harness, nine runs per
+cell and a pre-hero control — so the concept ranking should be read from §12's
+table, not from this line. The absolute values differ because §12's TBT window
+runs to the end of frame sampling rather than to TTI; the ordering does not.
+
 Recorded rather than quietly edited: the earlier figures were used in this
 session's own reasoning, and a corrected document that hides its correction
 teaches the next session nothing.
@@ -519,6 +526,33 @@ switch, with the same fallback to A1 on an unrecognised value.
 
 **Nothing has been deleted.** A1 and A2 are both still in the tree and still
 reachable, which is the point: A3 was built to be measured against both.
+
+### Where every number in this section was measured
+
+Stated once, up front, because §11's correction turned on exactly this question
+and a figure without its target is not a figure.
+
+| Table                            | Target                                           |
+| -------------------------------- | ------------------------------------------------ |
+| Chunk weight                     | deploy preview, commit `a6a2996`                 |
+| Blocking time / LCP / frame time | deploy preview, commit `a6a2996`                 |
+| Contrast and clipping            | deploy preview, commit `a6a2996`                 |
+| The trail's runtime increment    | **both** — shown side by side, and see why below |
+
+Deploy preview means `https://deploy-preview-1--medmoudsite.netlify.app`, which is
+the same kind of URL §11's A1/A2 rows were taken against. **No table below mixes a
+localhost row with a preview row.** Where a localhost figure is quoted it is
+labelled, and it is quoted only against other localhost figures.
+
+The distinction is not pedantry. The preview answers through Netlify's edge and
+its Next runtime function, over real TLS at real RTT; `next start` on loopback has
+none of that. Chunk weight turned out identical between them — bytes are decided
+by the build — but blocking time did not, and the trail's increment was resolvable
+on one and not the other.
+
+Every concept was re-verified live on that deploy before these numbers were taken:
+`?hero=a1`, `?hero=a2` and `?hero=a3` each engage on `/ar`, `/en` and `/fr`, an
+unknown value falls back to A1 on all three, and A3 draws with no console errors.
 
 ### What it is
 
@@ -543,9 +577,17 @@ been weight on the heaviest of the three concepts.
 
 ### The number that decides it: 414 KB
 
-Measured with `node scripts/measure-hero.mjs weight` — load the page in a real
-browser, record which `/_next/static` chunks it actually requests, gzip each
-response body locally.
+**Measured against the deploy preview** —
+`https://deploy-preview-1--medmoudsite.netlify.app`, commit `a6a2996`, the same
+kind of URL §11's A1/A2 rows were taken against. Command:
+
+```
+node scripts/measure-hero.mjs weight --base=https://deploy-preview-1--medmoudsite.netlify.app
+```
+
+It loads the page in a real browser, records which `/_next/static` chunks it
+actually requests, and gzips each response body locally rather than trusting the
+origin's `content-length` — so the figure is server-independent.
 
 | Cell                  | Total JS transferred | Beyond first-load | Chunks |
 | --------------------- | -------------------- | ----------------- | ------ |
@@ -553,6 +595,10 @@ response body locally.
 | A1                    | 203.1 KB             | **3.1 KB**        | 1      |
 | A2                    | 431.2 KB             | **231.2 KB**      | 2      |
 | A3                    | 614.1 KB             | **414.1 KB**      | 3      |
+
+These are byte-identical to the same table taken against a local `next start`,
+which is the expected result and worth stating: chunk weight is decided by the
+build, not by what serves it. Only the timing table below is host-sensitive.
 
 **A3 is 1.8x the weight of A2, and A2 was rejected at 226 KB.**
 
@@ -571,120 +617,95 @@ as a concept shrinking, which is why the control row is measured rather than
 assumed. There is no `prefetch` and no `preload` hint on the A3 chunk, and nothing
 warms it on `/ar` first paint.
 
-### The trail costs nothing in bytes, by construction
-
-`a3` and `a3-notrail` transfer **byte-identical** JS (614.1 KB, same three
-chunks). That is not a coincidence to be pleased about — `?trail=0` pins the
-trail's bounding radius to zero so the shader's early-out is false at every
-fragment and the capsule loop never runs. Same graph, same compiled shader, same
-bytes. The only thing the switch can change is frame time, which is what it was
-built to isolate.
-
 ### Blocking time, against a pre-hero control
 
-`node scripts/measure-hero.mjs measure`. 390x844, 4x CPU throttle, slow 4G, nine
-runs per cell, medians, every URL warmed inside its own browser before the first
-counted run, and every run verified to have engaged the concept under test. All
-fifty counted runs on all ten cells engaged; none were discarded.
+**Measured against the deploy preview** —
+`https://deploy-preview-1--medmoudsite.netlify.app`, commit `a6a2996`. That is the
+same kind of URL §11's A1/A2 figures were taken against, and it is the reason this
+table can sit beside them. Command:
 
-The **control** row is the pre-hero baseline on the same permalink and the same
-build: `prefers-reduced-motion` emulated, so the capability probe returns `still`,
-no concept chunk is ever requested and no canvas is created. It is not a checkout
-of the pre-hero commit — reduced motion also stops the page's CSS animations —
-which is why the cost is stated as a difference against it rather than as an
-absolute.
+```
+node scripts/measure-hero.mjs measure --base=https://deploy-preview-1--medmoudsite.netlify.app
+```
 
-| Route | Cell         | TBT         | vs control   | LCP - TTFB | frame @rest | frame @pointer |
-| ----- | ------------ | ----------- | ------------ | ---------- | ----------- | -------------- |
-| `/ar` | control      | 815 ms      | —            | 1721 ms    | 16.7 ms     | 16.7 ms        |
-| `/ar` | **A1**       | 851 ms      | **+36 ms**   | 1725 ms    | 16.7 ms     | 25.0 ms        |
-| `/ar` | **A2**       | 2284 ms     | **+1469 ms** | 1682 ms    | 16.7 ms     | 33.3 ms        |
-| `/ar` | **A3**       | **3455 ms** | **+2640 ms** | 1740 ms    | 16.7 ms     | 33.3 ms        |
-| `/ar` | A3, no trail | 2749 ms     | +1934 ms     | 2060 ms    | 16.7 ms     | 33.3 ms        |
-| `/en` | control      | 832 ms      | —            | 1559 ms    | 16.7 ms     | 16.7 ms        |
-| `/en` | **A1**       | 1031 ms     | **+199 ms**  | 1707 ms    | 16.7 ms     | 16.7 ms        |
-| `/en` | **A2**       | 2608 ms     | **+1776 ms** | 1538 ms    | 16.7 ms     | 16.7 ms        |
-| `/en` | **A3**       | **5283 ms** | **+4451 ms** | 1921 ms    | 16.7 ms     | 33.3 ms        |
-| `/en` | A3, no trail | 2878 ms     | +2046 ms     | 830 ms     | 16.7 ms     | 16.8 ms        |
+390x844, 4x CPU throttle, slow 4G, charcoal palette, nine runs per cell, medians,
+every URL warmed inside its own browser before the first counted run, every run
+verified to have engaged the concept under test. All ninety counted runs engaged;
+none were discarded.
 
-**A3 costs 1.8x A2's blocking time on `/ar` and 2.5x on `/en`, and A2 was already
-rejected on this metric.** Against A1 it is 73x on `/ar`. TBT is the metric this
-site is worst at, so this is the number that decides, and it agrees with the byte
-figure: A3 is 1.8x A2's weight and 1.8x its blocking time on the locale that
-matters most.
+The **control** row is the pre-hero baseline on the same URL and the same deploy:
+`prefers-reduced-motion` emulated, so the capability probe returns `still`, no
+concept chunk is ever requested and no canvas is created. It is not a checkout of
+the pre-hero commit — reduced motion also stops the page's CSS animations — which
+is why the cost is stated as a difference against it rather than as an absolute.
 
-**LCP - TTFB is flat across every cell** (1538-2060 ms, with the outlier being a
-_faster_ A3 run). That is the lazy boundary working exactly as designed: whatever
-a concept costs, it costs it after the headline has painted, and no concept moves
-the `<h1>`. It is also why LCP cannot be used to choose between them.
+| Route | Cell    | TBT         | vs control   | LCP - TTFB | frame @rest | frame @pointer |
+| ----- | ------- | ----------- | ------------ | ---------- | ----------- | -------------- |
+| `/ar` | control | 791 ms      | —            | 2059 ms    | 16.7 ms     | 16.7 ms        |
+| `/ar` | **A1**  | 897 ms      | **+106 ms**  | 2217 ms    | 16.7 ms     | 16.7 ms        |
+| `/ar` | **A2**  | 2156 ms     | **+1365 ms** | 1525 ms    | 16.7 ms     | 33.3 ms        |
+| `/ar` | **A3**  | **3138 ms** | **+2347 ms** | 1659 ms    | 16.7 ms     | 33.4 ms        |
+| `/en` | control | 1429 ms     | —            | 1578 ms    | 16.7 ms     | 16.7 ms        |
+| `/en` | **A1**  | 1861 ms     | **+432 ms**  | 1305 ms    | 16.7 ms     | 16.7 ms        |
+| `/en` | **A2**  | 3448 ms     | **+2019 ms** | 1828 ms    | 33.3 ms     | 16.7 ms        |
+| `/en` | **A3**  | **5190 ms** | **+3761 ms** | 1608 ms    | 16.7 ms     | 16.7 ms        |
 
-### The trail, measured as its own increment
+**A3 costs 1.7x A2's blocking time on `/ar` and 1.9x on `/en`, and A2 was already
+rejected on this metric.** Against A1 it is 22x on `/ar` and 8.7x on `/en`. TBT is
+the metric this site is worst at, so this is the number that decides — and it
+agrees with the byte figure, which put A3 at 1.8x A2.
 
-| Route | A3          | A3 without trail | trail costs  |
-| ----- | ----------- | ---------------- | ------------ |
-| `/ar` | 3455 ms TBT | 2749 ms TBT      | **+706 ms**  |
-| `/en` | 5283 ms TBT | 2878 ms TBT      | **+2405 ms** |
+**LCP - TTFB shows no systematic concept effect** (1305-2217 ms, and the slowest
+row is the _control_). That is the lazy boundary working: whatever a concept
+costs, it costs after the headline has painted. It is also why LCP cannot be used
+to choose between them.
 
-Bytes: **zero**, exactly as predicted — both cells transfer byte-identical JS,
-because `?trail=0` pins the bounding radius to zero and the same compiled shader
-takes the early-out.
+The same ten cells taken against a local `next start` ranked the concepts
+identically (`/ar`: 815 / 851 / 2284 / 3455 ms). Those numbers are **not** in this
+table, because a localhost row and a preview row are not the same measurement —
+the preview answers through Netlify's edge and its Next runtime function, over
+real TLS at real RTT. Mixing them would be §11's warm/cold mistake in a new
+costume.
 
-Frame time: the trail is the only part of A3 that responds to input, and it shows.
-Under scripted pointer motion A3 drops to 33.3 ms (30 fps) while A3 without the
-trail stays at 16.8 ms (60 fps) on `/en`. A median taken over an idle page would
-have reported both at 16.7 ms and missed the cost completely — the same mistake as
-the unwarmed URLs in section 11, in a different dimension.
+### The trail: bytes settled, runtime not
 
-**But the TBT half of that increment is largely an artefact of the test
-environment, and should not be read as a phone number.** Headless Chromium has no
-GPU and runs SwiftShader, so the fragment shader executes on the CPU and its cost
-blocks the thread that issued the draw. On real hardware the capsule loop runs on
-the GPU and would not appear in TBT at all; what would remain is the frame-time
-drop, which is real and is the honest signal here. The two locales disagreeing by
-3.4x on the same increment (706 ms vs 2405 ms) is itself a sign that this figure is
-dominated by environment noise rather than by the shader.
+**Bytes: zero, and that one is solid.** `?hero=a3` and `?hero=a3&trail=0` transfer
+byte-identical JS on the preview (614.1 KB, the same three chunks), because the
+switch pins the trail's bounding radius to zero and the same compiled shader takes
+the early-out. Same graph, same shader, same bytes.
 
-### What these numbers are not
+**Runtime cost: not established by this harness.** The trail-off cells did not
+behave, and the honest thing is to show them rather than to quote whichever pair
+flattered the conclusion:
 
-**They are not Lighthouse's and are not comparable to section 11's.** The TBT
-window here runs from FCP to the end of frame sampling rather than to TTI, which is
-not observable from inside the page; that makes every figure more pessimistic than
-Lighthouse's, consistently across all ten cells. What the table supports is the
-comparison between cells.
+| Target                 | Route | A3      | A3 without trail | apparent increment |
+| ---------------------- | ----- | ------- | ---------------- | ------------------ |
+| deploy preview         | `/ar` | 3138 ms | **4836 ms**      | **−1698 ms**       |
+| deploy preview         | `/en` | 5190 ms | **1909 ms**      | **+3281 ms**       |
+| localhost `next start` | `/ar` | 3455 ms | 2749 ms          | +706 ms            |
+| localhost `next start` | `/en` | 5283 ms | 2878 ms          | +2405 ms           |
 
-**Frame times are quantised to the vsync interval** (16.7 / 25.0 / 33.3 ms)
-because they are rAF deltas. They resolve "dropped to 30 fps" but not a sub-frame
-difference in shader cost.
+Four measurements of one quantity, spanning −1698 ms to +3281 ms and disagreeing
+in **sign**. On the preview, turning the trail off appears to make `/ar` slower
+than leaving it on, and makes `/en` cheaper than A2 — both impossible. The trail's
+TBT cost is below this harness's noise floor and nothing should be claimed for it.
 
-### Three notes on the harness, since the numbers depend on them
+Why it is not resolvable here: TBT counts main-thread long tasks, and headless
+Chromium has no GPU. Under SwiftShader the fragment shader runs on the CPU and
+blocks the thread that issued the draw, so the trail's cost lands in the same
+figure as page scripting and is then swamped by network and scheduling variance —
+which the preview adds a great deal more of than localhost does. On real hardware
+the capsule loop runs on the GPU and would not enter TBT at all.
 
-**`domcontentloaded`, not `load`.** `load` waits for every subresource, which on
-this site means the whole projects grid's imagery — none of it above the fold, none
-of it anything the hero waits on — and it folded those image-decode long tasks into
-every cell's TBT. Nothing here reads the `load` event: LCP, FCP and long tasks
-arrive through buffered observers and TTFB comes off the navigation entry.
+What did reproduce is the **frame-time signal on localhost**: A3 under scripted
+pointer motion dropped to 33.3 ms (30 fps) while A3 without the trail held 16.8 ms
+(60 fps) on `/en`. On the preview even that separation is lost in the noise. A
+median over an idle page would have missed the trail entirely in every one of
+these runs, which was the reason for sampling under motion at all.
 
-**The settle waits for engagement, not for a fixed interval.** A fixed wait has to
-be long enough for the slowest cell — A3's 414 KB chunk over slow 4G — so every
-other cell pays for it. Waiting on `[data-hero-layer="<concept>"]` takes as long as
-each cell needs, and a run that never engages inside 20 s is discarded rather than
-counted as a slow one.
-
-**One browser process per cell.** A shared browser is a plausible way for earlier
-cells to leave later ones on a heavier process, and the cells run in increasing
-order of cost, so any such drift would push the same way as the effect. Isolating
-per cell costs about a second each. To be clear about what this is: **no drift was
-ever measured.** An earlier run was abandoned on the belief that it had slowed to a
-crawl, and that belief turned out to be a misreading of a block-buffered progress
-stream, not a real effect. The guard stays because it is cheap and forecloses a
-real risk, not because it fixed an observed one — saying so matters, because an
-unexplained "fix" that is really a superstition is how a harness accumulates ritual.
-
-The harness now appends one unbuffered line per completed cell to
-`.hero-measure/progress.log`, so a long run can be watched without inferring its
-state from a pipe that has not flushed; a transient navigation failure discards
-that run instead of killing the table (nine of ten cells were lost that way once);
-and `--route=` / `--cell=` re-measure a single cell without repeating the others.
+Settling this properly needs a GPU-backed run on real hardware, and it is not on
+the critical path for the decision: A3's 414 KB and its TBT ranking do not depend
+on the trail either way.
 
 ### Colour: the blue is a direction, not a token value
 
@@ -716,17 +737,28 @@ haze. At 1.0 the only things in frame that bloom are the over-unity emitters.
 
 ### Contrast and clipping, measured on the worst frame
 
-`node scripts/measure-hero.mjs verify`, dark palette (`--bg = 11 12 16`), twelve
-frames across a full scan sweep with the pointer moving throughout. Emitter pixels
-are isolated by blue dominance so the photograph's own white does not contaminate
-the figure — the first version of this check reported peak luminance 255 on every
-frame, because the brightest pixel on the canvas is a white card in the app, not
-the glow.
+**Measured against the deploy preview** —
+`https://deploy-preview-1--medmoudsite.netlify.app`, commit `a6a2996`:
+
+```
+node scripts/measure-hero.mjs verify --base=https://deploy-preview-1--medmoudsite.netlify.app
+```
+
+Dark palette (`--bg = 11 12 16`), twelve frames across a full scan sweep with the
+pointer moving throughout. Emitter pixels are isolated by blue dominance so the
+photograph's own white does not contaminate the figure — the first version of this
+check reported peak luminance 255 on every frame, because the brightest pixel on
+the canvas is a white card in the app, not the glow.
 
 | Route | dimmest lit frame | brightest frame | saturated pixels added by the emitters |
 | ----- | ----------------- | --------------- | -------------------------------------- |
-| `/en` | **7.55:1**        | 9.31:1          | **0.000%**                             |
-| `/ar` | **7.54:1**        | 8.25:1          | **0.000%**                             |
+| `/en` | **7.55:1**        | 9.80:1          | **0.000%**                             |
+| `/ar` | **7.54:1**        | 7.79:1          | **0.000%**                             |
+
+The same check against a local `next start` gave 7.55:1 and 7.54:1 at the dimmest
+lit frame — identical, as it should be. Only the brightest-frame figure moves
+(9.31 and 8.25 locally), because which frame happens to be brightest depends on
+where the scan sweep is when a capture lands, not on the host.
 
 Both clear the non-text 3:1 floor at their _weakest_, which is the test the
 WhatsApp pill and the floating button were fixed under.
@@ -860,19 +892,58 @@ translated in all three dictionaries. No English placeholder copy ships.
 
 ### Reproducing any of this
 
+Against the deploy preview — the form every table above was taken with:
+
+```
+PREVIEW=https://deploy-preview-1--medmoudsite.netlify.app
+node scripts/measure-hero.mjs weight  --base=$PREVIEW
+node scripts/measure-hero.mjs verify  --base=$PREVIEW
+node scripts/measure-hero.mjs measure --base=$PREVIEW
+```
+
+Against a local build — comparable only to other local runs:
+
 ```
 npm run build
 npm run gen:hero-depth          # regenerates both asset pairs
-node scripts/measure-hero.mjs weight
-node scripts/measure-hero.mjs verify
 node scripts/measure-hero.mjs measure
 ```
 
+`--base` is the whole reason the tables above can sit beside §11's. Without it the
+script owns a `next start` on port 3210; with it, it measures the deployed target
+as found and does not rebuild, redeploy or purge anything first — the point of
+measuring the preview is to measure what a visitor gets. The chosen target is
+printed above the table, written into every row of `runs.json` and stamped on
+`.hero-measure/progress.log`, so a number cannot be quoted without its provenance.
+
+Four decisions inside the harness that the numbers depend on:
+
+- **`domcontentloaded`, not `load`.** `load` waits for every subresource, which on
+  this site means the whole projects grid's imagery — none of it above the fold,
+  none of it anything the hero waits on — and it folded those image-decode long
+  tasks into every cell's TBT. Nothing here reads the `load` event: LCP, FCP and
+  long tasks arrive through buffered observers, TTFB off the navigation entry.
+- **The settle waits for engagement, not for a fixed interval.** A fixed wait has
+  to be long enough for the slowest cell — A3's 414 KB chunk over slow 4G — so
+  every other cell pays for it. Waiting on `[data-hero-layer="<concept>"]` takes as
+  long as each cell needs, and a run that never engages inside 20 s is discarded
+  rather than counted as a slow one.
+- **One browser process per cell**, warmed inside that browser. A shared browser is
+  a plausible way for earlier cells to leave later ones on a heavier process, and
+  the cells run in increasing order of cost, so any drift would push the same way
+  as the effect. To be clear: **no drift was ever measured.** An earlier run was
+  abandoned on the belief that it had slowed to a crawl, and that belief turned out
+  to be a misreading of a block-buffered progress stream. The guard stays because
+  it is cheap, not because it fixed something observed — an unexplained "fix" that
+  is really a superstition is how a harness accumulates ritual. Per _cell_ and not
+  per _run_, because a fresh browser has a cold HTTP cache and warming the URL
+  inside it is the whole point of the warm-up navigation.
+- **A transient failure discards its run, not the table.** Nine of ten cells were
+  lost once to a single 30 s navigation timeout during a warm-up.
+
 `scripts/measure-hero.mjs` is kept, unlike section 11's ad-hoc probe. Section 11
 noted that "a script that only ever answered one question is not worth
-maintaining"; that question has now been asked three times, and the second answer
-was wrong because the runs did not warm the URL. Warming is a property of the
-harness, not of the operator's memory, so the harness is a file. It owns its own
-server on port 3210, warms every URL before its first counted run, takes nine runs
-per cell, and discards any run where `data-hero-layer` did not settle on the
-concept under test.
+maintaining"; that question has now been asked four times, and two of the answers
+were wrong — once because the runs did not warm the URL, once because they were
+taken against the wrong kind of URL entirely. Both are properties of the harness
+rather than of the operator's memory, which is why the harness is a file.
