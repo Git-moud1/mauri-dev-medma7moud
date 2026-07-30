@@ -5,6 +5,8 @@
   "description": "Premium multilingual (AR/EN/FR) portfolio for Mauri-Dev — Develop Solutions (Full Stack & Mobile App Development).",
   "scripts": {
     "gen:blur": "node scripts/gen-blur.mjs",
+    "gen:hero-depth": "node scripts/gen-hero-depth.mjs",
+    "measure:hero": "node scripts/measure-hero.mjs",
     "dev": "next dev",
     "prebuild": "node scripts/gen-blur.mjs",
     "build": "next build",

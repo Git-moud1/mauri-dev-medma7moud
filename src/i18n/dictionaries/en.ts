@@ -27,6 +27,9 @@ const en = {
       'Full Stack & Mobile App Developer crafting fast, elegant products — from pixel-perfect interfaces to production-ready back-ends and native mobile apps.',
     ctaWork: 'View Work',
     ctaWhatsapp: 'Chat on WhatsApp',
+    /** A3's scroll affordance. Names the destination — "Scroll down" names the
+        gesture, which the visitor already knows how to do. */
+    scrollHint: 'See the work',
     stats: {
       years: 'Years experience',
       projects: 'Projects delivered',

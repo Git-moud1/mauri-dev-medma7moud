@@ -60,7 +60,7 @@ export function Hero({
       */}
       <div className="pointer-events-none absolute inset-0 -z-10">
         <LatticePoster dir={dir} />
-        <HeroCanvas dir={dir} />
+        <HeroCanvas dir={dir} locale={locale} />
         <div className="grain absolute inset-0 opacity-60" />
       </div>
 

@@ -16,10 +16,24 @@ export type HeroCapability =
   /** Reduced motion: a still, composed frame. Not nothing, and not broken. */
   | { kind: 'still'; reason: 'reduced-motion' }
   /** Static poster only: no canvas is created at all. */
-  | { kind: 'poster'; reason: 'save-data' | 'low-end' | 'no-webgl' | 'ssr' };
+  | {
+      kind: 'poster';
+      reason: 'save-data' | 'low-end' | 'no-webgl' | 'ssr' | 'light-palette';
+    };
 
-/** The concept to render. `a1` is the shader, `a2` the three.js scene. */
-export type HeroConcept = 'a1' | 'a2';
+/**
+ * The concept to render. `a1` is the raw-GLSL shader, `a2` the three.js scene,
+ * `a3` the depth-map plane in TSL on `three/webgpu`.
+ */
+export type HeroConcept = 'a1' | 'a2' | 'a3';
+
+/**
+ * Everything except the default. Listing them rather than testing `!== 'a1'`
+ * keeps the "unknown value falls back to the default" rule true by construction:
+ * a typo in the query string cannot select a concept, and adding a fourth
+ * concept cannot accidentally make every misspelling resolve to it.
+ */
+const ALTERNATES = ['a2', 'a3'] as const satisfies readonly HeroConcept[];
 
 /*
  * Module constants, not objects built per call.
@@ -38,7 +52,8 @@ const NO_WEBGL: HeroCapability = { kind: 'poster', reason: 'no-webgl' };
 const REDUCED_MOTION = '(prefers-reduced-motion: reduce)';
 
 /**
- * Both concepts are reachable on a deployed build with no rebuild: `?hero=a2`.
+ * Every concept is reachable on a deployed build with no rebuild: `?hero=a2`,
+ * `?hero=a3`.
  *
  * Read from the browser rather than from the route's `searchParams`,
  * deliberately. Touching `searchParams` in a server component opts `/[locale]`
@@ -47,7 +62,8 @@ const REDUCED_MOTION = '(prefers-reduced-motion: reduce)';
  * forfeiting the CDN HTML. The canvas is client-only and post-paint anyway.
  */
 export function conceptFromLocation(search: string): HeroConcept {
-  return new URLSearchParams(search).get('hero') === 'a2' ? 'a2' : 'a1';
+  const value = new URLSearchParams(search).get('hero');
+  return ALTERNATES.find((concept) => concept === value) ?? 'a1';
 }
 
 /**
@@ -198,6 +214,51 @@ function getVisibilitySnapshot(): boolean {
 }
 
 function getVisibilityServerSnapshot(): boolean {
+  return true;
+}
+
+/**
+ * Whether the charcoal palette is active.
+ *
+ * This is a capability question rather than a styling one, and only for A3.
+ *
+ * A1 paints its whole canvas from `--bg` and A2 reads the token into its fog and
+ * materials, so both follow the theme for free. A3's backdrop is a *photograph*
+ * with charcoal baked into it. On the light palette that leaves the hero's dark
+ * image underneath `--fg` at its light-theme value — near-black text — and the
+ * headline stops being readable. Measured, not guessed: see
+ * `.hero-measure/a3-en-light-theme.png`.
+ *
+ * A concept that cannot render legibly in a palette should decline that palette,
+ * the same way one that cannot get a GPU context declines the device. The poster
+ * is already the answer for every other "not here" case.
+ */
+export function useIsCharcoalPalette(): boolean {
+  return useSyncExternalStore(
+    subscribeToPalette,
+    getPaletteSnapshot,
+    getPaletteServerSnapshot,
+  );
+}
+
+function subscribeToPalette(onChange: () => void): () => void {
+  const observer = new MutationObserver(onChange);
+  observer.observe(document.documentElement, {
+    attributes: true,
+    attributeFilter: ['class'],
+  });
+  return () => {
+    observer.disconnect();
+  };
+}
+
+function getPaletteSnapshot(): boolean {
+  return document.documentElement.classList.contains('dark');
+}
+
+function getPaletteServerSnapshot(): boolean {
+  // Unused in practice — the server's capability is always `poster`, so nothing
+  // reads this before hydration. It matches no-flash.tsx's own default.
   return true;
 }
 

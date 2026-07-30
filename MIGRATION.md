@@ -508,3 +508,371 @@ Measured with an ad-hoc Playwright + CDP probe (`Emulation.setCPUThrottlingRate`
   `largest-contentful-paint`, `paint` and `longtask`). The probe was not kept — it
   is reproducible from this description, and a script that only ever answered one
   question is not worth maintaining.
+
+---
+
+## 12. Plan 3 — hero concept A3, the depth-map plane
+
+A third concept, built alongside A1 and A2 rather than replacing either.
+Reachable at `?hero=a3` on `/ar`, `/en` and `/fr`, through the same query-param
+switch, with the same fallback to A1 on an unrecognised value.
+
+**Nothing has been deleted.** A1 and A2 are both still in the tree and still
+reachable, which is the point: A3 was built to be measured against both.
+
+### What it is
+
+One flat plane, two textures — a photographic base image and a grayscale depth
+map — and a TSL fragment graph that offsets the base image's UVs by the depth
+value scaled by pointer position. No geometry. The depth is real per-pixel data,
+so the parallax holds at the extremes of the motion where A1's 2D shear falls
+apart, and there is no extrusion to pay for.
+
+On top of that: a scan line travelling through **depth space** rather than screen
+space, revealing a cell-noise dot grid; and a pointer trail evaluated as a capsule
+SDF chain against a 16-sample ring buffer, occluded by the same depth map, all
+through one bloom pass.
+
+Stack: `three/webgpu` node materials in TSL, `@react-three/fiber` 9.6.1.
+`WebGPURenderer` selects its own WebGL2 backend where WebGPU is absent — confirmed
+working; headless Chromium reports `WebGPU is not available, running under WebGL2
+backend` and renders identically. There is deliberately **no second GLSL path**.
+
+`@react-three/drei` was not added. A3 needs nothing from it, and it would have
+been weight on the heaviest of the three concepts.
+
+### The number that decides it: 414 KB
+
+Measured with `node scripts/measure-hero.mjs weight` — load the page in a real
+browser, record which `/_next/static` chunks it actually requests, gzip each
+response body locally.
+
+| Cell                  | Total JS transferred | Beyond first-load | Chunks |
+| --------------------- | -------------------- | ----------------- | ------ |
+| control (poster only) | 200.0 KB             | 0.0 KB            | 0      |
+| A1                    | 203.1 KB             | **3.1 KB**        | 1      |
+| A2                    | 431.2 KB             | **231.2 KB**      | 2      |
+| A3                    | 614.1 KB             | **414.1 KB**      | 3      |
+
+**A3 is 1.8x the weight of A2, and A2 was rejected at 226 KB.**
+
+The brief estimated A3 would "land near 200 KB gzipped". It does not, and the
+reason is structural rather than fixable by trimming: `three/webgpu`'s node and
+backend layer is 413.6 KB gzipped on its own, on top of the 277.1 KB
+`three.core.js` it shares with the `three` that `@react-three/fiber` already
+pulls in. Tree-shaking removes a great deal of the node library, but the
+renderer's node builders reach most of it, so what survives is most of what makes
+TSL work. There is no version of this concept on this stack that is cheap in
+bytes.
+
+**First-load JS is unchanged: 200.0 KB in every cell.** The dynamic import is not
+leaking into the entry chunk — a leak would show up as the _control_ growing, not
+as a concept shrinking, which is why the control row is measured rather than
+assumed. There is no `prefetch` and no `preload` hint on the A3 chunk, and nothing
+warms it on `/ar` first paint.
+
+### The trail costs nothing in bytes, by construction
+
+`a3` and `a3-notrail` transfer **byte-identical** JS (614.1 KB, same three
+chunks). That is not a coincidence to be pleased about — `?trail=0` pins the
+trail's bounding radius to zero so the shader's early-out is false at every
+fragment and the capsule loop never runs. Same graph, same compiled shader, same
+bytes. The only thing the switch can change is frame time, which is what it was
+built to isolate.
+
+### Blocking time, against a pre-hero control
+
+`node scripts/measure-hero.mjs measure`. 390x844, 4x CPU throttle, slow 4G, nine
+runs per cell, medians, every URL warmed inside its own browser before the first
+counted run, and every run verified to have engaged the concept under test. All
+fifty counted runs on all ten cells engaged; none were discarded.
+
+The **control** row is the pre-hero baseline on the same permalink and the same
+build: `prefers-reduced-motion` emulated, so the capability probe returns `still`,
+no concept chunk is ever requested and no canvas is created. It is not a checkout
+of the pre-hero commit — reduced motion also stops the page's CSS animations —
+which is why the cost is stated as a difference against it rather than as an
+absolute.
+
+| Route | Cell         | TBT         | vs control   | LCP - TTFB | frame @rest | frame @pointer |
+| ----- | ------------ | ----------- | ------------ | ---------- | ----------- | -------------- |
+| `/ar` | control      | 815 ms      | —            | 1721 ms    | 16.7 ms     | 16.7 ms        |
+| `/ar` | **A1**       | 851 ms      | **+36 ms**   | 1725 ms    | 16.7 ms     | 25.0 ms        |
+| `/ar` | **A2**       | 2284 ms     | **+1469 ms** | 1682 ms    | 16.7 ms     | 33.3 ms        |
+| `/ar` | **A3**       | **3455 ms** | **+2640 ms** | 1740 ms    | 16.7 ms     | 33.3 ms        |
+| `/ar` | A3, no trail | 2749 ms     | +1934 ms     | 2060 ms    | 16.7 ms     | 33.3 ms        |
+| `/en` | control      | 832 ms      | —            | 1559 ms    | 16.7 ms     | 16.7 ms        |
+| `/en` | **A1**       | 1031 ms     | **+199 ms**  | 1707 ms    | 16.7 ms     | 16.7 ms        |
+| `/en` | **A2**       | 2608 ms     | **+1776 ms** | 1538 ms    | 16.7 ms     | 16.7 ms        |
+| `/en` | **A3**       | **5283 ms** | **+4451 ms** | 1921 ms    | 16.7 ms     | 33.3 ms        |
+| `/en` | A3, no trail | 2878 ms     | +2046 ms     | 830 ms     | 16.7 ms     | 16.8 ms        |
+
+**A3 costs 1.8x A2's blocking time on `/ar` and 2.5x on `/en`, and A2 was already
+rejected on this metric.** Against A1 it is 73x on `/ar`. TBT is the metric this
+site is worst at, so this is the number that decides, and it agrees with the byte
+figure: A3 is 1.8x A2's weight and 1.8x its blocking time on the locale that
+matters most.
+
+**LCP - TTFB is flat across every cell** (1538-2060 ms, with the outlier being a
+_faster_ A3 run). That is the lazy boundary working exactly as designed: whatever
+a concept costs, it costs it after the headline has painted, and no concept moves
+the `<h1>`. It is also why LCP cannot be used to choose between them.
+
+### The trail, measured as its own increment
+
+| Route | A3          | A3 without trail | trail costs  |
+| ----- | ----------- | ---------------- | ------------ |
+| `/ar` | 3455 ms TBT | 2749 ms TBT      | **+706 ms**  |
+| `/en` | 5283 ms TBT | 2878 ms TBT      | **+2405 ms** |
+
+Bytes: **zero**, exactly as predicted — both cells transfer byte-identical JS,
+because `?trail=0` pins the bounding radius to zero and the same compiled shader
+takes the early-out.
+
+Frame time: the trail is the only part of A3 that responds to input, and it shows.
+Under scripted pointer motion A3 drops to 33.3 ms (30 fps) while A3 without the
+trail stays at 16.8 ms (60 fps) on `/en`. A median taken over an idle page would
+have reported both at 16.7 ms and missed the cost completely — the same mistake as
+the unwarmed URLs in section 11, in a different dimension.
+
+**But the TBT half of that increment is largely an artefact of the test
+environment, and should not be read as a phone number.** Headless Chromium has no
+GPU and runs SwiftShader, so the fragment shader executes on the CPU and its cost
+blocks the thread that issued the draw. On real hardware the capsule loop runs on
+the GPU and would not appear in TBT at all; what would remain is the frame-time
+drop, which is real and is the honest signal here. The two locales disagreeing by
+3.4x on the same increment (706 ms vs 2405 ms) is itself a sign that this figure is
+dominated by environment noise rather than by the shader.
+
+### What these numbers are not
+
+**They are not Lighthouse's and are not comparable to section 11's.** The TBT
+window here runs from FCP to the end of frame sampling rather than to TTI, which is
+not observable from inside the page; that makes every figure more pessimistic than
+Lighthouse's, consistently across all ten cells. What the table supports is the
+comparison between cells.
+
+**Frame times are quantised to the vsync interval** (16.7 / 25.0 / 33.3 ms)
+because they are rAF deltas. They resolve "dropped to 30 fps" but not a sub-frame
+difference in shader cost.
+
+### Three notes on the harness, since the numbers depend on them
+
+**`domcontentloaded`, not `load`.** `load` waits for every subresource, which on
+this site means the whole projects grid's imagery — none of it above the fold, none
+of it anything the hero waits on — and it folded those image-decode long tasks into
+every cell's TBT. Nothing here reads the `load` event: LCP, FCP and long tasks
+arrive through buffered observers and TTFB comes off the navigation entry.
+
+**The settle waits for engagement, not for a fixed interval.** A fixed wait has to
+be long enough for the slowest cell — A3's 414 KB chunk over slow 4G — so every
+other cell pays for it. Waiting on `[data-hero-layer="<concept>"]` takes as long as
+each cell needs, and a run that never engages inside 20 s is discarded rather than
+counted as a slow one.
+
+**One browser process per cell.** A shared browser is a plausible way for earlier
+cells to leave later ones on a heavier process, and the cells run in increasing
+order of cost, so any such drift would push the same way as the effect. Isolating
+per cell costs about a second each. To be clear about what this is: **no drift was
+ever measured.** An earlier run was abandoned on the belief that it had slowed to a
+crawl, and that belief turned out to be a misreading of a block-buffered progress
+stream, not a real effect. The guard stays because it is cheap and forecloses a
+real risk, not because it fixed an observed one — saying so matters, because an
+unexplained "fix" that is really a superstition is how a harness accumulates ritual.
+
+The harness now appends one unbuffered line per completed cell to
+`.hero-measure/progress.log`, so a long run can be watched without inferring its
+state from a pipe that has not flushed; a transient navigation failure discards
+that run instead of killing the table (nine of ten cells were lost that way once);
+and `--route=` / `--cell=` re-measure a single cell without repeating the others.
+
+### Colour: the blue is a direction, not a token value
+
+The reference multiplies its mask by `vec3(10, 0, 0)` — a direction in colour
+space scaled well past 1.0. Substituting the brand blue is therefore not a
+substitution of the token, because the same scalar gain on a different direction
+lands at a different luminance, and the bloom threshold is a luminance test.
+
+- Pure red at gain 10 has Rec.709 luminance `10 * 0.2126 = 2.13`.
+- `--glow-2` (`#3B82F6`) renormalised so its peak channel is 1.0 is
+  `(0.240, 0.528, 1.000)`; its luminance per unit of gain is
+  `0.2126*0.240 + 0.7152*0.528 + 0.0722*1.000 = 0.501` — the token carries a lot
+  of green.
+- Matching the reference's luminance therefore needs **gain 4.2, not 10**.
+
+Chosen and recorded:
+
+| Constant          | Value   | Why                                                   |
+| ----------------- | ------- | ----------------------------------------------------- |
+| `MASK_GAIN`       | 4.2     | luminance-matched to the reference red, per the above |
+| `TRAIL_GAIN`      | 3.4     | set last, after the scan line — shared bloom budget   |
+| `BLOOM_STRENGTH`  | 0.62    |                                                       |
+| `BLOOM_RADIUS`    | 0.55    |                                                       |
+| `BLOOM_THRESHOLD` | **1.0** | sits _at_ the photograph's white point                |
+
+The threshold is the one that matters. Below 1.0 the white cards in the app
+screenshot start blooming and the whole reason for using a real UI is lost to a
+haze. At 1.0 the only things in frame that bloom are the over-unity emitters.
+
+### Contrast and clipping, measured on the worst frame
+
+`node scripts/measure-hero.mjs verify`, dark palette (`--bg = 11 12 16`), twelve
+frames across a full scan sweep with the pointer moving throughout. Emitter pixels
+are isolated by blue dominance so the photograph's own white does not contaminate
+the figure — the first version of this check reported peak luminance 255 on every
+frame, because the brightest pixel on the canvas is a white card in the app, not
+the glow.
+
+| Route | dimmest lit frame | brightest frame | saturated pixels added by the emitters |
+| ----- | ----------------- | --------------- | -------------------------------------- |
+| `/en` | **7.55:1**        | 9.31:1          | **0.000%**                             |
+| `/ar` | **7.54:1**        | 8.25:1          | **0.000%**                             |
+
+Both clear the non-text 3:1 floor at their _weakest_, which is the test the
+WhatsApp pill and the floating button were fixed under.
+
+The two over-unity emitters do not clip when they overlap, and that is structural
+rather than tuned: the scan mask and the trail are combined with `max`, never a
+sum, as are the individual capsules within the trail. Summing them is what
+produces the white smear the brief names as the failure mode. The residual 0.012%
+of saturated pixels is the app screenshot's own white, and is identical with the
+trail on and off.
+
+### Corrections applied to the reference code
+
+All four from the brief, plus a fifth found against the installed three:
+
+1. **The frozen scan line.** `float(uScanProgress.value)` reads `.value` at
+   graph-construction time — when it is 0 — and compiles that in as a literal.
+   Fixed by passing the uniform node itself.
+2. **No teardown.** `RenderPipeline`, the node material and both textures are now
+   disposed in a `useEffect` cleanup whose dependencies match the `useMemo` that
+   created them. With three locale routes and a concept switch, the original
+   would stack render targets at canvas resolution for the life of the tab.
+3. **Two `useFrame` callbacks merged into one**, at priority 1. Because the render
+   call is the last statement in it, the "priority-1 callback must run last"
+   ordering is satisfied by construction rather than by getting two priorities
+   right. It is also now the only place any uniform is written.
+4. **`titleWords` hoisted out of the component.** It was rebuilt every render with
+   only `.length` in the dependency array — a new array identity feeding an effect
+   that could not see it had changed. It is derived per locale at module scope in
+   `HeroWords.tsx`.
+5. **`PostProcessing` and `renderAsync()` are both deprecated** in three 0.185
+   (r183 and r181), and each emits a console warning. A3 uses `RenderPipeline` and
+   `render()`, with `await renderer.init()` in the async `gl` factory where it
+   belongs. `@types/three@0.185.1` exports `RenderPipeline`, so this costs no
+   casts.
+
+A sixth thing, found only at runtime: the whole fragment graph has to be built
+inside a TSL `Fn`. `toVar()`, `If()` and `Loop()` all emit statements, and a
+statement needs a stack, which only exists while a shader function is being built.
+Constructing the graph at module scope the way the reference does for its simpler
+expression-only material throws `Cannot read properties of null (reading 'If')`
+the moment a loop is added.
+
+### Two things the brief asked for that were built differently, and why
+
+**The depth map is exported, not estimated.** The brief asks for Depth Anything V2
+or MiDaS rather than hand-painting, _unless_ the mockup is rendered in a 3D tool,
+in which case the depth buffer should be exported directly because it will be
+exact. That is the path taken. `scripts/gen-hero-depth.mjs` composites a real
+Swift Eats screenshot into a device body by an explicit pinhole projection of a
+plane in space, so the camera-space distance of every pixel on that plane is known
+in closed form and there is nothing for a model to infer. The result has both
+properties the brief says hand-painting gets wrong: a continuous ramp across the
+screen plane, because the plane is genuinely oblique, and a hard step at the
+silhouette.
+
+Assets: `public/hero/a3-base.webp` 14.0 KB and `a3-depth.webp` 6.7 KB, both
+1024x512 (powers of two), depth written **lossless** — lossy WebP hides error
+where the eye does not look, which on a smooth ramp means banding, and this ramp
+is not being looked at, it is being used as a coordinate. `NearestFilter` is
+explicitly off; the depth map has to interpolate.
+
+**RTL needs a second pair of assets, not a mirrored shader.** The first RTL pass
+mirrored the canvas UV the way A1 does. On A1 that is correct, because A1 draws
+signed distance fields with no handedness. Here the texture contains a photograph
+of a real app, and mirroring the canvas mirrored the UI inside the screen: `/ar`
+shipped a phone running an app whose own text ran backwards. That is not an RTL
+composition, it is a broken one — the exact "RTL was a port" tell the poster's
+comment warns about.
+
+The geometry is mirrored at composite time instead: `a3-base-rtl.webp` /
+`a3-depth-rtl.webp` (14.3 KB / 6.9 KB) put the phone on the reading-end edge for
+Arabic, angled correctly for where it sits, lit from the matching side, with
+legible UI. There is now no mirroring anywhere in the shader — only two numbers
+that differ per direction. Cost: one extra pair of files in the repo and **zero
+extra bytes for any visitor**, since a page fetches only its own direction's pair.
+
+### A3's real limitation: it cannot render on the light palette
+
+**The base image bakes a charcoal backdrop, so A3 does not follow the theme.** A1
+is procedural and re-reads `--bg` live; A2 reads the token into its fog and
+materials. A3's backdrop is a photograph, and it stays dark on a light page.
+
+This was found by capturing a light-theme frame rather than by reasoning about it,
+and it is worse than a style mismatch: with the light palette active, `--fg` is
+near-black, and the hero's headline ends up as dark text sitting on A3's dark
+image. **The `<h1>` stops being readable.** See
+`.hero-measure/a3-en-light-theme.png`.
+
+Retinting the backdrop live was tried and abandoned. The only honest way to do it
+is to re-key the baked backdrop's level to the live token, which on the light
+palette lifts the whole backdrop to ~0.93 linear — above the bloom threshold — and
+turns the hero into a white haze. Washing the composition out instead drags the
+emitters below the 3:1 floor the section above just established.
+
+So **A3 declines the light palette** and the poster stays, through the same
+mechanism as every other "not here" case:
+`data-hero-layer="poster" data-hero-reason="light-palette"`. The check lives in
+`HeroCanvas`, not in the shared capability probe, because it is true of A3 alone —
+and it is evaluated _after_ `capability`, so a reduced-motion visitor on the light
+theme is still told `reduced-motion`, which is the same ordering principle the
+probe itself follows. `hero.spec.ts` asserts both halves: that A3 declines, and
+that A1 does not.
+
+The debug attribute now carries five distinguishable reasons —
+`reduced-motion`, `no-webgl`, `save-data`, `low-end`, `light-palette` — plus `ssr`
+before hydration. The three the brief named are all still separable.
+
+This is a genuine cost of the depth-map approach against A1, and it is exactly the
+kind of thing that should decide between concepts: A3 is not merely heavier than
+A1, it serves a smaller share of visitors.
+
+### Text overlay: no second headline
+
+The reference hero reveals its own `<h1>` word by word. That cannot ship here, and
+not because of the placeholder copy: `Hero.tsx`'s `<h1>` is server-rendered
+specifically so it paints with the document, and `hero.spec.ts` asserts no `<h1>`
+lives inside the animated layer. Repeating the headline over the canvas would
+either duplicate the LCP text on screen or hide the server-rendered one behind a
+lazily-loaded chunk — which is the regression plan 1 removed when it deleted the
+`opacity: 0` entrance.
+
+So the reveal was kept and pointed at something not already on the page: the name
+of the project _in the image_, from `src/data/projects.ts`. Reveal order follows
+reading direction and is reversed on `/ar` by mirroring the reveal index, not the
+DOM. `uppercase` is gated off for Arabic — the script has no case, so the class is
+inert at best and interferes with shaping at worst; Arabic gets letter-spacing
+instead. The scroll affordance is a real anchor with `pointer-events-auto` on
+itself alone and a visible `focus-visible` ring; the new `hero.scrollHint` key is
+translated in all three dictionaries. No English placeholder copy ships.
+
+### Reproducing any of this
+
+```
+npm run build
+npm run gen:hero-depth          # regenerates both asset pairs
+node scripts/measure-hero.mjs weight
+node scripts/measure-hero.mjs verify
+node scripts/measure-hero.mjs measure
+```
+
+`scripts/measure-hero.mjs` is kept, unlike section 11's ad-hoc probe. Section 11
+noted that "a script that only ever answered one question is not worth
+maintaining"; that question has now been asked three times, and the second answer
+was wrong because the runs did not warm the URL. Warming is a property of the
+harness, not of the operator's memory, so the harness is a file. It owns its own
+server on port 3210, warms every URL before its first counted run, takes nine runs
+per cell, and discards any run where `data-hero-layer` did not settle on the
+concept under test.

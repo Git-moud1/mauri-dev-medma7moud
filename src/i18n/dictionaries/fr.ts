@@ -29,6 +29,7 @@ const fr: Dictionary = {
       'Développeur Full Stack & Mobile, je conçois des produits rapides et élégants — des interfaces soignées aux back-ends prêts pour la production et aux applications mobiles natives.',
     ctaWork: 'Voir les projets',
     ctaWhatsapp: 'Discuter sur WhatsApp',
+    scrollHint: 'Voir le travail',
     stats: {
       years: 'Ans d’expérience',
       projects: 'Projets livrés',

@@ -3,19 +3,30 @@
 import dynamic from 'next/dynamic';
 import { useRef, useState } from 'react';
 
+import type { Locale } from '@/i18n/config';
+
 import {
   conceptFromLocation,
   useHeroCapability,
+  useIsCharcoalPalette,
   useIsRenderable,
   type HeroConcept,
 } from './capability';
 import type { Direction } from './LatticePoster';
 
 /**
- * Both concepts are code-split and neither is in the page bundle. Only the one a
- * visitor's URL selects is ever fetched, and only after this island has mounted
- * and decided the device can take it — so neither download can compete with the
- * headline's paint, and choosing A2 cannot make A1's first load worse.
+ * All three concepts are code-split and none is in the page bundle. Only the one
+ * a visitor's URL selects is ever fetched, and only after this island has mounted
+ * and decided the device can take it — so no download can compete with the
+ * headline's paint, and choosing A2 or A3 cannot make A1's first load worse.
+ *
+ * This matters most for A3. `three/webgpu` is by far the heaviest of the three
+ * (the node-material layer alone is ~414 KB gzipped before tree-shaking, on top
+ * of the `three.core.js` it shares with A2), so it is only affordable at all
+ * because nothing on the critical path references it. There is deliberately no
+ * `prefetch` and no `preload` hint: warming this chunk on `/ar`'s first paint
+ * would put it in competition with the headline, which is the one thing the
+ * lazy boundary exists to prevent.
  */
 const ShaderLattice = dynamic(
   () => import('./ShaderLattice').then((mod) => mod.ShaderLattice),
@@ -27,9 +38,19 @@ const MeshLattice = dynamic(
     ssr: false,
   },
 );
+const DepthField = dynamic(() => import('./DepthField').then((mod) => mod.DepthField), {
+  ssr: false,
+});
 
 export interface HeroLayerProps {
   dir: Direction;
+  /**
+   * Needed by A3, whose text overlay has to gate `uppercase` per locale and pull
+   * real copy from the dictionary. `dir` alone cannot do it: /en and /fr share a
+   * direction but not a language, and Arabic's case-insensitivity is a property
+   * of the script rather than of the direction.
+   */
+  locale: Locale;
   /** False whenever the hero is off-screen or the tab is hidden. */
   active: boolean;
 }
@@ -48,7 +69,7 @@ export interface HeroLayerProps {
  * box" rule is satisfied by construction rather than by a fixed height that
  * would then be wrong at some viewport.
  */
-export function HeroCanvas({ dir }: { dir: Direction }) {
+export function HeroCanvas({ dir, locale }: { dir: Direction; locale: Locale }) {
   const capability = useHeroCapability();
   const hostRef = useRef<HTMLDivElement>(null);
   const active = useIsRenderable(hostRef);
@@ -59,7 +80,29 @@ export function HeroCanvas({ dir }: { dir: Direction }) {
   const [concept] = useState<HeroConcept>(() =>
     typeof window === 'undefined' ? 'a1' : conceptFromLocation(window.location.search),
   );
-  const animating = capability.kind === 'animate';
+
+  /*
+   * A3, and only A3, declines the light palette.
+   *
+   * Its backdrop is a photograph with charcoal baked in, so on the light theme
+   * the hero's near-black `--fg` headline ends up on a dark image and stops being
+   * readable — a legibility failure, not a style mismatch. A1 and A2 both read
+   * `--bg` live and are unaffected.
+   *
+   * Checked *after* `capability`, not folded into it, so a reduced-motion visitor
+   * on the light theme is still told `reduced-motion`. That is the same ordering
+   * principle the probe itself follows: report the reason that would have applied
+   * anyway, not the one that happened to be evaluated last.
+   */
+  const charcoal = useIsCharcoalPalette();
+  const paletteBlocked = concept === 'a3' && !charcoal;
+  const animating = capability.kind === 'animate' && !paletteBlocked;
+  const reason =
+    capability.kind !== 'animate'
+      ? capability.reason
+      : paletteBlocked
+        ? 'light-palette'
+        : undefined;
 
   return (
     <div
@@ -67,15 +110,25 @@ export function HeroCanvas({ dir }: { dir: Direction }) {
       // Exposed so a measurement run can tell *why* it got the poster instead
       // of inferring it. A fallback that cannot be distinguished from a broken
       // canvas is a fallback you cannot verify.
-      data-hero-layer={animating ? concept : capability.kind}
-      data-hero-reason={capability.kind === 'animate' ? undefined : capability.reason}
+      data-hero-layer={
+        animating ? concept : capability.kind === 'animate' ? 'poster' : capability.kind
+      }
+      data-hero-reason={reason}
       className="absolute inset-0"
     >
+      {/*
+        Switched on the concept, with A1 as the `default` rather than as one more
+        branch. An unrecognised `?hero=` value has already been resolved to `a1`
+        by `conceptFromLocation`, so this only has to keep faith with that: there
+        is exactly one arm that renders nothing new, and it renders A1.
+      */}
       {animating ? (
-        concept === 'a2' ? (
-          <MeshLattice dir={dir} active={active} />
+        concept === 'a3' ? (
+          <DepthField dir={dir} locale={locale} active={active} />
+        ) : concept === 'a2' ? (
+          <MeshLattice dir={dir} locale={locale} active={active} />
         ) : (
-          <ShaderLattice dir={dir} active={active} />
+          <ShaderLattice dir={dir} locale={locale} active={active} />
         )
       ) : null}
     </div>
