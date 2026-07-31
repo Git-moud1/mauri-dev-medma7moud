@@ -12,6 +12,15 @@ import { Contact } from '@/components/Contact';
 import { Footer } from '@/components/Footer';
 import { contactLinks, followLinks } from '@/components/SocialLinks';
 import { FloatingWhatsApp } from '@/components/islands/FloatingWhatsApp';
+import { JsonLd } from '@/components/JsonLd';
+import { siteGraph } from '@/lib/jsonld';
+
+/**
+ * The homepage's preview shows the first six projects. The constant is shared
+ * with the `<Projects>` call below and with the structured data, so the list a
+ * crawler reads and the grid a visitor sees cannot fall out of step.
+ */
+const PREVIEW_COUNT = 6;
 
 /**
  * Every section below is a server component. `Providers` is a client boundary,
@@ -40,6 +49,14 @@ export default async function Home(props: { params: Promise<{ locale: string }> 
 
   return (
     <Providers locale={locale}>
+      <JsonLd
+        graph={siteGraph({
+          locale,
+          settings,
+          projects: projects.slice(0, PREVIEW_COUNT),
+          path: `/${locale}`,
+        })}
+      />
       <Header locale={locale} whatsappUrl={settings.whatsappUrl} />
       <main>
         <Hero
@@ -59,7 +76,7 @@ export default async function Home(props: { params: Promise<{ locale: string }> 
         <Projects
           locale={locale}
           projects={projects}
-          limit={6}
+          limit={PREVIEW_COUNT}
           showFilters={false}
           showViewAll
         />

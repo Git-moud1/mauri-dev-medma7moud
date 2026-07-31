@@ -7,12 +7,16 @@ import { LOCALES } from '@/i18n/config';
 import { dictionaries } from '@/i18n/dictionaries';
 import { getT } from '@/i18n/server';
 import { getProjects, getSettings } from '@/lib/content';
+import { SITE } from '@/lib/site';
+import { socialMetadata } from '@/lib/metadata';
 import { Providers } from '@/app/providers';
 import { Header } from '@/components/Header';
 import { Projects } from '@/components/Projects';
 import { Footer } from '@/components/Footer';
 import { contactLinks, followLinks } from '@/components/SocialLinks';
 import { FloatingWhatsApp } from '@/components/islands/FloatingWhatsApp';
+import { JsonLd } from '@/components/JsonLd';
+import { siteGraph } from '@/lib/jsonld';
 import { ArrowRightIcon } from '@/components/Icons';
 
 /**
@@ -34,10 +38,31 @@ export async function generateMetadata(props: {
   if (!isLocale(locale)) return {};
   const dict = dictionaries[locale];
 
+  const title = `${dict.projects.allTitle} ${dict.projects.allTitleStrong}`;
+
   return {
     // The layout's template appends the site name, so this is the page part only.
-    title: `${dict.projects.allTitle} ${dict.projects.allTitleStrong}`,
+    title,
     description: dict.projects.allSubtitle,
+    /*
+     * Restated rather than inherited: a page that says nothing keeps the
+     * layout's blocks and announces itself as the homepage, under the
+     * homepage's headline.
+     *
+     * Declaring the block is also why `opengraph-image.tsx` and
+     * `twitter-image.tsx` sit in this folder — the declaration replaces the
+     * parent's block whole, images and all, so the convention has to be here
+     * too or this page ships a card with no picture.
+     *
+     * The site name is spelled out because the layout's `%s` template applies
+     * to the document title only; `openGraph.title` takes no template.
+     */
+    ...socialMetadata({
+      locale,
+      title: `${title} — ${SITE.name}`,
+      description: dict.projects.allSubtitle,
+      path: `/${locale}/projects`,
+    }),
     alternates: {
       canonical: `/${locale}/projects`,
       languages: {
@@ -65,6 +90,15 @@ export default async function ProjectsPage(props: {
 
   return (
     <Providers locale={locale}>
+      {/* The whole catalogue, so this page's list is the longer one. */}
+      <JsonLd
+        graph={siteGraph({
+          locale,
+          settings,
+          projects,
+          path: `/${locale}/projects`,
+        })}
+      />
       <Header locale={locale} whatsappUrl={settings.whatsappUrl} />
       <main>
         {/*

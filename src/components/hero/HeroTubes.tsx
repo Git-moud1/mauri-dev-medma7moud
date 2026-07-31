@@ -6,7 +6,7 @@ import type { TubesCursorApp } from 'threejs-components/build/cursors/tubes1.min
 /**
  * The tubes cursor effect, as the hero's background layer.
  *
- * This is the same library as `components/ui/tubes-curor.tsx`, but it renders
+ * This wraps the `threejs-components` tubes cursor, and it renders
  * **no copy of its own**. The hero's headline, subtitle, CTAs and stats are
  * server-rendered by `Hero.tsx` and are already localised — `titleLine1`,
  * `titleHighlight`, `titleLine2` and `subtitle` per locale. Duplicating any of
@@ -15,7 +15,7 @@ import type { TubesCursorApp } from 'threejs-components/build/cursors/tubes1.min
  *
  * So the split is: this file owns the canvas, `Hero.tsx` owns the words.
  *
- * --- Four things this does that the demo component does not ---
+ * --- Four things this does that the library's own demo does not ---
  *
  * 1. **`absolute`, not `fixed`.** A fixed canvas escapes the hero and covers the
  *    whole document, so the projects grid and everything below would scroll

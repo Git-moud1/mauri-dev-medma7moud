@@ -8,6 +8,7 @@ import { LOCALES, type Locale } from '@/i18n/config';
 import { isLocale, dirFor } from '@/i18n/locale';
 import { dictionaries } from '@/i18n/dictionaries';
 import { SITE, SITE_URL } from '@/lib/site';
+import { socialMetadata } from '@/lib/metadata';
 
 export function generateStaticParams() {
   return LOCALES.map((locale) => ({ locale }));
@@ -28,6 +29,20 @@ export async function generateMetadata(props: {
       canonical: `/${locale}`,
       languages: { ar: '/ar', en: '/en', fr: '/fr', 'x-default': '/ar' },
     },
+    ...socialMetadata({
+      locale,
+      title: dict.meta.title,
+      description: dict.meta.description,
+      path: `/${locale}`,
+    }),
+    /*
+     * Search Console's HTML-tag method, supplied by the environment rather than
+     * committed: the token proves ownership of the property, and it belongs
+     * with the deploy, not in the repo. Undefined when unset, which Next omits
+     * entirely — an empty `content` would be a tag that fails verification
+     * rather than one that is simply absent.
+     */
+    verification: { google: process.env.GOOGLE_SITE_VERIFICATION || undefined },
   };
 }
 
