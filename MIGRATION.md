@@ -642,3 +642,56 @@ the architecture depends on is intact.
 Still open from the brief's definition of done: the work is on `feat/v2` and
 wants merging to `main`, and Lighthouse has not been re-measured since the hero
 and projects work.
+
+---
+
+## 14. Deployed to production — and the tubes hero costs 34 Lighthouse points
+
+`main` was merged and pushed at `1209017`; Netlify built and deployed it. This is
+the **first production deploy of the v2 architecture** — until now the live site
+was still the Next 14 single-page build.
+
+The GitHub-side README edit that renamed the title to "medmahmoud" was the one
+merge conflict. It lost to the branch's "Mauri-Dev — Portfolio Website", because
+`SITE.name`, the metadata, the dictionaries and the logo all say Mauri-Dev.
+
+### Verified on the deploy, not locally
+
+`tests/seo.spec.ts` and `tests/headers.spec.ts` were run with
+`PLAYWRIGHT_BASE_URL=https://medmoudsite.netlify.app`: **19 passed, 0 failed**.
+That covers the whole header and CSP set on live documents, `/sitemap.xml`,
+`/icon.png`, `/apple-icon.png`, an `og:image` per locale that actually renders as
+a PNG, and a JSON-LD graph that parses on all three locales.
+
+### Lighthouse, and the regression it found
+
+Full writeup and the raw method:
+`docs/superpowers/baseline/lighthouse-live-2026-07-31.md`.
+
+| Category       | Target | v1 live (07-28) | v2 live   |
+| -------------- | ------ | --------------- | --------- |
+| Performance    | >= 95  | 96              | **61-63** |
+| Accessibility  | >= 95  | 100             | 100       |
+| Best Practices | >= 95  | 96              | **100**   |
+| SEO            | 100    | 100             | **100**   |
+
+**SEO is 100 and Best Practices reached 100** — the plan-3 targets are met on the
+live site, and accessibility held.
+
+**Performance fell to 61, and every point of it is Total Blocking Time**: 40 ms
+before, ~3,600 ms now. LCP (2.7 s) and CLS (0.001) are unchanged, so nothing this
+plan added is implicated — the cost is the tubes hero.
+`/_next/static/chunks/2ozfefydyz1ku.js` is **762 KB with 5,843 ms of scripting**,
+and fetching it finds `WebGLRenderer` and `BufferGeometry` inside. That is
+`threejs-components` and its three.js.
+
+§12's cost table already priced this: A2 measured +1,365 ms TBT and A3 +2,347 ms,
+and both were withdrawn for it. The tubes hero is the same purchase and, on
+production hardware emulation, a more expensive one. `next/dynamic` keeps
+first-load JS flat but a split chunk still executes on the main thread when it
+lands — splitting moves the cost, it does not remove it.
+
+The hero is the owner's design decision, so this is a measurement and not a
+change. The options, cheapest first, are in the Lighthouse writeup: gate the
+canvas on `(pointer: fine)` plus a desktop viewport, defer it past first
+interaction, or drop it.
