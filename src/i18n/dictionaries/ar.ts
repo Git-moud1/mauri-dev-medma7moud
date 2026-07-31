@@ -74,6 +74,13 @@ const ar: Dictionary = {
     viewGallery: 'عرض المعرض',
     liveLink: 'الموقع المباشر',
     empty: 'لا توجد مشاريع في هذه الفئة بعد.',
+    viewAll: 'مشاهدة كل المشاريع',
+    viewAllCount: '{count} مشروعاً في المجموع',
+    allTitle: 'كل',
+    allTitleStrong: 'المشاريع',
+    allSubtitle:
+      'كل منتج ويب وموبايل تم بناؤه من الفكرة إلى الإطلاق. صفِّ حسب النوع، أو اضغط أي مشروع لتصفّح معرضه.',
+    backHome: 'العودة إلى الرئيسية',
   },
   gallery: {
     close: 'إغلاق المعرض',

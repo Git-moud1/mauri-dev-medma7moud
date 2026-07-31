@@ -72,6 +72,16 @@ const en = {
     viewGallery: 'View gallery',
     liveLink: 'Live site',
     empty: 'No projects in this category yet.',
+    /** Homepage → full projects page. */
+    viewAll: 'View all projects',
+    /** Shown beside it, so the link says what it leads to rather than just "more". */
+    viewAllCount: '{count} projects in total',
+    /** The full projects page: its own heading, subtitle and back link. */
+    allTitle: 'All',
+    allTitleStrong: 'Projects',
+    allSubtitle:
+      'Every web and mobile product built end-to-end. Filter by type, or click any project to browse its gallery.',
+    backHome: 'Back to home',
   },
   gallery: {
     close: 'Close gallery',

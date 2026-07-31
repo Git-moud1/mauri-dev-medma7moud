@@ -74,6 +74,13 @@ const fr: Dictionary = {
     viewGallery: 'Voir la galerie',
     liveLink: 'Site en ligne',
     empty: 'Aucun projet dans cette catégorie pour l’instant.',
+    viewAll: 'Voir tous les projets',
+    viewAllCount: '{count} projets au total',
+    allTitle: 'Tous les',
+    allTitleStrong: 'projets',
+    allSubtitle:
+      'Chaque produit web et mobile réalisé de bout en bout. Filtrez par type, ou cliquez sur un projet pour parcourir sa galerie.',
+    backHome: 'Retour à l’accueil',
   },
   gallery: {
     close: 'Fermer la galerie',

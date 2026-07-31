@@ -50,7 +50,19 @@ export default async function Home(props: { params: Promise<{ locale: string }> 
         />
         <TechMarquee locale={locale} />
         <About locale={locale} />
-        <Projects locale={locale} projects={projects} />
+        {/*
+          A preview, not the catalogue. Six is two full rows on the `lg:grid-cols-3`
+          grid and three on `sm:grid-cols-2`, so the block never ends on a lone
+          orphaned card at any breakpoint — which is what a 5 or a 7 would do.
+          Everything else is one click away at /[locale]/projects.
+        */}
+        <Projects
+          locale={locale}
+          projects={projects}
+          limit={6}
+          showFilters={false}
+          showViewAll
+        />
         <Process locale={locale} />
         <Contact locale={locale} contact={contact} follow={follow} />
       </main>

@@ -162,18 +162,32 @@ export function ProjectsGrid({
   projects,
   locale,
   labels,
+  showFilters = true,
 }: {
   projects: readonly Project[];
   locale: Locale;
   labels: ProjectsGridLabels;
+  /**
+   * Off on the homepage, where the grid is a fixed-size preview.
+   *
+   * Filters and a truncated list contradict each other: pick "Web" on a
+   * six-of-seven preview and the result is some web projects, with no way to
+   * tell which are missing or that any are. The homepage links to the full page
+   * instead, and the filters live there — where "Web" really does mean every web
+   * project.
+   */
+  showFilters?: boolean;
 }) {
   const [filter, setFilter] = useState<Filter>('all');
   const [active, setActive] = useState<Project | null>(null);
   const dir = dirFor(locale);
 
   const filtered = useMemo(
-    () => (filter === 'all' ? projects : projects.filter((p) => p.category === filter)),
-    [filter, projects],
+    () =>
+      !showFilters || filter === 'all'
+        ? projects
+        : projects.filter((p) => p.category === filter),
+    [filter, projects, showFilters],
   );
 
   const filters: { id: Filter; label: string }[] = [
@@ -184,38 +198,41 @@ export function ProjectsGrid({
 
   return (
     <>
-      {/* Filter pills */}
-      <Reveal delay={2} className="mb-10 flex justify-center">
-        <div className="inline-flex rounded-full border border-border bg-surface p-1">
-          {filters.map((f) => (
-            <button
-              key={f.id}
-              type="button"
-              onClick={() => {
-                setFilter(f.id);
-              }}
-              className={`relative rounded-full px-5 py-2 text-sm font-semibold transition-colors ${
-                filter === f.id ? 'text-[rgb(20_18_14)]' : 'text-muted hover:text-fg'
-              }`}
-            >
-              {/* The pill jumps between filters rather than sliding: shared-
+      {/* Filter pills. Not rendered at all on the homepage preview — `hidden`
+          would still ship the markup and the three buttons with it. */}
+      {showFilters ? (
+        <Reveal delay={2} className="mb-10 flex justify-center">
+          <div className="inline-flex rounded-full border border-border bg-surface p-1">
+            {filters.map((f) => (
+              <button
+                key={f.id}
+                type="button"
+                onClick={() => {
+                  setFilter(f.id);
+                }}
+                className={`relative rounded-full px-5 py-2 text-sm font-semibold transition-colors ${
+                  filter === f.id ? 'text-[rgb(20_18_14)]' : 'text-muted hover:text-fg'
+                }`}
+              >
+                {/* The pill jumps between filters rather than sliding: shared-
                   layout animation needs motion's layout projection, which
                   `domAnimation` deliberately leaves out (Task 10a). Restoring
                   the slide in CSS would mean measuring three variable-width,
                   localized labels in JS — not worth it here. Owner decision:
                   leave it; revisit with the new hero work in plan 3. */}
-              {filter === f.id && (
-                <m.span
-                  layoutId="filter-pill"
-                  className="absolute inset-0 -z-10 rounded-full bg-gold-grad"
-                  transition={{ type: 'spring', stiffness: 380, damping: 30 }}
-                />
-              )}
-              {f.label}
-            </button>
-          ))}
-        </div>
-      </Reveal>
+                {filter === f.id && (
+                  <m.span
+                    layoutId="filter-pill"
+                    className="absolute inset-0 -z-10 rounded-full bg-gold-grad"
+                    transition={{ type: 'spring', stiffness: 380, damping: 30 }}
+                  />
+                )}
+                {f.label}
+              </button>
+            ))}
+          </div>
+        </Reveal>
+      ) : null}
 
       {/* Grid */}
       {filtered.length > 0 ? (
