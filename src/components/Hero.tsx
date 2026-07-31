@@ -3,6 +3,7 @@ import { dirFor } from '@/i18n/locale';
 import type { Locale } from '@/i18n/config';
 
 import { ArrowRightIcon, WhatsAppIcon, CodeIcon, SmartphoneIcon } from './Icons';
+import { HeroTubesLayer } from './hero/HeroTubesLayer';
 
 /**
  * Above-the-fold hero — fully server-rendered, no client JS.
@@ -42,11 +43,23 @@ export function Hero({
   return (
     <section id="top" className="relative overflow-hidden pt-32 pb-20 sm:pt-40 sm:pb-28">
       {/*
-        The grain, and nothing else. `absolute inset-0` inside this `relative`
-        section, so it contributes no size of its own and cannot move the
-        headline.
+        The hero's background layer.
+
+        `absolute inset-0` inside this `relative` section, so it contributes no
+        size of its own and cannot move the headline whatever it renders — the
+        box is reserved by construction rather than by a fixed height that would
+        be wrong at some viewport.
+
+        `pointer-events-none` is load-bearing: the two CTAs and the WhatsApp
+        button sit in front of this, and a canvas that accepted clicks would make
+        them unclickable. The tubes still follow the pointer, because the library
+        listens on the window.
+
+        `-z-10` keeps the whole layer behind the text. The headline is
+        server-rendered above it and never waits for it.
       */}
       <div className="pointer-events-none absolute inset-0 -z-10">
+        <HeroTubesLayer />
         <div className="grain absolute inset-0 opacity-60" />
       </div>
 
