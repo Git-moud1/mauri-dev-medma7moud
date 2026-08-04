@@ -73,8 +73,8 @@ export function Hero({
           {availableForWork ? (
             <span className="glass inline-flex items-center gap-2 rounded-full px-4 py-1.5 text-xs font-medium text-fg">
               <span className="relative flex h-2 w-2">
-                <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-green-500 opacity-70" />
-                <span className="relative inline-flex h-2 w-2 rounded-full bg-green-500" />
+                <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-status-ok opacity-70" />
+                <span className="relative inline-flex h-2 w-2 rounded-full bg-status-ok" />
               </span>
               {t('hero.badge')}
             </span>

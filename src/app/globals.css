@@ -26,6 +26,10 @@
     --glow-1/2     The hero's single light source. Decoration, never behind
                    text at full strength, so it is free to be vivid. One source
                    only — a second one is what turns the page into purple soup.
+                   Per-theme: these used to sit in the theme-independent block
+                   below, which meant the light theme inherited values chosen
+                   against near-black.
+    --status-ok    The availability dot. Per-theme for the same reason.
 
   --wa / --wa-fg exist because WhatsApp green is a fixed brand colour we do not
   get to choose. White on #25D366 measures 1.98:1 and fails AA outright; the
@@ -50,6 +54,14 @@
     --brand-1: 109 40 217; /* #6D28D9   6.69:1 */
     --brand-2: 79 70 229; /* #4F46E5   5.92:1 */
     --brand-3: 29 78 216; /* #1D4ED8   6.31:1 */
+    /* The hero's one light source, tuned for paper: the dark-theme pair is
+       vivid because it is drawn on near-black, and the same values on #F7F8FB
+       read as neon. */
+    --glow-1: 124 58 237; /* #7C3AED */
+    --glow-2: 37 99 235; /* #2563EB */
+    /* Availability dot. Decorative, but it still has to be legible against the
+       surface it sits on, so it is not one value shared across both themes. */
+    --status-ok: 22 163 74; /* #16A34A */
   }
 
   :root.dark {
@@ -66,6 +78,11 @@
     --brand-1: 167 139 250; /* #A78BFA   7.18:1 */
     --brand-2: 129 140 248; /* #818CF8   6.55:1 */
     --brand-3: 96 165 250; /* #60A5FA   7.69:1 */
+    /* The hero's one light source: violet bleeding into electric blue. Free to
+       be vivid — it is never behind text at full strength. */
+    --glow-1: 139 92 246; /* #8B5CF6 */
+    --glow-2: 59 130 246; /* #3B82F6 */
+    --status-ok: 34 197 94; /* #22C55E */
   }
 
   /* Theme-independent by design — see the note above. */
@@ -75,10 +92,6 @@
     --pill-1: 109 40 217; /* #6D28D9  white 7.10:1 */
     --pill-2: 79 70 229; /* #4F46E5  white 6.29:1 */
     --pill-3: 37 99 235; /* #2563EB  white 5.17:1 */
-
-    /* The hero's one light source: violet bleeding into electric blue. */
-    --glow-1: 139 92 246; /* #8B5CF6 */
-    --glow-2: 59 130 246; /* #3B82F6 */
 
     --wa: 37 211 102; /* #25D366 WhatsApp brand green, fixed */
     --wa-fg: 11 12 16; /* charcoal on it: 9.86:1 (white was 1.98:1) */

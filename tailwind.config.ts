@@ -44,6 +44,9 @@ const config: Config = {
           1: 'rgb(var(--glow-1) / <alpha-value>)',
           2: 'rgb(var(--glow-2) / <alpha-value>)',
         },
+        status: {
+          ok: 'rgb(var(--status-ok) / <alpha-value>)',
+        },
         wa: {
           DEFAULT: 'rgb(var(--wa) / <alpha-value>)',
           fg: 'rgb(var(--wa-fg) / <alpha-value>)',
