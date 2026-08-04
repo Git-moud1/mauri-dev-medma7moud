@@ -34,7 +34,7 @@ export function FloatingWhatsApp({ whatsappUrl }: { whatsappUrl?: string }) {
         dir === 'rtl' ? 'left-5' : 'right-5'
       }`}
     >
-      <span className="absolute inset-0 animate-ping rounded-full bg-[#25D366] opacity-30 group-hover:opacity-40" />
+      <span className="absolute inset-0 animate-ping rounded-full bg-wa opacity-30 group-hover:opacity-40" />
       <WhatsAppIcon className="relative h-7 w-7" />
     </m.a>
   );

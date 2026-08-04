@@ -72,7 +72,10 @@ export function Header({
           <a
             href={ctaHref}
             {...(ctaExternal ? { target: '_blank', rel: 'noopener noreferrer' } : {})}
-            className="hidden items-center gap-2 rounded-full bg-[#25D366] px-4 py-2.5 text-sm font-semibold text-white transition-transform hover:-translate-y-0.5 sm:inline-flex"
+            // `bg-wa`/`text-wa-fg`, not a literal #25D366 with white text: the
+            // green is a fixed brand colour, and white on it measures 1.98:1.
+            // The charcoal foreground is 9.86:1. See the note in globals.css.
+            className="hidden items-center gap-2 rounded-full bg-wa px-4 py-2.5 text-sm font-semibold text-wa-fg transition-transform hover:-translate-y-0.5 sm:inline-flex"
           >
             <WhatsAppIcon className="h-4 w-4" />
             {ctaLabel}

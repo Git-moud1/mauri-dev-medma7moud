@@ -3,6 +3,7 @@ import ReactDOM from 'react-dom';
 import { notFound } from 'next/navigation';
 import '../../globals.css';
 import { NoFlashScript } from '../../no-flash';
+import { ThemeSync } from '@/theme/ThemeSync';
 import { fontClassFor, fontStyleFor } from './fonts';
 import { LOCALES, type Locale } from '@/i18n/config';
 import { isLocale, dirFor } from '@/i18n/locale';
@@ -90,6 +91,13 @@ export default async function LocaleLayout(props: {
     <html lang={typed} dir={dirFor(typed)} suppressHydrationWarning>
       <head>
         <NoFlashScript />
+        {/*
+          Renders nothing. It re-applies the theme to <html> before paint on
+          every remount of this layout — which is every locale switch, because
+          React strips <html>'s attributes when it re-acquires the singleton.
+          The full mechanism is documented in src/theme/ThemeSync.tsx.
+        */}
+        <ThemeSync />
         {/*
           Without JavaScript nothing ever adds `.reveal-in`, so every revealed
           element stays at `opacity: 0` and the page renders blank — content

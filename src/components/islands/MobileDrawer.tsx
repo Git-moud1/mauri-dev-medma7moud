@@ -239,7 +239,7 @@ export function DrawerPanel({
                 onClick={() => {
                   setOpen(false);
                 }}
-                className="mt-2 flex items-center justify-center gap-2 rounded-xl bg-[#25D366] px-4 py-3 text-base font-semibold text-white"
+                className="mt-2 flex items-center justify-center gap-2 rounded-xl bg-wa px-4 py-3 text-base font-semibold text-wa-fg"
               >
                 <WhatsAppIcon className="h-5 w-5" />
                 {ctaLabel}

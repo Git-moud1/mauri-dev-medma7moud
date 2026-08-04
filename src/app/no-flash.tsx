@@ -1,9 +1,19 @@
+import { LOCALES, STORAGE_KEY_THEME } from '@/i18n/config';
+
 /**
  * Inline pre-hydration script. Two jobs:
  *
  * 1. Theme — read `bc-theme` from localStorage (falling back to the OS
- *    preference) and set the dark class + colorScheme before first paint.
- *    Its default must stay in sync with ThemeProvider's initial state.
+ *    preference) and set the dark class + colorScheme before first paint. It
+ *    is the inline, string-literal twin of `resolveTheme()` + `applyTheme()` in
+ *    src/theme/theme.ts: it cannot import them (it has to run before any bundle
+ *    does), so the storage key and the default are interpolated from the same
+ *    constants those functions use, and the resolution order below must match
+ *    theirs.
+ *
+ *    This owns the FIRST paint only. Every later remount of the `[locale]`
+ *    layout is ThemeSync's job — React strips <html>'s attributes on those and
+ *    this script is not re-executed. See the note in src/theme/ThemeSync.tsx.
  *
  * 2. One-time locale migration — v1 stored the locale in localStorage under
  *    `bc-locale`. v2 needs it in a cookie so proxy.ts can read it when
@@ -17,13 +27,13 @@
  */
 export function NoFlashScript() {
   const code = `(function(){try{
-    var t=localStorage.getItem('bc-theme');
-    if(!t){t=window.matchMedia('(prefers-color-scheme: dark)').matches?'dark':'light';}
+    var t=localStorage.getItem(${JSON.stringify(STORAGE_KEY_THEME)});
+    if(t!=='light'&&t!=='dark'){t=window.matchMedia('(prefers-color-scheme: dark)').matches?'dark':'light';}
     var r=document.documentElement;
-    if(t==='dark'){r.classList.add('dark');}
+    r.classList.toggle('dark',t==='dark');
     r.style.colorScheme=t;
     var legacy=localStorage.getItem('bc-locale');
-    if(legacy&&['ar','en','fr'].indexOf(legacy)!==-1){
+    if(legacy&&${JSON.stringify(LOCALES)}.indexOf(legacy)!==-1){
       if(document.cookie.indexOf('bc-locale=')===-1){
         document.cookie='bc-locale='+legacy+';path=/;max-age=31536000;samesite=lax';
       }

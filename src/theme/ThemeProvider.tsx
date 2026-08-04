@@ -1,9 +1,7 @@
 'use client';
 
 import { createContext, useCallback, useContext, useMemo, useState } from 'react';
-import { STORAGE_KEY_THEME } from '@/i18n/config';
-
-type Theme = 'light' | 'dark';
+import { applyTheme, resolveTheme, storeTheme, type Theme } from './theme';
 
 interface ThemeContextValue {
   theme: Theme;
@@ -13,41 +11,30 @@ interface ThemeContextValue {
 
 const ThemeContext = createContext<ThemeContextValue | null>(null);
 
-function apply(theme: Theme) {
-  const root = document.documentElement;
-  root.classList.toggle('dark', theme === 'dark');
-  root.style.colorScheme = theme;
-}
-
 export function ThemeProvider({ children }: { children: React.ReactNode }) {
   /**
-   * B4. The state starts from the class the no-flash script has already written
-   * onto <html>, not from a hardcoded 'dark'.
+   * B4. The state is resolved from storage-then-OS-preference — the same
+   * `resolveTheme()` the no-flash script and ThemeSync use — rather than from a
+   * hardcoded 'dark' corrected later in an effect. The old version guessed
+   * 'dark' and fixed itself after mount, which showed a light-theme visitor the
+   * wrong toggle icon for a frame.
    *
-   * The old version guessed 'dark', then corrected itself from storage in an
-   * effect. For a visitor who had chosen light that produced a first client
-   * render disagreeing with the DOM — a hydration mismatch, and a toggle icon
-   * showing the wrong state for a frame. Reading the DOM is also what makes the
-   * effect unnecessary: no-flash has already resolved stored-theme-then-OS
-   * preference before React runs, so re-deriving it here would only duplicate
-   * that logic and risk the two drifting apart.
+   * It deliberately does not read the `dark` class off <html> either, which is
+   * what it used to do. This provider is inside the `[locale]` segment, so it
+   * remounts on every locale switch — and on that same commit React strips
+   * every attribute from <html> (see ThemeSync). Deriving the initial state
+   * from the class made this provider's correctness depend on whether its
+   * initialiser happened to run before or after that strip.
    *
-   * On the server there is no document; 'dark' matches no-flash's own default,
-   * which keeps the prerendered HTML consistent.
+   * On the server `resolveTheme()` returns DEFAULT_THEME, which is what
+   * no-flash falls back to as well, so the prerendered HTML stays consistent.
    */
-  const [theme, setThemeState] = useState<Theme>(() => {
-    if (typeof document === 'undefined') return 'dark';
-    return document.documentElement.classList.contains('dark') ? 'dark' : 'light';
-  });
+  const [theme, setThemeState] = useState<Theme>(resolveTheme);
 
   const setTheme = useCallback((t: Theme) => {
     setThemeState(t);
-    apply(t);
-    try {
-      localStorage.setItem(STORAGE_KEY_THEME, t);
-    } catch {
-      /* ignore */
-    }
+    applyTheme(t);
+    storeTheme(t);
   }, []);
 
   const toggle = useCallback(() => {
