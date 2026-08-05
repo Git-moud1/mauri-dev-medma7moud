@@ -26,6 +26,20 @@ interface Draft {
   cover: string;
 }
 
+/**
+ * The id is a blob-key prefix and a URL segment, so it is constrained to
+ * `[a-z0-9-]`. Rather than reject what is typed, coerce it: a space becomes a
+ * hyphen, capitals fall to lowercase. A trailing hyphen survives because it is
+ * legal and stripping it mid-word fights the person typing.
+ */
+function slugifyId(value: string): string {
+  return value
+    .toLowerCase()
+    .replace(/[^a-z0-9-]+/g, '-')
+    .replace(/-{2,}/g, '-')
+    .replace(/^-/, '');
+}
+
 function toDraft(project: StoredProject | null): Draft {
   return {
     id: project?.id ?? '',
@@ -86,6 +100,12 @@ export function ProjectEditor({
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [confirmingDelete, setConfirmingDelete] = useState(false);
+  /**
+   * Until the id is typed by hand it tracks the English title. Media uploads are
+   * keyed by id, so an empty id locks the whole Media section on a new project —
+   * deriving one means the drop zone is live as soon as there is a title.
+   */
+  const [idTouched, setIdTouched] = useState(project !== null);
 
   const isEdit = project !== null;
   const dirty = useMemo(
@@ -169,7 +189,11 @@ export function ProjectEditor({
             <Field
               label="ID"
               required
-              hint={isEdit ? 'Fixed after creation.' : 'Lowercase, digits, hyphens.'}
+              hint={
+                isEdit
+                  ? 'Fixed after creation.'
+                  : 'Lowercase, digits, hyphens. Filled from the English title.'
+              }
             >
               {({ id, describedBy }) => (
                 <TextInput
@@ -178,7 +202,8 @@ export function ProjectEditor({
                   value={draft.id}
                   readOnly={isEdit}
                   onChange={(event) => {
-                    setDraft({ ...draft, id: event.target.value });
+                    setIdTouched(true);
+                    setDraft({ ...draft, id: slugifyId(event.target.value) });
                   }}
                 />
               )}
@@ -270,10 +295,13 @@ export function ProjectEditor({
                   dir={activeLocale.dir}
                   value={draft.title[locale]}
                   onChange={(event) => {
-                    setDraft({
+                    const value = event.target.value;
+                    const next = {
                       ...draft,
-                      title: { ...draft.title, [locale]: event.target.value },
-                    });
+                      title: { ...draft.title, [locale]: value },
+                    };
+                    if (!idTouched && locale === 'en') next.id = slugifyId(value.trim());
+                    setDraft(next);
                   }}
                 />
               )}
