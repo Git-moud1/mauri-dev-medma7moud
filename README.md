@@ -6,7 +6,7 @@ A premium, single-page, multilingual (Arabic / English / French) portfolio and m
 Built with **Next.js 16 (App Router, Turbopack) · React 19 · TypeScript · Tailwind CSS 3 · motion**,
 deployed on **Netlify**.
 
-- **Live:** https://medmoudsite.netlify.app
+- **Live:** https://mauri-dev.netlify.app
 - **Contact:** baymed000@gmail.com · WhatsApp [+222 31 31 75 01](https://wa.me/22231317501)
 
 ---
@@ -577,7 +577,7 @@ local work. **The repository is public — no real value belongs in any committe
   map (`ar` / `en` / `fr` / `x-default`) from the route's own dictionary. The client-side
   `DocumentMeta` rewriter is gone.
 - **Origin lives in one place:** `SITE_URL` in `src/lib/site.ts`, read from
-  `NEXT_PUBLIC_SITE_URL` and defaulting to `https://medmoudsite.netlify.app`. Nothing else
+  `NEXT_PUBLIC_SITE_URL` and defaulting to `https://mauri-dev.netlify.app`. Nothing else
   hardcodes an origin.
 - **Viewport:** `themeColor` responds to `prefers-color-scheme` (`#f8f9fc` light / `#08080c` dark).
 
@@ -703,7 +703,7 @@ The official Next.js runtime plugin handles `next/image` optimization, SSR, and 
 | ---------------------- | ------------------- | --------------------------------------------------------------------------- |
 | `ADMIN_PASSWORD_HASH`  | For `/admin`        | Base64 of an argon2id hash. Netlify dashboard only — never a committed file |
 | `AUTH_SECRET`          | For `/admin`        | 32 random bytes, base64. Signs the session JWT                              |
-| `NEXT_PUBLIC_SITE_URL` | No                  | Defaults to `https://medmoudsite.netlify.app`. Set it when a domain lands   |
+| `NEXT_PUBLIC_SITE_URL` | No                  | Defaults to `https://mauri-dev.netlify.app`. Set it when a domain lands   |
 | `NODE_VERSION`         | Set in netlify.toml | `22.11.0`                                                                   |
 
 Generate the two admin values with `node scripts/gen-admin-secrets.mjs` — see §11 for why the

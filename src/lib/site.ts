@@ -4,7 +4,7 @@
  * this. Switching to a custom domain is a one-line env change.
  */
 export const SITE_URL =
-  process.env.NEXT_PUBLIC_SITE_URL ?? 'https://medmoudsite.netlify.app';
+  process.env.NEXT_PUBLIC_SITE_URL ?? 'https://mauri-dev.netlify.app';
 
 /** Central place for the developer's real contact details & links. */
 export const SITE = {
