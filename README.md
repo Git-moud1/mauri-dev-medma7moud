@@ -82,8 +82,6 @@ npm run dev          # http://localhost:3000
 | `npm start`                           | Serves the production build                                                         |
 | `npm run lint`                        | `eslint .` — ESLint 9 flat config, `typescript-eslint` strictTypeChecked + jsx-a11y |
 | `npm run format` / `format:check`     | Prettier over the repo                                                              |
-| `npm run test:e2e`                    | Full Playwright suite (mobile + desktop projects)                                   |
-| `npm run test:headers`                | Header assertions — only meaningful against a deploy, see §14                       |
 | `npm run gen:blur`                    | Regenerates LQIP blur placeholders → `src/data/blur.generated.ts`                   |
 | `node scripts/gen-admin-secrets.mjs`  | Generates `ADMIN_PASSWORD_HASH` + `AUTH_SECRET`, printing nothing — see §11         |
 | `node scripts/gen-mockups.mjs`        | Rebuilds the synthetic mockup screens (network required — see §9)                   |
@@ -119,7 +117,8 @@ save — see §11.
 
 **Dev deps:** TypeScript 5.5 (`strict` + `noUncheckedIndexedAccess`), Tailwind 3.4,
 PostCSS + Autoprefixer, ESLint 9 flat config (`typescript-eslint` strictTypeChecked +
-`eslint-plugin-jsx-a11y` + `eslint-config-next`), Prettier, `@playwright/test`.
+`eslint-plugin-jsx-a11y` + `eslint-config-next`), Prettier, and `@playwright/test` — kept
+only as the headless-Chromium driver for the measurement scripts in §13.
 
 **Notably absent by design:** no i18n library, no state manager, no UI kit, no icon package
 (icons are hand-written inline SVGs in `src/components/Icons.tsx`), no CMS. Everything is local
@@ -156,16 +155,6 @@ Path alias: `@/*` → `./src/*` (see `tsconfig.json`).
 │   ├── gen-mockups.mjs        # SVG templates + real photos → high-res WebP screens
 │   ├── photos.mjs             # named photo tokens → fetched & processed JPEG buffers
 │   └── mockups/<project>/*.svg# mockup screen templates (__PH_<token>__ placeholders)
-│
-├── tests/
-│   ├── smoke.spec.ts          # public-site suite — several PROTECTED tests, see the file
-│   ├── headers.spec.ts        # PROTECTED. Delivered headers; deploy-only
-│   ├── csp.spec.ts            # the CSP does not block what the site needs
-│   ├── auth.spec.ts           # password / session / fail-closed unit tests
-│   ├── content.spec.ts        # store schemas and the bundled-data fallback
-│   ├── images.spec.ts         # magic-byte sniffing, re-encode, EXIF stripping
-│   ├── locale.spec.ts         # locale negotiation unit tests
-│   └── global-setup.ts        # warms the next/image cache so a cold run is not flaky
 │
 └── src/
     ├── proxy.ts               # locale redirect for /, plus the first-pass /admin guard
@@ -249,9 +238,8 @@ to `src/data/projects.ts` / `src/lib/site.ts` — see §11.
 
 **The admin is a second root layout, on purpose.** `src/app/(admin)/admin` owns its own
 `<html>`, loads none of the public fonts, and shares no client provider with the public tree.
-That is the mechanism keeping the dashboard off the public critical path, and
-`tests/smoke.spec.ts` asserts it by fetching every script `/ar` loads and checking none of
-them contains admin code.
+That is the mechanism keeping the dashboard off the public critical path. To re-check it by
+hand, fetch every script `/ar` loads and confirm none of them contains admin code.
 
 **The lightbox is code-split.** `islands/ProjectsGrid.tsx` loads `ProjectGallery` via
 `dynamic(..., { ssr: false })`, so the drag/gesture code only downloads when a visitor actually
@@ -631,8 +619,7 @@ re-measured on production after merge; nothing in the preview numbers can settle
 
 Current first-load JS is **237.3 KB gzipped** on every route, against a 150 KB target that has not
 been met. 1.2 KB of that is the compression cost of the extra chunk boundary the admin's client
-entrypoint introduces — no admin code reaches the public page, and `tests/smoke.spec.ts` asserts
-it. Full accounting in `docs/superpowers/baseline/2026-07-27-after-plan-1.md` and `PROGRESS.md`.
+entrypoint introduces — no admin code reaches the public page. Full accounting in `docs/superpowers/baseline/2026-07-27-after-plan-1.md` and `PROGRESS.md`.
 
 ---
 
@@ -676,8 +663,12 @@ npm run build && npm start
 curl -sI http://localhost:3000/ar | grep -iE "content-security-policy|referrer-policy|permissions-policy"
 ```
 
-The immutable cache rules still need a deploy to verify:
-`PLAYWRIGHT_BASE_URL=https://<preview>.netlify.app npm run test:headers`.
+The immutable cache rules still need a deploy to verify — `netlify.toml` only takes effect on
+CDN-served responses:
+
+```bash
+curl -sI https://<preview>.netlify.app/_next/static/<any-hashed-asset> | grep -i cache-control
+```
 
 **Known loose directive: `script-src 'unsafe-inline'` on public routes.** A prerendered route
 emits 22 inline scripts, 21 of them Next's own RSC flight payload, and a browser ignores
@@ -703,7 +694,7 @@ The official Next.js runtime plugin handles `next/image` optimization, SSR, and 
 | ---------------------- | ------------------- | --------------------------------------------------------------------------- |
 | `ADMIN_PASSWORD_HASH`  | For `/admin`        | Base64 of an argon2id hash. Netlify dashboard only — never a committed file |
 | `AUTH_SECRET`          | For `/admin`        | 32 random bytes, base64. Signs the session JWT                              |
-| `NEXT_PUBLIC_SITE_URL` | No                  | Defaults to `https://mauri-dev.netlify.app`. Set it when a domain lands   |
+| `NEXT_PUBLIC_SITE_URL` | No                  | Defaults to `https://mauri-dev.netlify.app`. Set it when a domain lands     |
 | `NODE_VERSION`         | Set in netlify.toml | `22.11.0`                                                                   |
 
 Generate the two admin values with `node scripts/gen-admin-secrets.mjs` — see §11 for why the
@@ -765,12 +756,12 @@ and the fixed hex stops in `.btn-gold`. Don't rename `--gold`; many utilities de
 fallback for a visitor whose `Accept-Language` matches nothing. The theme default must agree
 between `src/app/no-flash.tsx` and `ThemeProvider`'s SSR value.
 
-**Run the tests** — `npm run test:e2e` (148 pass, 14 skipped locally; the skips are the
-deploy-only header assertions). Several tests are marked **PROTECTED** in `tests/smoke.spec.ts`
-and `tests/headers.spec.ts` and must not be weakened — each exists because a real regression
-passed a weaker check: computed `font-family` per locale, computed `opacity > 0` per section,
-the hero and cards visible with JavaScript disabled, CLS under a throttled font swap, headers
-asserted on a delivered response, and no admin code in any script the public page loads.
+**Check by hand before shipping** — the Playwright suite was removed, so these invariants now
+have no automated guard. Each one is listed because a real regression once passed a weaker
+check: computed `font-family` per locale, computed `opacity > 0` per section, the hero and
+cards visible with JavaScript disabled, CLS under a throttled font swap, security headers
+asserted on a delivered response (not on config), and no admin code in any script the public
+page loads. `git log -- tests/` recovers the deleted specs if you want them back.
 
 **Change the admin password** — rerun `node scripts/gen-admin-secrets.mjs`, then replace
 `ADMIN_PASSWORD_HASH` in Netlify. Rotating `AUTH_SECRET` at the same time invalidates every

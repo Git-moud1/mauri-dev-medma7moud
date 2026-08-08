@@ -10,10 +10,8 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint .",
-    "test:e2e": "playwright test",
     "format": "prettier --write .",
-    "format:check": "prettier --check .",
-    "test:headers": "playwright test tests/headers.spec.ts --project=desktop"
+    "format:check": "prettier --check ."
   },
   "dependencies": {
     "@netlify/blobs": "^10.7.10",

@@ -6,6 +6,6 @@
  * and this page has to declare one, because otherwise it announces itself under
  * the homepage's title. Without this file `/[locale]/projects` went out with
  * `og:title` and no `og:image`, which is the bare share link the brief set out
- * to fix; `tests/seo.spec.ts` is what caught it.
+ * to fix.
  */
 export { default, size, contentType, generateImageMetadata } from '../opengraph-image';

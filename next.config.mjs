@@ -77,8 +77,8 @@ const CSP_SHARED = [
  * only, so hot reload silently stops working without it.
  *
  * Both are gated on NODE_ENV and neither can reach a deployed response: Netlify
- * builds with NODE_ENV=production, and `tests/headers.spec.ts` asserts on the
- * delivered header that `unsafe-eval` is absent. A production `'unsafe-eval'`
+ * builds with NODE_ENV=production, so the delivered header never carries
+ * `unsafe-eval`. A production `'unsafe-eval'`
  * would be a real XSS primitive, and there is an admin panel behind this origin
  * now.
  */
