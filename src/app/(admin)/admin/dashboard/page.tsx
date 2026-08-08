@@ -1,6 +1,5 @@
 import { redirect } from 'next/navigation';
-import { getStore } from '@netlify/blobs';
-import { blobStore } from '@/lib/content';
+import { supabaseStore } from '@/lib/content';
 import { requireSession } from '../actions';
 import { DashboardShell } from './DashboardShell';
 
@@ -10,23 +9,6 @@ import { DashboardShell } from './DashboardShell';
  */
 export const dynamic = 'force-dynamic';
 
-/**
- * Can this runtime actually write?
- *
- * Reads always succeed because they fall back to the bundled catalogue, so
- * "the list rendered" proves nothing about whether saving will work. Probing
- * once here lets the UI say so up front instead of letting each save discover
- * it separately.
- */
-async function isStoreAvailable(): Promise<boolean> {
-  try {
-    await getStore('site-content').get('projects.json', { type: 'json' });
-    return true;
-  } catch {
-    return false;
-  }
-}
-
 export default async function DashboardPage() {
   // The proxy already redirects a signed-out request. This re-checks for the
   // same reason every action does: the proxy is a first pass, not the boundary.
@@ -34,17 +16,17 @@ export default async function DashboardPage() {
 
   // Straight from the store, bypassing the tagged cache: an admin must see what
   // is actually stored, not what the public cache last captured.
-  const [projects, settings, storeAvailable] = await Promise.all([
-    blobStore.getProjects(),
-    blobStore.getSettings(),
-    isStoreAvailable(),
+  //
+  // There is no "can this runtime write?" probe any more, and no read-only
+  // banner. That pair existed because Netlify Blobs could be readable-by-
+  // fallback and unwritable at the same time — locally, reads quietly returned
+  // the bundled catalogue while every save threw. With one database behind one
+  // credential the asymmetry is gone: if these reads returned, saving works. If
+  // they did not, they threw, and ./error.tsx says so in full.
+  const [projects, settings] = await Promise.all([
+    supabaseStore.getProjects(),
+    supabaseStore.getSettings(),
   ]);
 
-  return (
-    <DashboardShell
-      projects={projects}
-      settings={settings}
-      storeAvailable={storeAvailable}
-    />
-  );
+  return <DashboardShell projects={projects} settings={settings} />;
 }

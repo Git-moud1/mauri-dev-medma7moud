@@ -1,15 +1,9 @@
 'use server';
 
-import { getStore } from '@netlify/blobs';
 import { requireSession } from '../actions';
-import {
-  processUpload,
-  mediaKey,
-  slugifyFilename,
-  toArrayBuffer,
-} from '@/lib/images/process';
+import { processUpload, mediaKey, slugifyFilename } from '@/lib/images/process';
 import { MAX_UPLOAD_BYTES, MAX_UPLOAD_LABEL } from '@/lib/images/limits';
-import { MEDIA_STORE } from '@/lib/images/store';
+import { supabase, MEDIA_BUCKET } from '@/lib/supabase';
 
 /** FormDataEntryValue is `string | File`; a File stringifies to "[object File]". */
 function fieldString(formData: FormData, key: string): string {
@@ -65,25 +59,40 @@ export async function uploadImage(formData: FormData): Promise<UploadResult> {
   const slug = `${slugifyFilename(file.name)}-${Date.now().toString(36)}`;
 
   try {
-    const store = getStore(MEDIA_STORE);
+    const storage = supabase().storage.from(MEDIA_BUCKET);
     await Promise.all(
       processed.widths.map(async (variant) => {
-        // Blobs takes an ArrayBuffer, not a Node Buffer, and specifically not
-        // the SharedArrayBuffer sharp's output is backed by on Netlify — see
-        // toArrayBuffer, which exists entirely for that distinction.
-        await store.set(
+        // A Node Buffer goes straight over the wire: Storage takes binary
+        // bodies, so there is nothing to convert.
+        //
+        // Worth knowing why that matters, because the deleted conversion cost
+        // this project a store full of garbage. Netlify Blobs' `set` accepted
+        // `string | ArrayBuffer | Blob`, and on the Netlify Linux runtime
+        // sharp's output is backed by a SharedArrayBuffer — no branch matched,
+        // it fell through to `String(value)`, and 26 bytes of "[object
+        // SharedArrayBuffer]" were written under every media key while the
+        // upload reported success. Locally the same code produced a plain
+        // ArrayBuffer and worked, so no local test could have caught it. Six of
+        // those corpses were still in the store at migration time.
+        const { error } = await storage.upload(
           mediaKey(projectId, slug, variant.width),
-          toArrayBuffer(variant.data),
+          variant.data,
+          { contentType: 'image/webp', cacheControl: '31536000', upsert: false },
         );
+        // Unlike the migration script, this must NOT upsert: keys carry a
+        // timestamp, so a collision means a bug, not a re-run, and silently
+        // overwriting would replace an image other records already point at.
+        if (error) throw new Error(error.message);
       }),
     );
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error);
-    if (/blob|store|environment/i.test(message)) {
+    if (/SUPABASE_URL|SUPABASE_SECRET_KEY/.test(message)) {
       return {
         ok: false,
         error:
-          'Uploads need the Netlify runtime. Run `npx netlify dev` locally, or upload on the deploy.',
+          'Image storage is not configured — SUPABASE_URL and SUPABASE_SECRET_KEY are missing. ' +
+          'Locally: fill in .env.local. On Netlify: Site configuration → Environment variables.',
       };
     }
     return { ok: false, error: `Upload failed: ${message}` };

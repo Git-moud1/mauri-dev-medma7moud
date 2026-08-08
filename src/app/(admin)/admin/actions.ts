@@ -12,7 +12,7 @@ import {
   SESSION_COOKIE_OPTIONS,
 } from '@/lib/auth/session';
 import { checkRateLimit, recordFailure, clearAttempts } from '@/lib/auth/rate-limit';
-import { blobStore, CONTENT_TAG, projectSchema, settingsSchema } from '@/lib/content';
+import { supabaseStore, CONTENT_TAG, projectSchema, settingsSchema } from '@/lib/content';
 import { FOLLOW_KEYS } from '@/lib/social';
 
 /**
@@ -97,24 +97,30 @@ export type Result =
  * Run a store write, turning an unreachable store into a message instead of a
  * crash.
  *
- * Netlify Blobs only exists inside a Netlify runtime. `npm run dev` and
- * `next start` have no Blobs context, so every write throws there — reads are
- * fine because they fall back to the bundled catalogue. Without this the admin
- * would show an unhandled server-action error and give no hint that the fix is
- * `netlify dev` or a deploy.
+ * A save is the one moment where the owner is holding text they will lose. An
+ * unhandled server-action error would drop them on a generic screen with the
+ * form gone; a returned message keeps the editor open with the draft in it.
+ *
+ * The environment case is called out separately because it is the only failure
+ * with a fix the owner can act on without reading a log.
  */
-async function withStore(work: () => Promise<void>): Promise<Result> {
+async function withStore(work: () => Promise<Result | undefined>): Promise<Result> {
   try {
-    await work();
-    return { ok: true };
+    // Returning a Result lets the work itself report a business failure — "that
+    // id is taken" — from inside the same guard that catches an unreachable
+    // store. Every one of these actions has to read before it writes, and since
+    // reads throw now, a read left outside this boundary would be an unhandled
+    // server-action error with the owner's unsaved form behind it.
+    return (await work()) ?? { ok: true };
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error);
-    if (/blob|store|environment|MissingBlobsEnvironmentError/i.test(message)) {
+    if (/SUPABASE_URL|SUPABASE_SECRET_KEY/.test(message)) {
       return {
         ok: false,
         error:
-          'The content store is unavailable. Netlify Blobs only runs inside Netlify — ' +
-          'use `npx netlify dev` locally, or edit on the deploy.',
+          'The content store is not configured — SUPABASE_URL and SUPABASE_SECRET_KEY ' +
+          'are missing. Locally: fill in .env.local. On Netlify: Site configuration → ' +
+          'Environment variables, scoped to both Builds and Functions.',
       };
     }
     return { ok: false, error: `Could not save: ${message}` };
@@ -188,13 +194,12 @@ export async function createProject(formData: FormData): Promise<Result> {
   const parsed = projectSchema.safeParse(formDataToProject(formData));
   if (!parsed.success) return { ok: false, error: firstError(parsed.error.issues) };
 
-  const projects = await blobStore.getProjects();
-  if (projects.some((project) => project.id === parsed.data.id)) {
-    return { ok: false, error: `The id "${parsed.data.id}" is already taken.` };
-  }
-
   const saved = await withStore(async () => {
-    await blobStore.saveProjects([...projects, parsed.data]);
+    const projects = await supabaseStore.getProjects();
+    if (projects.some((project) => project.id === parsed.data.id)) {
+      return { ok: false, error: `The id "${parsed.data.id}" is already taken.` };
+    }
+    await supabaseStore.saveProjects([...projects, parsed.data]);
   });
   if (saved.ok) updateTag(CONTENT_TAG);
   return saved;
@@ -208,13 +213,12 @@ export async function updateProject(id: string, formData: FormData): Promise<Res
   const parsed = projectSchema.safeParse({ ...formDataToProject(formData), id });
   if (!parsed.success) return { ok: false, error: firstError(parsed.error.issues) };
 
-  const projects = await blobStore.getProjects();
-  if (!projects.some((project) => project.id === id)) {
-    return { ok: false, error: 'That project no longer exists.' };
-  }
-
   const saved = await withStore(async () => {
-    await blobStore.saveProjects(
+    const projects = await supabaseStore.getProjects();
+    if (!projects.some((project) => project.id === id)) {
+      return { ok: false, error: 'That project no longer exists.' };
+    }
+    await supabaseStore.saveProjects(
       projects.map((project) => (project.id === id ? parsed.data : project)),
     );
   });
@@ -225,9 +229,11 @@ export async function updateProject(id: string, formData: FormData): Promise<Res
 export async function deleteProject(id: string): Promise<Result> {
   if (!(await requireSession())) return { ok: false, error: 'Not signed in.' };
 
-  const projects = await blobStore.getProjects();
   const saved = await withStore(async () => {
-    await blobStore.saveProjects(projects.filter((project) => project.id !== id));
+    const projects = await supabaseStore.getProjects();
+    await supabaseStore.saveProjects(projects.filter((project) => project.id !== id));
+    // Explicit: `withStore` reads `undefined` as "no business failure, it saved".
+    return undefined;
   });
   if (saved.ok) updateTag(CONTENT_TAG);
   return saved;
@@ -240,20 +246,20 @@ export async function deleteProject(id: string): Promise<Result> {
 export async function moveProject(id: string, direction: -1 | 1): Promise<Result> {
   if (!(await requireSession())) return { ok: false, error: 'Not signed in.' };
 
-  const projects = await blobStore.getProjects();
-  const index = projects.findIndex((project) => project.id === id);
-  const target = index + direction;
-  if (index === -1) return { ok: false, error: 'That project no longer exists.' };
-  if (target < 0 || target >= projects.length) {
-    return { ok: false, error: 'Already at the end of the list.' };
-  }
-
-  const next = [...projects];
-  const [moved] = next.splice(index, 1);
-  if (moved) next.splice(target, 0, moved);
-
   const saved = await withStore(async () => {
-    await blobStore.saveProjects(next);
+    const projects = await supabaseStore.getProjects();
+    const index = projects.findIndex((project) => project.id === id);
+    const target = index + direction;
+    if (index === -1) return { ok: false, error: 'That project no longer exists.' };
+    if (target < 0 || target >= projects.length) {
+      return { ok: false, error: 'Already at the end of the list.' };
+    }
+
+    const next = [...projects];
+    const [moved] = next.splice(index, 1);
+    if (moved) next.splice(target, 0, moved);
+
+    await supabaseStore.saveProjects(next);
   });
   if (saved.ok) updateTag(CONTENT_TAG);
   return saved;
@@ -312,7 +318,8 @@ export async function updateSettings(formData: FormData): Promise<Result> {
   }
 
   const saved = await withStore(async () => {
-    await blobStore.saveSettings(parsed.data);
+    await supabaseStore.saveSettings(parsed.data);
+    return undefined;
   });
   if (saved.ok) updateTag(CONTENT_TAG);
   return saved;

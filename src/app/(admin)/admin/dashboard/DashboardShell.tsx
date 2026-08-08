@@ -19,11 +19,9 @@ type Tab = 'projects' | 'settings';
 export function DashboardShell({
   projects,
   settings,
-  storeAvailable,
 }: {
   projects: StoredProject[];
   settings: SiteSettings;
-  storeAvailable: boolean;
 }) {
   const [tab, setTab] = useState<Tab>('projects');
 
@@ -60,20 +58,11 @@ export function DashboardShell({
         </header>
 
         {/*
-          The one banner worth showing every time: locally there is no Blobs
-          runtime, reads fall back to the bundled catalogue, and every write will
-          fail. Saying so up front beats letting each save discover it.
+          The read-only banner is gone with Netlify Blobs. It warned that reads
+          were falling back to the bundled catalogue while writes would fail —
+          a split that only Blobs could produce. Reaching this component now
+          means the database answered, and the same credential does both.
         */}
-        {!storeAvailable ? (
-          <p className="mb-8 rounded-xl border border-border bg-surface-2 px-4 py-3 text-sm text-muted">
-            <span className="font-medium text-fg">Read-only.</span> The content store is
-            unreachable, so this is the bundled catalogue and saving will fail. Netlify
-            Blobs only runs inside Netlify — use{' '}
-            <span className="font-mono text-fg">npx netlify dev</span> locally, or edit on
-            the deploy.
-          </p>
-        ) : null}
-
         {tab === 'projects' ? (
           <ProjectRows projects={projects} />
         ) : (
