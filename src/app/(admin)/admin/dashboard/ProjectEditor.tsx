@@ -61,8 +61,11 @@ function toDraft(project: StoredProject | null): Draft {
   };
 }
 
-function toFormData(draft: Draft): FormData {
+function toFormData(draft: Draft, version: string): FormData {
   const formData = new FormData();
+  // The stamp this project had when the editor opened; the action refuses the
+  // save if the stored project no longer matches it.
+  formData.set('expectedVersion', version);
   formData.set('id', draft.id);
   formData.set('category', draft.category);
   formData.set('frame', draft.frame);
@@ -86,10 +89,13 @@ function toFormData(draft: Draft): FormData {
  */
 export function ProjectEditor({
   project,
+  version = '',
   onClose,
   onSaved,
 }: {
   project: StoredProject | null;
+  /** `versionOf(project)` from the dashboard; empty when creating. */
+  version?: string;
   onClose: () => void;
   onSaved: () => void;
 }) {
@@ -140,8 +146,8 @@ export function ProjectEditor({
     setSaving(true);
     setError(null);
     const result: Result = isEdit
-      ? await updateProject(project.id, toFormData(draft))
-      : await createProject(toFormData(draft));
+      ? await updateProject(project.id, toFormData(draft, version))
+      : await createProject(toFormData(draft, version));
     setSaving(false);
 
     if (result.ok) {
@@ -158,7 +164,7 @@ export function ProjectEditor({
   async function destroy() {
     if (!project) return;
     setSaving(true);
-    const result = await deleteProject(project.id);
+    const result = await deleteProject(project.id, version);
     setSaving(false);
     if (result.ok) {
       toast.push({ tone: 'success', text: `Deleted ${project.id}.` });

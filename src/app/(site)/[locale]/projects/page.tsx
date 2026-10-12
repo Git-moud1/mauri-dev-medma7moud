@@ -3,7 +3,6 @@ import Link from 'next/link';
 import { notFound } from 'next/navigation';
 
 import { isLocale, dirFor } from '@/i18n/locale';
-import { LOCALES } from '@/i18n/config';
 import { dictionaries } from '@/i18n/dictionaries';
 import { getT } from '@/i18n/server';
 import { getProjects, getSettings } from '@/lib/content';
@@ -22,13 +21,14 @@ import { ArrowRightIcon } from '@/components/Icons';
 /**
  * The full catalogue, which the homepage's six-project preview links to.
  *
- * Prerendered per locale exactly like `/[locale]`, and for the same reason: the
- * content reads are cached and tagged, so touching them must not turn this into
- * a dynamic route. Check the build output still lists `/[locale]/projects` as
- * SSG after editing anything here.
+ * Static exactly like `/[locale]`, and rendered on first request for the same
+ * reason — see `generateStaticParams` in ../layout.tsx. The content reads are
+ * cached and tagged, so touching them must not turn this into a dynamic route:
+ * check the build output still lists `/[locale]/projects` as static (●/○), not
+ * dynamic (ƒ), after editing anything here.
  */
-export function generateStaticParams() {
-  return LOCALES.map((locale) => ({ locale }));
+export function generateStaticParams(): { locale: string }[] {
+  return [];
 }
 
 export async function generateMetadata(props: {

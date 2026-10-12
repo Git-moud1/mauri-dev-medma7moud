@@ -8,3 +8,4 @@ src/data/blur.generated.ts
 
 # Prettier has no SQL parser, so `--check` errors rather than skipping these.
 supabase/*.sql
+.blobs-local

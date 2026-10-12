@@ -1,5 +1,4 @@
 import { z } from 'zod';
-import type { Project } from '@/data/projects';
 import {
   FOLLOW_KEYS,
   socialPlatform,
@@ -144,10 +143,7 @@ export const settingsSchema = z
      * section.
      */
     whatsappNumber: platformField('whatsapp'),
-    /**
-     * Moved out of `SITE` so it is editable from the admin. The blob fallback
-     * seeds it from `SITE.email`, so a cold store still publishes an address.
-     */
+    /** Moved out of `SITE` so it is editable from the admin. */
     email: platformField('email'),
     socials: socialsSchema,
     heroStats: z.object({
@@ -172,20 +168,3 @@ export const settingsSchema = z
 export type SiteSettings = z.infer<typeof settingsSchema>;
 /** What the admin form posts, before the derived field is added. */
 export type SiteSettingsInput = z.input<typeof settingsSchema>;
-
-export interface ContentStore {
-  getProjects(): Promise<StoredProject[]>;
-  getSettings(): Promise<SiteSettings>;
-  saveProjects(next: StoredProject[]): Promise<void>;
-  saveSettings(next: SiteSettingsInput): Promise<void>;
-}
-
-/**
- * Shape a bundled project for the store. The bundled catalogue is the fallback
- * the public site renders whenever the blob store is empty, cold or
- * unreachable, so it has to satisfy the same schema as anything the admin
- * writes.
- */
-export function projectToStored(project: Project): StoredProject {
-  return projectSchema.parse(project);
-}

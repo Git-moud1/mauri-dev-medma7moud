@@ -1,5 +1,5 @@
 import { redirect } from 'next/navigation';
-import { supabaseStore } from '@/lib/content';
+import { blobsStore, versionOf } from '@/lib/content';
 import { requireSession } from '../actions';
 import { DashboardShell } from './DashboardShell';
 
@@ -14,19 +14,27 @@ export default async function DashboardPage() {
   // same reason every action does: the proxy is a first pass, not the boundary.
   if (!(await requireSession())) redirect('/admin');
 
-  // Straight from the store, bypassing the tagged cache: an admin must see what
-  // is actually stored, not what the public cache last captured.
-  //
-  // There is no "can this runtime write?" probe any more, and no read-only
-  // banner. That pair existed because Netlify Blobs could be readable-by-
-  // fallback and unwritable at the same time — locally, reads quietly returned
-  // the bundled catalogue while every save threw. With one database behind one
-  // credential the asymmetry is gone: if these reads returned, saving works. If
-  // they did not, they threw, and ./error.tsx says so in full.
+  // Straight from the store with strong consistency, bypassing the tagged
+  // cache: an admin must see what is actually stored, not what the public cache
+  // last captured. A read that fails throws, and ./error.tsx says so in full —
+  // there is no fallback catalogue and no read-only mode to hide behind.
   const [projects, settings] = await Promise.all([
-    supabaseStore.getProjects(),
-    supabaseStore.getSettings(),
+    blobsStore.getProjects(),
+    blobsStore.getSettings(),
   ]);
 
-  return <DashboardShell projects={projects} settings={settings} />;
+  // Stamped here, compared in the actions: a form saved after the same record
+  // changed elsewhere is refused instead of overwriting that change.
+  const projectVersions = Object.fromEntries(
+    projects.map((project) => [project.id, versionOf(project)]),
+  );
+
+  return (
+    <DashboardShell
+      projects={projects}
+      projectVersions={projectVersions}
+      settings={settings}
+      settingsVersion={versionOf(settings)}
+    />
+  );
 }

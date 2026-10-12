@@ -7,6 +7,7 @@ import { Toaster } from '../ui/Toaster';
 import { Button } from '../ui/primitives';
 import { ProjectRows } from './ProjectRows';
 import { SettingsForm } from './SettingsForm';
+import { PasswordForm } from './PasswordForm';
 
 type Tab = 'projects' | 'settings';
 
@@ -18,10 +19,15 @@ type Tab = 'projects' | 'settings';
  */
 export function DashboardShell({
   projects,
+  projectVersions,
   settings,
+  settingsVersion,
 }: {
   projects: StoredProject[];
+  /** Per project id; see `versionOf`. */
+  projectVersions: Record<string, string>;
   settings: SiteSettings;
+  settingsVersion: string;
 }) {
   const [tab, setTab] = useState<Tab>('projects');
 
@@ -58,15 +64,17 @@ export function DashboardShell({
         </header>
 
         {/*
-          The read-only banner is gone with Netlify Blobs. It warned that reads
-          were falling back to the bundled catalogue while writes would fail —
-          a split that only Blobs could produce. Reaching this component now
-          means the database answered, and the same credential does both.
+          No read-only banner. It once warned that reads were falling back to
+          the bundled catalogue while writes would fail. There is no fallback
+          any more: reaching this component means the store answered.
         */}
         {tab === 'projects' ? (
-          <ProjectRows projects={projects} />
+          <ProjectRows projects={projects} versions={projectVersions} />
         ) : (
-          <SettingsForm settings={settings} />
+          <>
+            <SettingsForm settings={settings} version={settingsVersion} />
+            <PasswordForm />
+          </>
         )}
       </div>
     </Toaster>

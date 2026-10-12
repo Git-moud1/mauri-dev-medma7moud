@@ -1,0 +1,45 @@
+# Restoration log — 2026-10
+
+Checkpoint for the October 2026 outage recovery. Newest entry last. Detail lives in
+README §11; this file records what happened and what is verified.
+
+## Outage (diagnosed 2026-10-12)
+
+- Supabase project `eglcgjliyrvymelhawjn` vanished from DNS between 2026-08-19 and 2026-08-22
+  (NXDOMAIN on every public resolver). Every keep-alive run from 2026-08-22 failed with curl
+  exit 6 (host not resolvable) — the workflow was a symptom, not the cause. Paused vs deleted
+  was never established; nothing in the recovery depends on it.
+- Public pages kept serving Netlify's cached render of 2026-08-08; every `/api/media/*` image
+  (14 references, 3 projects) returned 404, and no deploy could build.
+- A home Wi-Fi router (192.168.100.1) returns SERVFAIL for `*.netlify.app` while public
+  resolvers answer — a network DNS fault, separate from the outage.
+
+## Data recovered
+
+- Netlify Blobs still held the pre-Supabase copy: `site-content` (9 projects + settings,
+  identical to the 2026-08-08 render) and `site-media` (all 14 referenced images, every
+  width). Read-only copies, SHA-256 manifests: `Desktop\MYW1-recovery-2026-10-12`,
+  `Desktop\MYW1-backups\production-*`.
+- 11 contact-form submissions exported from Netlify Forms (personal data — kept private).
+- Not recoverable and unused by any feature: Supabase's `created_at` / `updated_at` columns
+  (they held the 2026-08-08 migration time, not creation dates). Not invented.
+
+## Architecture (decided 2026-10-12)
+
+Netlify Free + Netlify Blobs + Netlify Forms. Vercel Hobby forbids commercial use; Turso Free
+archives databases after 10 days idle; Firebase Storage needs the paid Blaze plan.
+
+## Branch `fix/blobs-store`
+
+- Content and media back on Netlify Blobs; Supabase and the keep-alive workflow removed.
+- No store read at build time (`generateStaticParams` → `[]`); pages render on first request.
+- Conditional + read-back-verified writes; per-form version stamps against stale tabs.
+- Store prefix compiled from Netlify `CONTEXT`: production `''`, previews `staging-`, else `local-`.
+- Admin password change, forgot/reset by email (Resend adapter; outbox on non-production).
+- Local verification: 55/55 content/admin checks, 33/33 auth checks (local Blobs emulator,
+  real `next start`, Playwright Chromium).
+
+## Open items
+
+- `RESEND_API_KEY` — needs a Resend account opened with the recovery address (owner action).
+- `mauri-dev.online` — not delegated at the `.online` registry; registration/DNS is the owner's.

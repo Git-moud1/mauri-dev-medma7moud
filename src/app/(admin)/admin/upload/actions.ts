@@ -3,7 +3,8 @@
 import { requireSession } from '../actions';
 import { processUpload, mediaKey, slugifyFilename } from '@/lib/images/process';
 import { MAX_UPLOAD_BYTES, MAX_UPLOAD_LABEL } from '@/lib/images/limits';
-import { supabase, MEDIA_BUCKET } from '@/lib/supabase';
+import { putMedia } from '@/lib/images/store';
+import { isMissingBlobsEnvironment } from '@/lib/blobs';
 
 /** FormDataEntryValue is `string | File`; a File stringifies to "[object File]". */
 function fieldString(formData: FormData, key: string): string {
@@ -59,42 +60,24 @@ export async function uploadImage(formData: FormData): Promise<UploadResult> {
   const slug = `${slugifyFilename(file.name)}-${Date.now().toString(36)}`;
 
   try {
-    const storage = supabase().storage.from(MEDIA_BUCKET);
+    // Every width is written AND read back before the path is handed out, so a
+    // project record can never point at an image that did not land intact.
+    // `putMedia` also owns the SharedArrayBuffer fix and the no-overwrite rule.
     await Promise.all(
-      processed.widths.map(async (variant) => {
-        // A Node Buffer goes straight over the wire: Storage takes binary
-        // bodies, so there is nothing to convert.
-        //
-        // Worth knowing why that matters, because the deleted conversion cost
-        // this project a store full of garbage. Netlify Blobs' `set` accepted
-        // `string | ArrayBuffer | Blob`, and on the Netlify Linux runtime
-        // sharp's output is backed by a SharedArrayBuffer — no branch matched,
-        // it fell through to `String(value)`, and 26 bytes of "[object
-        // SharedArrayBuffer]" were written under every media key while the
-        // upload reported success. Locally the same code produced a plain
-        // ArrayBuffer and worked, so no local test could have caught it. Six of
-        // those corpses were still in the store at migration time.
-        const { error } = await storage.upload(
-          mediaKey(projectId, slug, variant.width),
-          variant.data,
-          { contentType: 'image/webp', cacheControl: '31536000', upsert: false },
-        );
-        // Unlike the migration script, this must NOT upsert: keys carry a
-        // timestamp, so a collision means a bug, not a re-run, and silently
-        // overwriting would replace an image other records already point at.
-        if (error) throw new Error(error.message);
-      }),
+      processed.widths.map((variant) =>
+        putMedia(mediaKey(projectId, slug, variant.width), variant.data),
+      ),
     );
   } catch (error) {
-    const message = error instanceof Error ? error.message : String(error);
-    if (/SUPABASE_URL|SUPABASE_SECRET_KEY/.test(message)) {
+    if (isMissingBlobsEnvironment(error)) {
       return {
         ok: false,
         error:
-          'Image storage is not configured — SUPABASE_URL and SUPABASE_SECRET_KEY are missing. ' +
-          'Locally: fill in .env.local. On Netlify: Site configuration → Environment variables.',
+          'Image storage is not available here — Netlify Blobs exists inside a Netlify ' +
+          'deploy, or locally under `npm run blobs:local`.',
       };
     }
+    const message = error instanceof Error ? error.message : String(error);
     return { ok: false, error: `Upload failed: ${message}` };
   }
 

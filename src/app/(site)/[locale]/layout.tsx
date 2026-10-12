@@ -5,14 +5,28 @@ import '../../globals.css';
 import { NoFlashScript } from '../../no-flash';
 import { ThemeSync } from '@/theme/ThemeSync';
 import { fontClassFor, fontStyleFor } from './fonts';
-import { LOCALES, type Locale } from '@/i18n/config';
+import { type Locale } from '@/i18n/config';
 import { isLocale, dirFor } from '@/i18n/locale';
 import { dictionaries } from '@/i18n/dictionaries';
 import { SITE, SITE_URL } from '@/lib/site';
 import { socialMetadata } from '@/lib/metadata';
 
-export function generateStaticParams() {
-  return LOCALES.map((locale) => ({ locale }));
+/**
+ * Deliberately empty: no locale is rendered at build time.
+ *
+ * The pages under this segment read the content store, and Netlify Blobs does
+ * not exist inside `next build`. Rendering them there either fails the build
+ * or, as it once did, bakes a fallback into the HTML that silently replaces the
+ * owner's content at every deploy.
+ *
+ * An empty array (not a missing function) keeps the routes static: Next renders
+ * each locale on its first request, inside the Netlify function where the
+ * store is reachable, and caches the result until `updateTag('content')`. See
+ * the Next 16 docs for generateStaticParams, "All paths at runtime".
+ * Unknown locales still 404 — the pages call notFound() themselves.
+ */
+export function generateStaticParams(): { locale: string }[] {
+  return [];
 }
 
 export async function generateMetadata(props: {

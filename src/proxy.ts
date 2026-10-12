@@ -20,12 +20,14 @@ import { SESSION_COOKIE, verifySession } from '@/lib/auth/session';
  * buy is that a signed-out visitor lands on the login page instead of a
  * flash of dashboard chrome.
  */
+const SIGNED_OUT_ADMIN_PAGES = new Set(['/admin/forgot', '/admin/reset']);
+
 export async function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
-  // `/admin` itself is the login page and stays open. Everything under it does
-  // not.
-  if (pathname.startsWith('/admin/')) {
+  // `/admin` itself is the login page and stays open, as do the two pages a
+  // signed-out owner needs to recover access. Everything else under it does not.
+  if (pathname.startsWith('/admin/') && !SIGNED_OUT_ADMIN_PAGES.has(pathname)) {
     const valid = await verifySession(request.cookies.get(SESSION_COOKIE)?.value);
     if (valid) return NextResponse.next();
 

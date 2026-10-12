@@ -1,18 +1,27 @@
 'use server';
 
-import { cookies, headers } from 'next/headers';
+import { cookies } from 'next/headers';
 import { updateTag } from 'next/cache';
 import { redirect } from 'next/navigation';
 import { z } from 'zod';
-import { verifyPassword } from '@/lib/auth/password';
+import { verifyAgainst } from '@/lib/auth/password';
+import { readCredential } from '@/lib/auth/credential';
+import { clientIp, hasValidSession } from '@/lib/auth/request';
 import {
   createSession,
-  verifySession,
   SESSION_COOKIE,
   SESSION_COOKIE_OPTIONS,
 } from '@/lib/auth/session';
 import { checkRateLimit, recordFailure, clearAttempts } from '@/lib/auth/rate-limit';
-import { supabaseStore, CONTENT_TAG, projectSchema, settingsSchema } from '@/lib/content';
+import {
+  blobsStore,
+  versionOf,
+  ContentConflictError,
+  CONTENT_TAG,
+  projectSchema,
+  settingsSchema,
+} from '@/lib/content';
+import { isMissingBlobsEnvironment } from '@/lib/blobs';
 import { FOLLOW_KEYS } from '@/lib/social';
 
 /**
@@ -32,24 +41,18 @@ export interface ActionState {
   error: string;
 }
 
-async function clientIp(): Promise<string> {
-  const store = await headers();
-  return (
-    store.get('x-nf-client-connection-ip') ??
-    store.get('x-forwarded-for')?.split(',')[0]?.trim() ??
-    'unknown'
-  );
-}
-
 /**
  * Re-verify the session inside the action itself.
  *
  * The proxy guard is a first pass and nothing more: a matcher change, a route
  * that stops matching, or a directly invoked action would all bypass it. An
  * action that trusts the proxy is an action with no auth.
+ *
+ * It also checks the session version against the stored credential, which the
+ * proxy cannot: after a password change, older sessions fail here.
  */
 export async function requireSession(): Promise<boolean> {
-  return verifySession((await cookies()).get(SESSION_COOKIE)?.value);
+  return hasValidSession();
 }
 
 export async function login(
@@ -67,13 +70,29 @@ export async function login(
     return { error: `Too many attempts. Try again in ${minutes} minutes.` };
   }
 
-  if (!(await verifyPassword(parsed.data.password))) {
+  // The stored credential once a password has been changed, the bootstrap
+  // variable until then. A store error refuses sign-in rather than falling back
+  // to the variable, which may hold a password that has since been replaced.
+  let credential;
+  try {
+    credential = await readCredential();
+  } catch {
+    return {
+      error: 'Sign-in is unavailable right now — the credential store did not answer.',
+    };
+  }
+
+  if (!(await verifyAgainst(credential?.hash, parsed.data.password)) || !credential) {
     await recordFailure(ip);
     return { error: GENERIC_ERROR };
   }
 
   await clearAttempts(ip);
-  (await cookies()).set(SESSION_COOKIE, await createSession(), SESSION_COOKIE_OPTIONS);
+  (await cookies()).set(
+    SESSION_COOKIE,
+    await createSession(credential.sessionVersion),
+    SESSION_COOKIE_OPTIONS,
+  );
   redirect('/admin/dashboard');
 }
 
@@ -113,19 +132,34 @@ async function withStore(work: () => Promise<Result | undefined>): Promise<Resul
     // server-action error with the owner's unsaved form behind it.
     return (await work()) ?? { ok: true };
   } catch (error) {
-    const message = error instanceof Error ? error.message : String(error);
-    if (/SUPABASE_URL|SUPABASE_SECRET_KEY/.test(message)) {
+    if (isMissingBlobsEnvironment(error)) {
       return {
         ok: false,
         error:
-          'The content store is not configured — SUPABASE_URL and SUPABASE_SECRET_KEY ' +
-          'are missing. Locally: fill in .env.local. On Netlify: Site configuration → ' +
-          'Environment variables, scoped to both Builds and Functions.',
+          'The content store is not available here — Netlify Blobs exists inside a ' +
+          'Netlify deploy, or locally under `npm run blobs:local`.',
       };
     }
+    // Already a full sentence telling the owner what to do; no prefix.
+    if (error instanceof ContentConflictError) return { ok: false, error: error.message };
+    const message = error instanceof Error ? error.message : String(error);
     return { ok: false, error: `Could not save: ${message}` };
   }
 }
+
+/**
+ * The version stamp the dashboard put on the form when it was loaded.
+ * See `versionOf` — it is what stops a form left open in one tab from
+ * overwriting a save made in another.
+ */
+function expectedVersion(formData: FormData): string {
+  const value = formData.get('expectedVersion');
+  return typeof value === 'string' ? value : '';
+}
+
+const STALE_PROJECT =
+  'This project was changed since the editor was opened — probably in another tab. ' +
+  'Nothing was saved. Reload to see the current version, then make the change again.';
 
 /**
  * One FormData field as a trimmed string.
@@ -194,13 +228,13 @@ export async function createProject(formData: FormData): Promise<Result> {
   const parsed = projectSchema.safeParse(formDataToProject(formData));
   if (!parsed.success) return { ok: false, error: firstError(parsed.error.issues) };
 
-  const saved = await withStore(async () => {
-    const projects = await supabaseStore.getProjects();
-    if (projects.some((project) => project.id === parsed.data.id)) {
-      return { ok: false, error: `The id "${parsed.data.id}" is already taken.` };
-    }
-    await supabaseStore.saveProjects([...projects, parsed.data]);
-  });
+  const saved = await withStore(() =>
+    blobsStore.updateProjects((projects) =>
+      projects.some((project) => project.id === parsed.data.id)
+        ? `The id "${parsed.data.id}" is already taken.`
+        : [...projects, parsed.data],
+    ),
+  );
   if (saved.ok) updateTag(CONTENT_TAG);
   return saved;
 }
@@ -213,28 +247,39 @@ export async function updateProject(id: string, formData: FormData): Promise<Res
   const parsed = projectSchema.safeParse({ ...formDataToProject(formData), id });
   if (!parsed.success) return { ok: false, error: firstError(parsed.error.issues) };
 
-  const saved = await withStore(async () => {
-    const projects = await supabaseStore.getProjects();
-    if (!projects.some((project) => project.id === id)) {
-      return { ok: false, error: 'That project no longer exists.' };
-    }
-    await supabaseStore.saveProjects(
-      projects.map((project) => (project.id === id ? parsed.data : project)),
-    );
-  });
+  const expected = expectedVersion(formData);
+  const saved = await withStore(() =>
+    blobsStore.updateProjects((projects) => {
+      const current = projects.find((project) => project.id === id);
+      if (!current) return 'That project no longer exists.';
+      if (versionOf(current) !== expected) return STALE_PROJECT;
+      return projects.map((project) => (project.id === id ? parsed.data : project));
+    }),
+  );
   if (saved.ok) updateTag(CONTENT_TAG);
   return saved;
 }
 
-export async function deleteProject(id: string): Promise<Result> {
+/**
+ * `version` is the stamp the editor was opened with. Deleting a project that
+ * was edited elsewhere in the meantime is refused, for the same reason saving
+ * over it is.
+ *
+ * Only the record goes. Its images stay in the media store, unreferenced:
+ * nothing here deletes uploaded files, so a deletion is recoverable from the
+ * store plus a backup of projects.json.
+ */
+export async function deleteProject(id: string, version: string): Promise<Result> {
   if (!(await requireSession())) return { ok: false, error: 'Not signed in.' };
 
-  const saved = await withStore(async () => {
-    const projects = await supabaseStore.getProjects();
-    await supabaseStore.saveProjects(projects.filter((project) => project.id !== id));
-    // Explicit: `withStore` reads `undefined` as "no business failure, it saved".
-    return undefined;
-  });
+  const saved = await withStore(() =>
+    blobsStore.updateProjects((projects) => {
+      const current = projects.find((project) => project.id === id);
+      if (!current) return 'That project no longer exists.';
+      if (versionOf(current) !== version) return STALE_PROJECT;
+      return projects.filter((project) => project.id !== id);
+    }),
+  );
   if (saved.ok) updateTag(CONTENT_TAG);
   return saved;
 }
@@ -246,21 +291,23 @@ export async function deleteProject(id: string): Promise<Result> {
 export async function moveProject(id: string, direction: -1 | 1): Promise<Result> {
   if (!(await requireSession())) return { ok: false, error: 'Not signed in.' };
 
-  const saved = await withStore(async () => {
-    const projects = await supabaseStore.getProjects();
-    const index = projects.findIndex((project) => project.id === id);
-    const target = index + direction;
-    if (index === -1) return { ok: false, error: 'That project no longer exists.' };
-    if (target < 0 || target >= projects.length) {
-      return { ok: false, error: 'Already at the end of the list.' };
-    }
+  // No version stamp: a move is relative to wherever the project is NOW, so
+  // applying it to a list that changed elsewhere is still what the owner asked
+  // for. The etag inside updateProjects still refuses an overlapping write.
+  const saved = await withStore(() =>
+    blobsStore.updateProjects((projects) => {
+      const index = projects.findIndex((project) => project.id === id);
+      const target = index + direction;
+      if (index === -1) return 'That project no longer exists.';
+      if (target < 0 || target >= projects.length)
+        return 'Already at the end of the list.';
 
-    const next = [...projects];
-    const [moved] = next.splice(index, 1);
-    if (moved) next.splice(target, 0, moved);
-
-    await supabaseStore.saveProjects(next);
-  });
+      const next = [...projects];
+      const [moved] = next.splice(index, 1);
+      if (moved) next.splice(target, 0, moved);
+      return next;
+    }),
+  );
   if (saved.ok) updateTag(CONTENT_TAG);
   return saved;
 }
@@ -317,8 +364,9 @@ export async function updateSettings(formData: FormData): Promise<Result> {
     };
   }
 
+  const expected = expectedVersion(formData);
   const saved = await withStore(async () => {
-    await supabaseStore.saveSettings(parsed.data);
+    await blobsStore.saveSettings(parsed.data, expected);
     return undefined;
   });
   if (saved.ok) updateTag(CONTENT_TAG);

@@ -13,8 +13,14 @@ function secret(): Uint8Array {
   return new TextEncoder().encode(value);
 }
 
-export async function createSession(): Promise<string> {
-  return new SignJWT({ role: 'admin' })
+/**
+ * `sv` is the credential's session version at sign-in. A password change or
+ * reset increments the stored version, and every token carrying an older one
+ * stops being accepted by `requireSession` — that is how old sessions are
+ * invalidated without a session table.
+ */
+export async function createSession(sessionVersion: number): Promise<string> {
+  return new SignJWT({ role: 'admin', sv: sessionVersion })
     .setProtectedHeader({ alg: 'HS256' })
     .setIssuedAt()
     .setExpirationTime(EXPIRY)
@@ -22,19 +28,36 @@ export async function createSession(): Promise<string> {
 }
 
 /**
+ * The session's claims if the token is genuine and unexpired, else null.
+ *
  * Fails closed on every path: no token, bad signature, expired, wrong claim, or
  * no secret configured. A thrown `AUTH_SECRET is not set` must not become an
  * authenticated request, so the throw is caught here rather than propagating.
+ *
+ * Tokens issued before session versions existed carry no `sv`; they read as 0,
+ * the bootstrap credential's version, and stop working at the first change.
  */
-export async function verifySession(token: string | undefined): Promise<boolean> {
-  if (!token) return false;
+export async function readSession(
+  token: string | undefined,
+): Promise<{ sessionVersion: number } | null> {
+  if (!token) return null;
 
   try {
     const { payload } = await jwtVerify(token, secret());
-    return payload.role === 'admin';
+    if (payload.role !== 'admin') return null;
+    const sv = typeof payload.sv === 'number' ? payload.sv : 0;
+    return { sessionVersion: sv };
   } catch {
-    return false;
+    return null;
   }
+}
+
+/**
+ * Signature and expiry only — the proxy's FIRST PASS. It cannot see the stored
+ * session version; `requireSession` in the admin actions is the real check.
+ */
+export async function verifySession(token: string | undefined): Promise<boolean> {
+  return (await readSession(token)) !== null;
 }
 
 /**
