@@ -95,6 +95,37 @@ let scene: { canvas: HTMLCanvasElement; app: TubesCursorApp } | null = null;
 let disposeTimer: ReturnType<typeof setTimeout> | null = null;
 const RETAIN_MS = 2000;
 
+/**
+ * Run `task` once the window has fired `load` and the main thread is idle
+ * (with a 2 s ceiling, so a busy page still gets the effect). Returns a
+ * canceller for unmount. Falls back to a short timeout where
+ * requestIdleCallback is missing (Safari).
+ */
+function whenPageIsIdle(task: () => void): () => void {
+  let idleHandle: number | null = null;
+  let timeoutHandle: ReturnType<typeof setTimeout> | null = null;
+  let done = false;
+
+  const schedule = () => {
+    if (done) return;
+    if ('requestIdleCallback' in window) {
+      idleHandle = window.requestIdleCallback(task, { timeout: 2000 });
+    } else {
+      timeoutHandle = setTimeout(task, 300);
+    }
+  };
+
+  if (document.readyState === 'complete') schedule();
+  else window.addEventListener('load', schedule, { once: true });
+
+  return () => {
+    done = true;
+    window.removeEventListener('load', schedule);
+    if (idleHandle !== null) window.cancelIdleCallback(idleHandle);
+    if (timeoutHandle !== null) clearTimeout(timeoutHandle);
+  };
+}
+
 function disposeScene() {
   disposeTimer = null;
   // Feature-tested: the package publishes no types and no changelog, so a
@@ -155,7 +186,7 @@ export function HeroTubes() {
     }
 
     let cancelled = false;
-    let frame = 0;
+    let cancelSchedule = () => {};
 
     if (scene) {
       // No setReady here: `ready` was already seeded from `scene !== null` in
@@ -169,12 +200,20 @@ export function HeroTubes() {
       host.appendChild(canvas);
 
       /*
-       * One frame, so the canvas has been laid out before the library measures
-       * it. Initialised in the same tick its dimensions are still 0 and the
-       * library divides by them — which surfaces as `Computed radius is NaN`
-       * and a canvas that never draws.
+       * After the page has loaded and gone idle — never in the same tick.
+       *
+       * Same tick: the canvas has not been laid out, its dimensions are 0 and
+       * the library divides by them (`Computed radius is NaN`, a canvas that
+       * never draws). Any later moment fixes that.
+       *
+       * Why as late as idle: the module is ~760 KB of three.js, and starting it
+       * on the first frame put ~3 s of script evaluation on a mid-range phone's
+       * main thread while the page was still becoming interactive (Lighthouse
+       * mobile, deploy-preview-3). The words are server-rendered and are the
+       * LCP; the effect is decoration behind them, and it fades in exactly as
+       * before, only once the page is usable.
        */
-      frame = requestAnimationFrame(() => {
+      cancelSchedule = whenPageIsIdle(() => {
         void import('threejs-components/build/cursors/tubes1.min.js')
           .then(({ default: createTubesCursor }) => {
             const palette = readPalette();
@@ -208,7 +247,7 @@ export function HeroTubes() {
 
     return () => {
       cancelled = true;
-      cancelAnimationFrame(frame);
+      cancelSchedule();
       if (scene) {
         scene.canvas.remove();
         disposeTimer = setTimeout(disposeScene, RETAIN_MS);
