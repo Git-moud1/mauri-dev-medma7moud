@@ -1,7 +1,8 @@
 # Operations
 
-Everything here costs nothing: Netlify Free, Netlify Blobs, Netlify Forms, and (optionally)
-Resend Free. There is no keep-alive job and nothing that needs one.
+Everything here costs nothing: Netlify Free, Netlify Blobs, and Resend Free (contact-form
+emails and password resets — 100/day, 3,000/month). There is no keep-alive job and nothing that
+needs one.
 
 ## Backups
 
@@ -84,7 +85,6 @@ When credits run out, **every site on the account is paused** until the next mon
 | Bandwidth                        | 20 credits per GB      |
 | Requests                         | 2 credits per 10,000   |
 | Compute                          | 10 credits per GB-hour |
-| Form submissions                 | free                   |
 
 - **Check:** Netlify → Team → Usage & billing, about once a week. Act at 50 % used before
   mid-month.
@@ -96,16 +96,16 @@ When credits run out, **every site on the account is paused** until the next mon
 
 ## Troubleshooting
 
-| Symptom                                                | Cause / fix                                                                                                                                                      |
-| ------------------------------------------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Public page shows a 500 error                          | A content document is missing or invalid. The function log names `site-content/projects.json` or `settings.json`. Restore it from a backup.                      |
-| Admin shows "content store is unreachable"             | Same as above, or a preview whose `staging-*` stores were never seeded: `npm run seed:staging -- --from <backup>`.                                               |
-| "Sign-in is unavailable right now"                     | `admin-auth/credential.json` is unreadable or malformed. Restore it, or delete it to fall back to `ADMIN_PASSWORD_HASH`.                                         |
-| Forgot password says "not configured"                  | `RESEND_API_KEY` is not set in Netlify (Functions scope).                                                                                                        |
-| Reset email never arrives                              | Without a verified domain, Resend delivers only to its own account address. Check the account email and the function log (`[auth] password reset email failed`). |
-| Contact messages missing                               | Netlify → Forms → contact → **Spam**. Real messages can be filtered there.                                                                                       |
-| "Could not load the sharp module" (local Windows only) | Start with `NEXT_SHARP_PATH=<repo>/node_modules/sharp`. Not an issue on Netlify.                                                                                 |
-| Site works on mobile data but not on one Wi-Fi network | Network DNS. See below.                                                                                                                                          |
+| Symptom                                                | Cause / fix                                                                                                                                                       |
+| ------------------------------------------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Public page shows a 500 error                          | A content document is missing or invalid. The function log names `site-content/projects.json` or `settings.json`. Restore it from a backup.                       |
+| Admin shows "content store is unreachable"             | Same as above, or a preview whose `staging-*` stores were never seeded: `npm run seed:staging -- --from <backup>`.                                                |
+| "Sign-in is unavailable right now"                     | `admin-auth/credential.json` is unreadable or malformed. Restore it, or delete it to fall back to `ADMIN_PASSWORD_HASH`.                                          |
+| Forgot password says "not configured"                  | `RESEND_API_KEY` is not set in Netlify (Functions scope).                                                                                                         |
+| Reset email never arrives                              | Without a verified domain, Resend delivers only to its own account address. Check the account email and the function log (`[auth] password reset email failed`).  |
+| A contact message never reached Gmail                  | Look in the `contact-messages` store (`npm run backup:blobs`), then the function log (`[contact] could not email`). Check Resend usage: 100/day on the free plan. |
+| "Could not load the sharp module" (local Windows only) | Start with `NEXT_SHARP_PATH=<repo>/node_modules/sharp`. Not an issue on Netlify.                                                                                  |
+| Site works on mobile data but not on one Wi-Fi network | Network DNS. See below.                                                                                                                                           |
 
 ## Wi-Fi / DNS (diagnosed 2026-10-12/13)
 

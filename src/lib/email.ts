@@ -27,6 +27,10 @@ export interface Message {
   subject: string;
   text: string;
   html: string;
+  /** Where a reply goes — the customer, for contact-form messages. */
+  replyTo?: string;
+  /** Outbox key on non-production builds; one per kind of message. */
+  outboxKey?: string;
 }
 
 export interface Mailer {
@@ -53,6 +57,7 @@ function resendMailer(apiKey: string): Mailer {
           subject: message.subject,
           text: message.text,
           html: message.html,
+          ...(message.replyTo ? { reply_to: message.replyTo } : {}),
         }),
         signal: AbortSignal.timeout(10_000),
       });
@@ -77,7 +82,7 @@ const outboxMailer: Mailer = {
   kind: 'outbox',
   async send(message) {
     await adminAuthStore().set(
-      'outbox.json',
+      message.outboxKey ?? 'outbox.json',
       JSON.stringify({ ...message, sentAt: new Date().toISOString() }),
     );
   },
