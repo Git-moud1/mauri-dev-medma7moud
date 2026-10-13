@@ -77,3 +77,25 @@ archives databases after 10 days idle; Firebase Storage needs the paid Blaze pla
 
 - `RESEND_API_KEY` — needs a Resend account opened with the recovery address (owner action).
 - `mauri-dev.online` — not delegated at the `.online` registry; registration/DNS is the owner's.
+
+## Production release (2026-10-13)
+
+- Checkpoint: tag `pre-restore-2026-10-13` (old `main`), old published deploy `6a77c2ca`.
+  Verified backup `MYW1-backups/production-2026-10-13T10-17-23-729Z` taken immediately before.
+- PR #3 merged as `bb482aa`. Production deploy `6ace068b` is live at
+  https://mauri-dev.netlify.app.
+- Read-only smoke test: **19/19**. That covers:
+  - 9 projects in order in all 3 languages
+  - content identical to the pre-outage page
+  - 28/28 uploaded image files and 34/34 static images served byte-identical
+  - no broken image on screen
+  - admin, forgot and reset pages load
+  - the dashboard redirects without a session
+- Production stores: `admin-auth` and `auth-attempts` are still empty, so the admin password
+  is unchanged (the `ADMIN_PASSWORD_HASH` bootstrap). Forgot password answers "not
+  configured" until `RESEND_API_KEY` is set.
+- Lighthouse after release (desktop): 96 / 100 / 96 / 100. Mobile runs on the measuring laptop
+  dropped to 69–75 for both production and the identical preview, because the host CPU
+  benchmark fell from ~3350 to ~1900 between sessions. The valid same-CPU before/after pair
+  is above (87 → 91). The remaining mobile TBT is the hero's three.js start-up. It now runs
+  after load, and removing it on phones would change the approved design.
