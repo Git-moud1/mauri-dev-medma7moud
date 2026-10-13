@@ -22,8 +22,8 @@ export default function ForgotPasswordPage() {
       >
         <h1 className="font-display text-2xl font-bold">Reset password</h1>
         <p className="mt-1 text-sm text-muted">
-          Enter the admin email. A single-use link valid for 20 minutes will be sent to
-          it.
+          Enter the admin email. A reset link valid for 5 minutes (two openings) will be
+          sent to it.
         </p>
 
         <label htmlFor="email" className="mt-6 block text-sm font-medium">

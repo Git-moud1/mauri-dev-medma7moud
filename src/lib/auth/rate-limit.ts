@@ -27,7 +27,7 @@ function key(ip: string, scope?: Scope): string {
  * Separate counters per surface, so guessing at the reset form does not lock
  * the owner out of signing in, and the reverse.
  */
-export type Scope = 'login' | 'change-password' | 'reset';
+export type Scope = 'login' | 'change-password' | 'reset' | 'forgot';
 
 function parseRecord(value: unknown): AttemptRecord | null {
   if (typeof value !== 'object' || value === null) return null;

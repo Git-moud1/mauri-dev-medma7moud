@@ -1,8 +1,13 @@
 'use client';
 
 import Link from 'next/link';
-import { useActionState, useEffect, useSyncExternalStore } from 'react';
-import { resetPassword, type AccountResult } from '../account/actions';
+import { useActionState, useEffect, useState, useSyncExternalStore } from 'react';
+import {
+  openResetLink,
+  resetPassword,
+  type AccountResult,
+  type OpenLinkResult,
+} from '../account/actions';
 
 const FIELD =
   'mt-1.5 w-full rounded-2xl border border-border bg-bg px-4 py-3 text-sm text-fg transition-colors focus:border-gold focus:outline-none';
@@ -15,8 +20,10 @@ const FIELD =
  * header. It is read here, kept in state, and wiped from the address bar
  * straight away so it does not linger in history or a screenshot.
  *
- * Loading this page does not use the link — only submitting the form does.
- * Mail scanners that open links therefore cannot burn it.
+ * Each load of this page counts as one OPENING of the link (at most two are
+ * allowed); only submitting the form uses it. Mail scanners that fetch the
+ * link without running JavaScript never reach the counter, because the token
+ * only exists in the fragment and is read by this script.
  */
 /**
  * Read once per page load and kept here, because the address bar is wiped
@@ -34,6 +41,9 @@ function tokenFromFragment(): string {
 
 const noSubscription = () => () => {};
 
+/** One open per page load, even if React runs the effect twice in development. */
+let openRequested = false;
+
 export default function ResetPasswordPage() {
   // Server snapshot is '' — the fragment does not exist on the server — and
   // React swaps in the browser's value after hydration without a mismatch.
@@ -43,11 +53,57 @@ export default function ResetPasswordPage() {
     null,
   );
 
+  const [opened, setOpened] = useState<OpenLinkResult | null>(null);
+
   useEffect(() => {
     if (window.location.hash) {
       window.history.replaceState(null, '', window.location.pathname);
     }
   }, []);
+
+  useEffect(() => {
+    if (!token || openRequested) return;
+    openRequested = true;
+    void openResetLink(token).then(setOpened, () => {
+      setOpened({ ok: false, error: 'The link could not be checked. Reload the page.' });
+    });
+  }, [token]);
+
+  if (!state?.ok && (!token || !opened || !opened.ok)) {
+    const message = !token
+      ? 'This page needs the link from the reset email.'
+      : !opened
+        ? 'Checking the link…'
+        : opened.ok
+          ? ''
+          : opened.error;
+    return (
+      <main className="grid min-h-screen place-items-center px-4">
+        <div className="w-full max-w-sm rounded-3xl border border-border bg-surface p-8">
+          <h1 className="font-display text-2xl font-bold">Reset password</h1>
+          <p
+            role={opened && !opened.ok ? 'alert' : 'status'}
+            className={`mt-2 text-sm ${opened && !opened.ok ? 'text-red-500' : 'text-muted'}`}
+          >
+            {message}
+          </p>
+          {opened || !token ? (
+            <Link href="/admin/forgot" className="btn-gold mt-6 block w-full text-center">
+              Request a new link
+            </Link>
+          ) : null}
+        </div>
+      </main>
+    );
+  }
+
+  const validUntil =
+    opened?.ok === true
+      ? new Date(opened.expiresAt).toLocaleTimeString([], {
+          hour: '2-digit',
+          minute: '2-digit',
+        })
+      : '';
 
   if (state?.ok) {
     return (
@@ -76,6 +132,14 @@ export default function ResetPasswordPage() {
           At least 12 characters mixing three of lowercase, uppercase, digits and symbols
           — or a passphrase of 16+.
         </p>
+        {validUntil ? (
+          <p className="mt-2 text-xs text-muted">
+            This link works until {validUntil}
+            {opened?.ok && opened.opensLeft === 0
+              ? ' and cannot be opened again — set the password now.'
+              : '.'}
+          </p>
+        ) : null}
 
         <input type="hidden" name="token" value={token} />
 
@@ -112,17 +176,7 @@ export default function ResetPasswordPage() {
             {state.error}
           </p>
         ) : null}
-        {!token ? (
-          <p role="alert" className="mt-3 text-sm text-red-500">
-            This page needs the link from the reset email.
-          </p>
-        ) : null}
-
-        <button
-          type="submit"
-          disabled={pending || !token}
-          className="btn-gold mt-6 w-full"
-        >
+        <button type="submit" disabled={pending} className="btn-gold mt-6 w-full">
           {pending ? 'Saving…' : 'Set new password'}
         </button>
 
