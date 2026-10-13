@@ -586,14 +586,32 @@ local work. **The repository is public — no real value belongs in any committe
   12+ characters mixing three character classes, or a 16+ passphrase. The hash and a bumped
   session version are written in **one** conditional blob write, so every other session ends
   at the same moment the password changes.
-- **Forgot** — `/admin/forgot` (linked from the sign-in page). The visitor types the admin
-  address; the answer is identical whether or not it matches. A match emails a link to the
-  fixed recovery address (`ADMIN_RECOVERY_EMAIL`, default `baymed000@gmail.com`). Three requests
-  per IP per hour and ten per day site-wide.
-- **Reset** — `/admin/reset#token=…`. 256-bit token, only its SHA-256 stored, 20 minutes, one
-  live token at a time. The token travels in the URL fragment, which never reaches a server
-  log. Single use rests on Netlify Blobs' conditional write (`If-Match`): two requests racing
-  with one token cannot both win. Five bad tokens lock the form for 15 minutes.
+- **Forgot** — `/admin/forgot`, linked from the sign-in page. The visitor types the admin
+  address and gets a plain answer:
+  - a wrong address: _"This is not the admin email"_;
+  - the right one: _"Email sent"_, and the link goes to `ADMIN_RECOVERY_EMAIL` (default
+    `baymed000@gmail.com`).
+
+  This reveals the admin address. That is the owner's deliberate choice: the address is
+  already the public contact email.
+
+  Limits, all stated in words:
+  - wrong addresses: 5 in 10 minutes per IP, then a 15-minute lock;
+  - emails: 5 per hour per IP and 20 per day site-wide.
+
+  Every email has a unique subject (`… · HH:MM UTC · #REF`). Gmail threads identical subjects
+  and hides repeated content, which made repeat emails look empty.
+
+- **Reset** — `/admin/reset#token=…`.
+  - 256-bit token; only its SHA-256 is stored.
+  - Valid for **5 minutes** and can be **opened twice**. Each page load counts one opening,
+    and a third is refused.
+  - Sets a password **once**.
+  - One live token: a newer email replaces the older link.
+  - The token travels in the URL fragment, which never reaches a server log.
+  - Opens and the final use are conditional writes (`If-Match`), so racing requests can
+    neither over-count nor both win.
+  - Five bad tokens lock the form for 15 minutes.
 
 **Email.** Set `RESEND_API_KEY` (Netlify, secret, Functions scope) from a free Resend account
 **opened with the recovery address**: without a verified domain Resend's sender

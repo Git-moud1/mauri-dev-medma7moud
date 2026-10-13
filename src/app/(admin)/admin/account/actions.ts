@@ -7,7 +7,16 @@ import {
   replaceCredential,
   CredentialConflictError,
 } from '@/lib/auth/credential';
-import { consumeResetToken, isTokenShaped, issueResetToken } from '@/lib/auth/reset';
+import { randomBytes } from 'node:crypto';
+import {
+  consumeResetToken,
+  isTokenShaped,
+  issueResetToken,
+  openResetToken,
+  RESET_MAX_OPENS,
+  RESET_TTL_MS,
+  type LinkProblem,
+} from '@/lib/auth/reset';
 import { clientIp, hasValidSession } from '@/lib/auth/request';
 import {
   checkRateLimit,
@@ -92,20 +101,21 @@ export async function changePassword(
 // Forgot password (signed out)
 // ---------------------------------------------------------------------------
 
-/** The same words whatever happened, so the form reveals nothing. */
-const REQUEST_ACKNOWLEDGED =
-  'If that is the admin address, a reset link is on its way. It works once and expires in 20 minutes.';
+const TTL_MINUTES = Math.round(RESET_TTL_MS / 60000);
 
 /**
- * Email a single-use reset link — to the fixed recovery address, and only when
- * the typed address matches it.
+ * Email a reset link to the admin address — only when the typed address IS
+ * the admin address, and the answer says plainly which happened.
  *
- * Anti-enumeration: a matching address, a wrong one, and a rate-limited request
- * all get REQUEST_ACKNOWLEDGED. Anti-flooding: three requests per IP per hour
- * and ten per day site-wide, both failing closed.
+ * Telling a visitor "that is not the admin email" reveals which address is the
+ * admin's. That was a deliberate choice by the owner: the address is already
+ * published on the site as the contact email, so there is nothing left to hide,
+ * and a form that always says "maybe" left the owner unsure whether to wait.
  *
- * The one message that differs is "not configured", and it differs for every
- * input alike — it describes the site, not the address.
+ * Limits, all reported in words:
+ * - wrong addresses: five per IP in ten minutes, then a fifteen-minute lock;
+ * - emails sent: five per IP per hour and twenty per day site-wide, failing
+ *   closed (they also guard Resend's 100/day free quota).
  */
 export async function requestPasswordReset(
   _previous: AccountResult | null,
@@ -118,59 +128,113 @@ export async function requestPasswordReset(
     );
     return {
       ok: false,
-      error:
-        'Password reset by email is not configured on this site yet. Contact the site owner.',
+      error: 'Password reset by email is not configured on this site yet.',
     };
   }
 
-  const typed = field(formData, 'email').trim().toLowerCase();
-  if (!typed || typed.length > 254) return { ok: true, message: REQUEST_ACKNOWLEDGED };
-
   const ip = await clientIp();
+  const limit = await checkRateLimit(ip, 'forgot');
+  if (!limit.allowed) return { ok: false, error: lockedMessage(limit.retryAfterSeconds) };
+
+  const typed = field(formData, 'email').trim().toLowerCase();
+  if (!typed || typed.length > 254) return { ok: false, error: 'Enter the admin email.' };
+  if (typed !== recoveryAddress()) {
+    await recordFailure(ip, 'forgot');
+    return { ok: false, error: 'This is not the admin email.' };
+  }
+  await clearAttempts(ip, 'forgot');
+
   const allowed =
-    (await consumeQuota(`reset-ip:${ip}`, 3, 60 * 60)) &&
-    (await consumeQuota('reset-site', 10, 24 * 60 * 60));
-  if (!allowed || typed !== recoveryAddress()) {
-    return { ok: true, message: REQUEST_ACKNOWLEDGED };
+    (await consumeQuota(`reset-ip:${ip}`, 5, 60 * 60)) &&
+    (await consumeQuota('reset-site', 20, 24 * 60 * 60));
+  if (!allowed) {
+    return {
+      ok: false,
+      error:
+        'Too many reset emails were requested recently. Use the latest email, or try again in an hour.',
+    };
   }
 
   try {
-    const { token } = await issueResetToken();
+    const { token, expiresAt } = await issueResetToken();
     // Fragment, not query string: a `#…` never reaches a server log, a CDN log
     // or a Referer header. The reset page reads it in the browser.
     const link = `${process.env.MD_PUBLIC_ORIGIN}/admin/reset#token=${token}`;
+
+    // Every email unique in subject AND body. Gmail threads messages with the
+    // same subject and hides content that repeats an earlier message in the
+    // thread — which made the second and third reset emails look empty.
+    const ref = randomBytes(3).toString('hex').toUpperCase();
+    const sentAt = new Date().toISOString().slice(11, 16);
+    const until = new Date(expiresAt).toISOString().slice(11, 16);
+
     await send.send({
       to: recoveryAddress(),
-      subject: 'Reset your Mauri-Dev admin password',
+      subject: `Mauri-Dev admin password reset · ${sentAt} UTC · #${ref}`,
       text:
-        'Someone asked to reset the Mauri-Dev admin password.\n\n' +
-        `Open this link within 20 minutes to choose a new password:\n${link}\n\n` +
-        'It works once. If you did not ask for this, ignore this email — your password has not changed.',
+        `Password reset requested at ${sentAt} UTC (request #${ref}).\n\n` +
+        `Open this link to choose a new password:\n${link}\n\n` +
+        `It works until ${until} UTC (${TTL_MINUTES} minutes), can be opened at most ` +
+        `${RESET_MAX_OPENS} times, and sets a password once. A newer request replaces it.\n\n` +
+        'If you did not ask for this, ignore this email — your password has not changed.',
       html:
-        '<p>Someone asked to reset the Mauri-Dev admin password.</p>' +
-        `<p><a href="${link}">Choose a new password</a> — the link works once and expires in 20 minutes.</p>` +
-        '<p>If you did not ask for this, ignore this email. Your password has not changed.</p>',
+        `<p>Password reset requested at <strong>${sentAt} UTC</strong> (request #${ref}).</p>` +
+        `<p><a href="${link}"><strong>Choose a new password</strong></a></p>` +
+        `<p>Works until <strong>${until} UTC</strong> (${TTL_MINUTES} minutes), opens at most ` +
+        `${RESET_MAX_OPENS} times, sets a password once. A newer request replaces it.</p>` +
+        `<p style="color:#666;word-break:break-all">If the button does not work, copy this address:<br>${link}</p>` +
+        '<p style="color:#666">If you did not ask for this, ignore this email. Your password has not changed.</p>',
     });
   } catch (error) {
-    // Logged, not shown: the visitor learns nothing either way, and the owner
-    // finds the cause in the function log.
     console.error('[auth] password reset email failed', error);
+    return { ok: false, error: 'The email could not be sent. Try again in a minute.' };
   }
-  return { ok: true, message: REQUEST_ACKNOWLEDGED };
+
+  return {
+    ok: true,
+    message:
+      `Email sent to the admin address. Check the inbox (and Spam). The link works for ` +
+      `${TTL_MINUTES} minutes and can be opened ${RESET_MAX_OPENS} times.`,
+  };
 }
 
 // ---------------------------------------------------------------------------
 // Reset password (signed out, with a token)
 // ---------------------------------------------------------------------------
 
-const INVALID_LINK =
-  'This reset link is invalid, already used, or expired. Request a new one from the sign-in page.';
+const LINK_PROBLEM: Record<LinkProblem, string> = {
+  invalid:
+    'This link is not valid — a newer reset email may have replaced it. Request a new link.',
+  expired: `This link has expired (links last ${TTL_MINUTES} minutes). Request a new one.`,
+  used: 'This link was already used to set a password. Request a new one if needed.',
+  'too-many-opens': `This link was already opened ${RESET_MAX_OPENS} times, the maximum. Request a new one.`,
+};
+
+export type OpenLinkResult =
+  { ok: true; expiresAt: number; opensLeft: number } | { ok: false; error: string };
+
+/** Count one opening of a reset link; the reset page calls this on load. */
+export async function openResetLink(token: string): Promise<OpenLinkResult> {
+  const ip = await clientIp();
+  const limit = await checkRateLimit(ip, 'reset');
+  if (!limit.allowed) return { ok: false, error: lockedMessage(limit.retryAfterSeconds) };
+
+  try {
+    const opened = await openResetToken(token);
+    if (opened.ok) return opened;
+    if (opened.problem === 'invalid') await recordFailure(ip, 'reset');
+    return { ok: false, error: LINK_PROBLEM[opened.problem] };
+  } catch (error) {
+    console.error('[auth] reset link check failed', error);
+    return { ok: false, error: 'The link could not be checked. Try again in a moment.' };
+  }
+}
 
 /**
- * Consume the token, then store the new hash and end every session.
+ * Use the link, then store the new hash and end every session.
  *
- * Order matters. The password policy is checked BEFORE the token is consumed,
- * so a typo in the new password does not burn the link. The token is consumed
+ * Order matters. The password policy is checked BEFORE the token is used, so a
+ * typo in the new password does not spend the link. The token is marked used
  * BEFORE the credential is written, so a raced second request can never set a
  * password. If the credential write then fails, the link is spent and the
  * password unchanged — the safe half to be left in; the owner requests another
@@ -187,23 +251,23 @@ export async function resetPassword(
   const token = field(formData, 'token');
   if (!isTokenShaped(token)) {
     await recordFailure(ip, 'reset');
-    return { ok: false, error: INVALID_LINK };
+    return { ok: false, error: LINK_PROBLEM.invalid };
   }
 
   const next = field(formData, 'newPassword');
   const problem = newPasswordProblem(next, field(formData, 'confirmPassword'));
   if (problem) return { ok: false, error: problem };
 
-  let consumed: boolean;
+  let used: Awaited<ReturnType<typeof consumeResetToken>>;
   try {
-    consumed = await consumeResetToken(token);
+    used = await consumeResetToken(token);
   } catch (error) {
     console.error('[auth] reset token check failed', error);
     return { ok: false, error: 'The reset could not be completed. Nothing was changed.' };
   }
-  if (!consumed) {
-    await recordFailure(ip, 'reset');
-    return { ok: false, error: INVALID_LINK };
+  if (!used.ok) {
+    if (used.problem === 'invalid') await recordFailure(ip, 'reset');
+    return { ok: false, error: LINK_PROBLEM[used.problem] };
   }
 
   try {
