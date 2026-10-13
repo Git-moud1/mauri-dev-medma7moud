@@ -5,10 +5,11 @@
   "description": "Premium multilingual (AR/EN/FR) portfolio for Mauri-Dev — Develop Solutions (Full Stack & Mobile App Development).",
   "scripts": {
     "gen:blur": "node scripts/gen-blur.mjs",
-    "migrate:supabase": "node scripts/migrate-to-supabase.mjs",
+    "blobs:local": "node scripts/local-blobs.mjs",
+    "backup:blobs": "node scripts/backup-blobs.mjs",
+    "seed:staging": "node scripts/seed-staging-blobs.mjs",
     "dev": "next dev",
-    "prebuild": "node scripts/gen-blur.mjs && node scripts/check-supabase.mjs",
-    "check:supabase": "node scripts/check-supabase.mjs",
+    "prebuild": "node scripts/gen-blur.mjs",
     "build": "next build",
     "start": "next start",
     "lint": "eslint .",
@@ -18,7 +19,6 @@
   "dependencies": {
     "@netlify/blobs": "^10.7.10",
     "@node-rs/argon2": "^2.0.2",
-    "@supabase/supabase-js": "^2.112.2",
     "jose": "^6.2.4",
     "motion": "^12.42.2",
     "next": "16.2.12",

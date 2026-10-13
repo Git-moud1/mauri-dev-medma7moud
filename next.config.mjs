@@ -97,9 +97,49 @@ const PUBLIC_CSP = [
   ),
 ].join('; ');
 
+/**
+ * Which Netlify Blob stores this build may touch — see src/lib/blobs.ts.
+ *
+ * Decided here, at build time, from Netlify's read-only `CONTEXT` variable
+ * (`production`, `deploy-preview`, `branch-deploy` or `dev`), and inlined into
+ * the bundle through `env` below. Only a production build reaches the real
+ * stores; previews and branch deploys get `staging-`; everything else —
+ * including any local build, where CONTEXT is unset — gets `local-`.
+ *
+ * Not overridable by another variable on purpose: one setting in the wrong
+ * context field of the Netlify UI must not be able to point a preview at
+ * production data.
+ */
+function blobsNamespace(context) {
+  if (context === 'production') return '';
+  if (context === 'deploy-preview' || context === 'branch-deploy') return 'staging-';
+  return 'local-';
+}
+
+/**
+ * The origin password-reset links point at, fixed at build time.
+ *
+ * Never taken from the request: a Host header is attacker-controlled, and a
+ * reset link built from it would send the owner's token to whatever domain the
+ * attacker named. Netlify's read-only build variables give the right answer per
+ * context — `URL` is the site's primary address (the custom domain once one is
+ * set), `DEPLOY_PRIME_URL` is the preview's own address.
+ */
+function publicOrigin(context) {
+  if (context === 'production') return process.env.URL || 'https://mauri-dev.netlify.app';
+  if (context === 'deploy-preview' || context === 'branch-deploy') {
+    return process.env.DEPLOY_PRIME_URL || '';
+  }
+  return 'http://localhost:3000';
+}
+
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   reactStrictMode: true,
+  env: {
+    MD_BLOBS_NAMESPACE: blobsNamespace(process.env.CONTEXT),
+    MD_PUBLIC_ORIGIN: publicOrigin(process.env.CONTEXT),
+  },
   experimental: {
     serverActions: {
       /**
@@ -113,6 +153,9 @@ const nextConfig = {
        * Set above `MAX_UPLOAD_BYTES` so the app's own check is the one that
        * reports, not the framework's. The real ceiling above this is Netlify's
        * 6 MB buffered-request cap; see src/lib/images/limits.ts.
+       *
+       * Unchanged by the move back to Netlify Blobs: the upload still arrives
+       * here first, and only the processed WebP widths are written to the store.
        */
       bodySizeLimit: '5mb',
     },

@@ -58,8 +58,8 @@ Metadata is server-rendered per locale by `generateMetadata`; the old client-sid
 is gone.
 
 The projects, the hero stats, the availability badge, the WhatsApp number and the social links
-are **read from the content store** and edited at `/admin` — see §11. The bundled files stay as
-the typed fallback.
+are **read from the content store** (Netlify Blobs) and edited at `/admin` — see §11. There is
+no bundled fallback: a store failure is an error, never old content.
 
 **Defaults:** language **Arabic (RTL)**, theme **dark** (falls back to `prefers-color-scheme`).
 The locale comes from the route and is remembered in the `bc-locale` **cookie** so the proxy can
@@ -182,7 +182,7 @@ Path alias: `@/*` → `./src/*` (see `tsconfig.json`).
     │                          # ProjectsGrid, ContactForm, FloatingWhatsApp
     │
     ├── data/
-    │   ├── projects.ts        # the TYPED FALLBACK catalogue — see §11 before editing
+    │   ├── projects.ts        # the `Project` type (its data is NOT rendered — see §11)
     │   └── blur.generated.ts  # AUTO-GENERATED — do not edit by hand
     │
     ├── i18n/
@@ -230,11 +230,11 @@ theme — see §16.
 `left`/`right`, so RTL works without a mirrored stylesheet. Directional icons are flipped manually
 with `dir === 'rtl' ? 'rotate-180' : ''`.
 
-**Content comes from a store, with the bundled data as the fallback.** `page.tsx` awaits
-`getProjects()` and `getSettings()` from `src/lib/content` and passes the results down. Both
-reads are wrapped in `unstable_cache` and tagged `content`, so `/[locale]` stays statically
-prerendered and an admin write invalidates it without a redeploy. Every read path falls back
-to `src/data/projects.ts` / `src/lib/site.ts` — see §11.
+**Content comes from the store, with no fallback.** `page.tsx` awaits `getProjects()` and
+`getSettings()` from `src/lib/content` and passes the results down. Both reads are wrapped in
+`unstable_cache` and tagged `content`, so `/[locale]` stays static — rendered on its first
+request after a deploy, then cached — and an admin write invalidates it without a redeploy.
+A failed read is an error, never stale data — see §11.
 
 **The admin is a second root layout, on purpose.** `src/app/(admin)/admin` owns its own
 `<html>`, loads none of the public fonts, and shares no client provider with the public tree.
@@ -342,9 +342,8 @@ one and the browser fetches the file twice.
 
 ### The data
 
-The shape below is shared by both content paths (§11): the store validates against it with zod
-in `src/lib/content/types.ts`, and **`src/data/projects.ts`** holds the bundled fallback in the
-same shape.
+The store validates every project against this shape with zod in `src/lib/content/types.ts`
+(§11). **`src/data/projects.ts`** declares the same `Project` type.
 
 ```ts
 interface Project {
@@ -369,8 +368,9 @@ interface Project {
 They can legitimately disagree — e.g. `pharmanet` and `skin-beauty` are `category: 'web'` with
 `frame: 'phone'` (responsive web apps shot on a phone).
 
-**The bundled catalogue** (order = display order). What a visitor sees comes from the store when
-one is reachable; this is what renders when it is not:
+**The bundled catalogue** in `src/data/projects.ts` — historical, and **not** what the site
+shows. The live catalogue is `site-content/projects.json` (9 projects as of 2026-10-12,
+including two this list never had). Do not treat this table as a backup of it:
 
 | id                | Title                                    | Category / frame | Live                                        |
 | ----------------- | ---------------------------------------- | ---------------- | ------------------------------------------- |
@@ -483,41 +483,87 @@ Submissions appear in **Netlify → Forms → contact**. Email notifications:
 `/admin` is a password-protected back office for the project catalogue and the site settings.
 An edit made there appears on the public site **without a redeploy**.
 
-### The two content paths
+### Where the content lives
 
-There are two, and both are supported on purpose:
+Everything the admin edits is in **Netlify Blobs**, in three stores:
 
-| Path                                  | Use it for                                         | Mechanism                                                                       |
-| ------------------------------------- | -------------------------------------------------- | ------------------------------------------------------------------------------- |
-| **Admin panel** (normal)              | Adding, editing, reordering and deleting real work | Writes JSON to the `site-content` Netlify Blobs store, then invalidates the tag |
-| **`src/data/projects.ts`** (fallback) | The typed default that ships in the bundle         | Rendered whenever the store is missing, cold, unreachable, or fails its schema  |
+| Store           | Holds                                                           |
+| --------------- | --------------------------------------------------------------- |
+| `site-content`  | `projects.json` (the ordered project array) and `settings.json` |
+| `site-media`    | Uploaded images, keyed exactly as their `/api/media/<key>` URLs |
+| `auth-attempts` | Failed-login counters for the rate limiter                      |
 
-`src/data/projects.ts` and `src/lib/site.ts` are **not dead code and must never be deleted**.
-They are what the site renders on a first deploy, during a Blobs outage, and in every local
-test run. A store failure produces slightly stale content; an empty portfolio in front of a
-client is the failure mode this design exists to prevent.
+**There is no fallback.** A missing, malformed or schema-invalid document is an error with its
+name on it: the public page returns a 500 and the dashboard shows `error.tsx`. The site once
+ran with the bundled catalogue as a silent fallback, and that fallback is what replaced the
+owner's real content at every deploy. `src/data/projects.ts` is now only the type source for
+`Project`; nothing renders its data.
 
-Both reads go through `src/lib/content/index.ts`, wrapped in `unstable_cache` and tagged
-`content`. Writes call `updateTag`, **not** `revalidateTag` — on Next 16 `revalidateTag` with a
-profile is stale-while-revalidate, so the next visitor would still be served the old content.
+**Nothing reads the store during `next build`.** The build container has no Blobs context.
+`generateStaticParams` returns `[]` for `/[locale]` and `/[locale]/projects`, so each page is
+rendered on its **first request** inside the Netlify function, cached, and served from cache
+until the next admin save. The build output still marks both routes `●`; check it stays that
+way, because a dynamic route forfeits the CDN HTML.
 
-> **`unstable_cache` entries survive a deploy.** They live in `.next/cache`, which Netlify
-> restores between builds, and a change to the _bundled fallback_ does not invalidate them. The
-> cache keys therefore carry a `CACHE_VERSION` — bump it whenever the fallback data changes, or
-> the new value will not appear. Runtime writes are unaffected.
+**Reads** go through `src/lib/content/index.ts`, wrapped in `unstable_cache`, tagged `content`,
+and use **strong consistency** — an eventual read right after a save could cache the previous
+version as the new page. **Writes** call `updateTag`, **not** `revalidateTag` (on Next 16 that is
+stale-while-revalidate).
+
+**Every write is conditional and verified** (`src/lib/content/blobs.ts`, `src/lib/images/store.ts`):
+
+- `projects.json` / `settings.json` are written with `onlyIfMatch` on the etag just read, so an
+  overlapping save is refused, never merged over. The dashboard also stamps each form with a
+  version (`versionOf`), so a form left open in another tab cannot overwrite a newer save.
+- Each write is read back with strong consistency and compared before it counts as done.
+- Images are written with `onlyIfNew` from a **plain `ArrayBuffer` copy**. Passing sharp's
+  `SharedArrayBuffer`-backed output stores the 26 bytes `"[object SharedArrayBuffer]"` — that is
+  what the six corrupt `sdfwsf/*` objects are.
+- **Never use `setJSON` with a condition.** In `@netlify/blobs` 10.7.10 it does not send
+  `If-Match` and still reports `modified: true`. Use `set(key, JSON.stringify(…), { onlyIfMatch })`.
+
+### Staging and production never share data
+
+Blob stores are site-wide: a deploy preview would otherwise write to the live catalogue. The
+store prefix is fixed **at build time** from Netlify's `CONTEXT` (`next.config.mjs`) and compiled
+into the bundle:
+
+| Build                             | Stores                          |
+| --------------------------------- | ------------------------------- |
+| `CONTEXT=production`              | `site-content`, `site-media`, … |
+| `deploy-preview`, `branch-deploy` | `staging-site-content`, …       |
+| anything else, including local    | `local-site-content`, …         |
+
+Seed the staging stores once from a backup: `npm run seed:staging -- --from <backup dir>`
+(refuses if they already hold anything, and verifies checksums first).
 
 ### Running it locally
 
-**Netlify Blobs only exists inside a Netlify runtime.**
+`next dev` / `next start` have **no** Blobs store, and that is safe: the SDK finds a store only
+through `NETLIFY_BLOBS_CONTEXT`, never through `NETLIFY_SITE_ID` or a token, so a local process
+cannot reach the real site. For full CRUD, run a local store:
 
 ```bash
-npx netlify dev      # full CRUD locally, Blobs sandbox included
-npm run dev          # reads only — fine for design and layout work
+npm run blobs:local -- --seed <backup dir>   # serves .blobs-local/, prints the variable
+NETLIFY_BLOBS_CONTEXT=… npm run dev           # in a second terminal
 ```
 
-Under `npm run dev` or `next start` every read falls back to the bundled catalogue, so the
-dashboard lists all 7 projects, and every write returns _"The content store is unavailable…"_.
-That message is the expected behaviour, not a bug.
+Do **not** use `netlify dev` for admin work: it would hand the app the real site's stores.
+
+On Windows, if an admin action fails with `Could not load the "sharp" module`, start the app
+with `NEXT_SHARP_PATH=<repo>/node_modules/sharp`. Next bundles its own sharp 0.34 next to the
+app's 0.35, and Windows cannot load both native libraries in one process. Netlify is not
+affected (its Image CDN replaces Next's optimiser).
+
+### Backups
+
+```bash
+npm run backup:blobs        # read-only; writes ../MYW1-backups/production-<timestamp>/
+```
+
+It only lists and downloads, writes a `SHA256SUMS.txt` last, and lays the folder out so it can
+be served with `blobs:local --seed` or used for `seed:staging`. Run it after a session of admin
+edits. The folder contains everything the admin manages — keep it private and out of the repo.
 
 ### Credentials
 
@@ -530,6 +576,33 @@ It writes `.env.admin.local` (gitignored, mode 0600) and prints nothing secret. 
 lines into **Netlify → Site configuration → Environment variables**, and into `.env.local` for
 local work. **The repository is public — no real value belongs in any committed file**,
 `.env.example` included; that file lists names with empty values only.
+
+> **`ADMIN_PASSWORD_HASH` is only the bootstrap password.** It is the admin password until the
+> first change or reset made from the admin. From then on `admin-auth/credential.json` (argon2id
+> hash + session version) is authoritative and the variable is ignored — so changing it in
+> Netlify after that does nothing. To fall back to it deliberately, delete that one blob.
+
+### Changing and recovering the password
+
+- **Change** — Dashboard → Settings → Password. Needs the current password; the new one must be
+  12+ characters mixing three character classes, or a 16+ passphrase. The hash and a bumped
+  session version are written in **one** conditional blob write, so every other session ends
+  at the same moment the password changes.
+- **Forgot** — `/admin/forgot` (linked from the sign-in page). The visitor types the admin
+  address; the answer is identical whether or not it matches. A match emails a link to the
+  fixed recovery address (`ADMIN_RECOVERY_EMAIL`, default `baymed000@gmail.com`). Three requests
+  per IP per hour and ten per day site-wide.
+- **Reset** — `/admin/reset#token=…`. 256-bit token, only its SHA-256 stored, 20 minutes, one
+  live token at a time. The token travels in the URL fragment, which never reaches a server
+  log. Single use rests on Netlify Blobs' conditional write (`If-Match`): two requests racing
+  with one token cannot both win. Five bad tokens lock the form for 15 minutes.
+
+**Email.** Set `RESEND_API_KEY` (Netlify, secret, Functions scope) from a free Resend account
+**opened with the recovery address**: without a verified domain Resend's sender
+`onboarding@resend.dev` delivers only to the account's own address (100/day, 3,000/month).
+With no key, a production site answers _"Password reset by email is not configured"_ — it
+never pretends to send — while previews and local runs write the message to
+`<prefix>admin-auth/outbox.json` instead, so the flow is testable end to end.
 
 > **`ADMIN_PASSWORD_HASH` holds the base64 of the argon2 hash, not the hash itself.** `@next/env`
 > runs dotenv-expand over every `.env` file, and a hash is `$argon2id$v=19$m=…` — every `$name`
@@ -721,28 +794,21 @@ real content, the bundled files for the typed default that ships in the build.
 Uploads are re-encoded to WebP at four widths and get their LQIP generated at upload time, so
 `gen:blur` is **not** part of this path.
 
-**Add a project — to the bundled fallback**
+**Add a project with bundled (git) images**
 
-Only when the entry should exist with no store at all: on a first deploy, during a Blobs
-outage, and in every local test run.
+Projects are always added through the admin — there is no other path into the catalogue. To
+use images committed to the repo instead of uploads: put them in `public/projects/<id>/`, run
+`npm run gen:blur`, deploy, then create the project in the admin with those `/projects/<id>/…`
+paths. Editing `src/data/projects.ts` changes nothing on the site.
 
-1. `mkdir public/projects/<id>` and drop the images in (`cover.jpg`, `1.jpg`, `2.jpg`, …).
-2. Append an entry to `projects` in `src/data/projects.ts` — all three languages for
-   `title`/`description`, plus `category`, `frame`, `cover`, `images`, optional `link`.
-3. `npm run gen:blur`.
-4. **Bump `CACHE_VERSION` in `src/lib/content/index.ts`.** `unstable_cache` entries live in
-   `.next/cache`, which Netlify restores between builds, and a change to the bundled fallback
-   does not invalidate them on its own.
-5. `npm run dev` and verify the card, the filter pills, and the lightbox.
-
-**Reorder projects** — drag the rows in the admin, or use the row's move buttons. Order in the
-stored array is display order, exactly as it is in the bundled catalogue.
+**Reorder projects** — use the row's move buttons in the admin. Order in the stored array is
+display order.
 
 **Change contact details** — WhatsApp number, social links, hero stats and the availability
 badge are all in the admin's **Settings**. The `wa.me` URL is derived from the number and shown
-read-only, so the two cannot drift. `src/lib/site.ts` holds the same values as the bundled
-fallback (`email`, `whatsappNumber`, `yearsExperience`, `projectsDelivered`, `stacksCount`); the
-email is not managed from the admin and still lives in `Contact.tsx` / `Footer.tsx`.
+read-only, so the two cannot drift. The email is edited there too. `src/lib/site.ts` still
+declares `email`, `whatsappNumber`, `yearsExperience`, `projectsDelivered` and `stacksCount`,
+but the public pages render the stored settings, not these constants.
 
 **Change the tech marquee or skills** — `TECH_STACK` and `SKILLS` in `src/lib/site.ts`.
 
@@ -774,11 +840,16 @@ existing session, which is what you want if the old password may have leaked.
 - **`src/data/blur.generated.ts` is generated.** Edits are overwritten by the next build.
 - **Security headers belong in `next.config.mjs`, never in `netlify.toml`.** The toml ones never
   reach an HTML document. See §14 — this shipped undetected for a whole branch.
-- **`src/data/projects.ts` and `src/lib/site.ts` are the live fallback, not legacy files.** The
-  site renders them whenever the store is missing, cold or unreachable. Deleting them turns a
-  Blobs outage into an empty portfolio.
-- **Bump `CACHE_VERSION` when the bundled fallback changes.** `unstable_cache` entries persist in
-  `.next/cache`, which Netlify restores between builds, so the old value survives the deploy.
+- **There is no content fallback, and that is the fix.** A silent fallback to
+  `src/data/projects.ts` once replaced the real catalogue at every deploy. Do not add one back;
+  a store failure must be loud.
+- **Nothing may read the store during `next build`.** Blobs does not exist there. Keep
+  `generateStaticParams` returning `[]` on the content pages (§11).
+- **Never call `setJSON` with `onlyIfMatch`/`onlyIfNew`** on `@netlify/blobs` 10.7.10 — the
+  condition is silently dropped. Use `set` with a string.
+- **Never hand a `SharedArrayBuffer` to Blobs.** It is stored as the text
+  `"[object SharedArrayBuffer]"`. Copy into a plain `ArrayBuffer` (`src/lib/images/store.ts`).
+- **Bump `CACHE_VERSION` when the shape or source of the cached reads changes.**
 - **`ADMIN_PASSWORD_HASH` is stored base64.** dotenv-expand eats every `$` in an argon2 hash and
   no quoting survives it. Netlify does no expansion, so a raw hash works in production while
   every local login fails — the worst possible split. See §11.

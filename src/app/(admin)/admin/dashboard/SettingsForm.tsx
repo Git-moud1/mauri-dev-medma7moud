@@ -98,7 +98,14 @@ function PlatformField({
   );
 }
 
-export function SettingsForm({ settings }: { settings: SiteSettings }) {
+export function SettingsForm({
+  settings,
+  version,
+}: {
+  settings: SiteSettings;
+  /** `versionOf(settings)` from the dashboard; posted back as `expectedVersion`. */
+  version: string;
+}) {
   const router = useRouter();
   const toast = useToast();
   const [saving, setSaving] = useState(false);
@@ -148,6 +155,12 @@ export function SettingsForm({ settings }: { settings: SiteSettings }) {
 
   return (
     <form action={(formData) => void save(formData)} className="space-y-8">
+      {/*
+        Refreshed with the page after every save; see `versionOf`. The `hidden`
+        attribute is for layout, not visibility: `space-y-8` skips only children
+        that carry it, so without it the first section would gain a top margin.
+      */}
+      <input type="hidden" hidden name="expectedVersion" value={version} />
       <Section
         title="Contact"
         description="Wide buttons in the footer and the contact section. Both optional — leave one blank and it is not published."

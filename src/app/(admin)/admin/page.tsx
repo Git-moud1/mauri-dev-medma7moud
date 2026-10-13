@@ -1,5 +1,6 @@
 'use client';
 
+import Link from 'next/link';
 import { useActionState } from 'react';
 import { login, type ActionState } from './actions';
 
@@ -39,6 +40,15 @@ export default function AdminLoginPage() {
         <button type="submit" disabled={pending} className="btn-gold mt-6 w-full">
           {pending ? 'Signing in…' : 'Sign in'}
         </button>
+
+        <p className="mt-4 text-center text-sm">
+          <Link
+            href="/admin/forgot"
+            className="text-muted transition-colors hover:text-fg"
+          >
+            Forgot password?
+          </Link>
+        </p>
       </form>
     </main>
   );

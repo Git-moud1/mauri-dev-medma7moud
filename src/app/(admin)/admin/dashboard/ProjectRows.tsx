@@ -17,7 +17,14 @@ import { ProjectEditor } from './ProjectEditor';
  * count. Editing expands the row in place and gets the full column width, which
  * is what the media grid needs.
  */
-export function ProjectRows({ projects }: { projects: StoredProject[] }) {
+export function ProjectRows({
+  projects,
+  versions,
+}: {
+  projects: StoredProject[];
+  /** Per project id — handed to the editor so a stale save is refused. */
+  versions: Record<string, string>;
+}) {
   const router = useRouter();
   const toast = useToast();
   const [pending, startTransition] = useTransition();
@@ -191,6 +198,7 @@ export function ProjectRows({ projects }: { projects: StoredProject[] }) {
                 <div className="mt-2">
                   <ProjectEditor
                     project={project}
+                    version={versions[project.id] ?? ''}
                     onClose={() => {
                       setOpenId(null);
                     }}

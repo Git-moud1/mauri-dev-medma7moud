@@ -29,11 +29,12 @@ const PREVIEW_COUNT = 6;
  *
  * Content comes from the store, read once here and passed down. Both reads are
  * wrapped in `unstable_cache` and tagged `content`, which is what keeps this
- * route statically prerendered between edits — check the build output still
- * lists `/[locale]` as SSG after touching anything here, because a dynamic
- * route forfeits the CDN HTML the whole architecture is built on.
+ * route static between edits — rendered on its first request after a deploy
+ * (see ../layout.tsx) and then served from cache. Check the build output still
+ * lists `/[locale]` as static, not dynamic, after touching anything here,
+ * because a dynamic route forfeits the CDN HTML the architecture is built on.
  *
- * Neither read can fail: both fall back to the bundled catalogue.
+ * A failed read throws and the request errors. There is no fallback catalogue.
  */
 export default async function Home(props: { params: Promise<{ locale: string }> }) {
   const { locale } = await props.params;
