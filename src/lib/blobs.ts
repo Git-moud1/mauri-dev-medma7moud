@@ -31,6 +31,8 @@ export const MEDIA_STORE = `${BLOBS_NAMESPACE}site-media`;
 export const AUTH_ATTEMPTS_STORE = `${BLOBS_NAMESPACE}auth-attempts`;
 /** The admin credential, the password-reset token, and (non-production only) the outbox. */
 export const ADMIN_AUTH_STORE = `${BLOBS_NAMESPACE}admin-auth`;
+/** Every contact-form message, kept even when the email about it fails. */
+export const CONTACT_STORE = `${BLOBS_NAMESPACE}contact-messages`;
 
 /**
  * Strong consistency for everything that is read in order to be written back,
@@ -56,6 +58,10 @@ export function mediaStore(): Store {
 
 export function authAttemptsStore(): Store {
   return getStore({ name: AUTH_ATTEMPTS_STORE, consistency: 'strong' });
+}
+
+export function contactStore(): Store {
+  return getStore({ name: CONTACT_STORE, consistency: 'strong' });
 }
 
 /** Strong: a stale credential read could accept a password that was just changed. */

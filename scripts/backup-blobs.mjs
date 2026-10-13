@@ -61,7 +61,13 @@ function netlify(args) {
   });
 }
 
-const STORES = ['site-content', 'site-media', 'auth-attempts', 'admin-auth'];
+const STORES = [
+  'site-content',
+  'site-media',
+  'auth-attempts',
+  'admin-auth',
+  'contact-messages',
+];
 let total = 0;
 for (const base of STORES) {
   const store = prefix + base;

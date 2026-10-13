@@ -22,7 +22,7 @@ deployed on **Netlify**.
 7. [Theming & design system](#7-theming--design-system)
 8. [Projects data & the gallery lightbox](#8-projects-data--the-gallery-lightbox)
 9. [Images pipeline (blur placeholders & mockups)](#9-images-pipeline-blur-placeholders--mockups)
-10. [Contact form (Netlify Forms)](#10-contact-form-netlify-forms)
+10. [Contact form (Resend)](#10-contact-form-resend)
 11. [Admin panel & the content store](#11-admin-panel--the-content-store)
 12. [SEO & metadata](#12-seo--metadata)
 13. [Accessibility & performance](#13-accessibility--performance)
@@ -142,7 +142,6 @@ Path alias: `@/*` → `./src/*` (see `tsconfig.json`).
 │
 ├── public/
 │   ├── mauri-dev.jpeg         # brand/profile image
-│   ├── __forms.html           # hidden static form so Netlify can detect the React form
 │   ├── fonts/tajawal-*.woff2  # self-hosted Arabic faces (3 weights x 2 subsets) — §7
 │   └── projects/<id>/…        # real project screenshots (jpg / jpeg / png / webp)
 │
@@ -450,31 +449,30 @@ than from its filename or its claimed MIME type (§11).
 
 ---
 
-## 10. Contact form (Netlify Forms)
+## 10. Contact form (Resend)
 
-Netlify detects forms by scanning **static HTML at deploy time**. The real form is rendered by
-React, so Netlify can't see it. The fix is `public/__forms.html`: a hidden static form declaring
-`name="contact"` with the exact same field names.
+Netlify Forms is no longer used (since 2026-10-13). The form calls a server action,
+`sendContactMessage` (`src/app/(site)/[locale]/contact-actions.ts`), which:
 
-```
-public/__forms.html          →  registers the "contact" form with Netlify
-src/components/ContactForm.tsx →  POSTs urlencoded data to /__forms.html
-```
+1. **Drops honeypot submissions silently.** If `bot-field` is filled, it answers "ok" and does
+   nothing.
+2. **Rate-limits** to 5 messages per IP per hour and 40 per day site-wide. The daily cap keeps
+   Resend's 100/day free quota available for password resets.
+3. **Stores** the message in the `contact-messages` Blob store. That's the archive, and it is
+   included in `npm run backup:blobs`.
+4. **Emails** it through Resend to `CONTACT_INBOX` (default: the recovery address,
+   `baymed000@gmail.com`) with **Reply-To set to the visitor**. Pressing Reply in Gmail answers
+   them directly.
 
-Fields: `name`, `email`, `subject`, `message`, plus `form-name=contact` and the
-`bot-field` honeypot. **If you add or rename a field, update both files** or submissions will be
-rejected.
+The visitor sees "sent" if the message was stored **or** emailed, since it then exists
+somewhere the owner will see it. They see the error text (which points to WhatsApp) only if
+both fail or the rate limit is hit. Previews and local runs write the email to
+`<prefix>admin-auth/outbox-contact.json` instead when no `RESEND_API_KEY` is set.
 
 Client-side validation runs before submit (required name/email/message + email regex), focuses the
 first invalid field, and renders localized errors with `role="alert"` and `aria-invalid`. Status
-feedback (`sending` / `success` / `error`) is announced via `aria-live="polite"`.
-
-Submissions appear in **Netlify → Forms → contact**. Email notifications:
-**Site settings → Forms → Form notifications → Add notification**.
-
-> **Local dev:** submissions only work on the deployed site (or under `netlify dev`).
-> On `npm run dev`, `POST /__forms.html` will fail and the form will show its error state.
-> That's expected.
+feedback (`sending` / `success` / `error`) is announced via `aria-live="polite"`. The server
+validates again with zod: name up to 100, subject up to 150, message up to 5,000 characters.
 
 ---
 
@@ -859,8 +857,7 @@ existing session, which is what you want if the old password may have leaked.
 - **The theme default must stay in sync** between `no-flash.tsx` and `ThemeProvider`'s SSR value.
   A mismatch causes a visible flash on first paint. The locale is no longer part of this: it comes
   from the route, and `DEFAULT_LOCALE` is only the proxy's fallback.
-- **`__forms.html` field names must mirror `ContactForm.tsx`** or Netlify rejects submissions.
-- **The contact form cannot work on `npm run dev`** — Netlify Forms is a deploy-time feature.
+- **Contact messages are stored before they are emailed.** If an email never arrives, the message is still in the `contact-messages` store (and in backups).
 - **`gen-mockups.mjs` needs network access** and will throw on an unknown `__PH_<token>__` or a
   missing `width`/`height` on the template's `<svg>` element.
 - **Dictionaries are structurally typed against `en.ts`.** A missing key in `ar.ts`/`fr.ts` is a

@@ -5,21 +5,13 @@ import { AnimatePresence } from 'motion/react';
 import * as m from 'motion/react-m';
 import { useI18n } from '@/i18n/I18nProvider';
 import { CheckIcon, SendIcon } from '../Icons';
+import { sendContactMessage } from '@/app/(site)/[locale]/contact-actions';
 
 type Status = 'idle' | 'sending' | 'success' | 'error';
 type Errors = Partial<Record<'name' | 'email' | 'message', string>>;
 
-function encode(data: Record<string, string>): string {
-  // Entries rather than keys-then-index: indexing a Record by a string yields
-  // `string | undefined` under noUncheckedIndexedAccess, and encoding an
-  // undefined would post the literal "undefined" as the field value.
-  return Object.entries(data)
-    .map(([k, v]) => `${encodeURIComponent(k)}=${encodeURIComponent(v)}`)
-    .join('&');
-}
-
 export function ContactForm() {
-  const { t } = useI18n();
+  const { t, locale } = useI18n();
   const [status, setStatus] = useState<Status>('idle');
   const [errors, setErrors] = useState<Errors>({});
 
@@ -60,21 +52,25 @@ export function ContactForm() {
 
     setStatus('sending');
     const data = new FormData(form);
-    const payload: Record<string, string> = { 'form-name': 'contact' };
-    // FormData values are string | File. There is no file input on this form,
-    // but stringifying a File would post "[object File]" rather than fail, so
-    // the non-string case is dropped explicitly.
-    data.forEach((v, k) => {
-      if (typeof v === 'string') payload[k] = v;
-    });
+    // FormData values are string | File; a File stringifies to "[object File]",
+    // so anything that is not a string reads as empty.
+    const field = (key: string): string => {
+      const value = data.get(key);
+      return typeof value === 'string' ? value : '';
+    };
 
     try {
-      const res = await fetch('/__forms.html', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-        body: encode(payload),
+      // A server action: the message is stored and emailed to the owner via
+      // Resend, with Reply-To set to the visitor (src/lib/contact.ts).
+      const result = await sendContactMessage({
+        name: field('name'),
+        email: field('email'),
+        subject: field('subject'),
+        message: field('message'),
+        botField: field('bot-field'),
+        locale,
       });
-      if (!res.ok) throw new Error(String(res.status));
+      if (!result.ok) throw new Error(result.reason);
       setStatus('success');
       form.reset();
     } catch {
@@ -103,9 +99,6 @@ export function ContactForm() {
   return (
     <form
       name="contact"
-      method="POST"
-      data-netlify="true"
-      data-netlify-honeypot="bot-field"
       // `void` rather than passing the async function straight in: React
       // ignores the returned promise, so an unhandled rejection would surface
       // as an unhandled rejection instead of the form's error state.
@@ -115,11 +108,10 @@ export function ContactForm() {
       noValidate
       className="glass rounded-3xl p-6 sm:p-8"
     >
-      {/* Netlify hidden fields */}
-      <input type="hidden" name="form-name" value="contact" />
-      <p className="hidden">
+      {/* Honeypot: hidden from people, filled in by naive bots. */}
+      <p className="hidden" aria-hidden="true">
         <label>
-          Don’t fill this out: <input name="bot-field" />
+          Don’t fill this out: <input name="bot-field" tabIndex={-1} autoComplete="off" />
         </label>
       </p>
 
