@@ -39,6 +39,40 @@ archives databases after 10 days idle; Firebase Storage needs the paid Blaze pla
 - Local verification: 55/55 content/admin checks, 33/33 auth checks (local Blobs emulator,
   real `next start`, Playwright Chromium).
 
+## Staging (2026-10-13)
+
+- PR #3, deploy-preview-3. Staging stores were seeded from the production backup and are
+  checksum-identical to it.
+- Staging suite on the Netlify runtime: **49/49 on two consecutive deploys**. It covers:
+  - public pages in all 3 locales, with text identical to the pre-outage page
+  - all 14 recovered images at every width, plus all static images
+  - filters, every gallery, theme toggle, mobile layout and menu
+  - the contact form
+  - every settings field: persistence, and live update without a redeploy
+  - project create, edit, image replacement, reorder and delete
+  - password change, emailed reset (outbox) and single-use links
+  - production stores unchanged afterwards
+- Logout and cookie flags (HttpOnly, Secure, SameSite=Strict) checked separately.
+- Persistence across deploys: the second deploy signed in with the password set during the
+  first deploy's tests.
+- Contact-form test messages land in Netlify's Spam folder (headless browser + example.com);
+  they are deleted after each run. Spam also holds 11 older submissions (March–April 2026),
+  exported to `MYW1-backups/forms-2026-10-13`. They are worth reviewing.
+- Lighthouse, mobile, `/ar`, median of 3 runs:
+
+  |             | Old production | Preview |
+  | ----------- | -------------- | ------- |
+  | Performance | 87             | 91      |
+  | TTFB        | 1224 ms        | 676 ms  |
+  | TBT         | 354 ms         | 216 ms  |
+  | CLS         | 0.001          | 0.001   |
+
+  Desktop scores 95 on both. The preview's SEO 69 and Best Practices 93 come from Netlify's
+  preview-only `noindex` header and its preview drawer.
+
+- The hero animation (three.js, ~760 KB) now loads after the `load` event and idle time.
+- Operations, rollback, DNS findings and custom domain steps: `docs/OPERATIONS.md`.
+
 ## Open items
 
 - `RESEND_API_KEY` — needs a Resend account opened with the recovery address (owner action).
