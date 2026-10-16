@@ -17,7 +17,7 @@ import { HeroTubesLayer } from './hero/HeroTubesLayer';
  * The animated background layer is gone as of this commit — concepts A1, A2 and
  * A3 were all removed at the owner's request. They are recoverable from git at
  * `a6a2996` / `fbe2e2a` if any of them is ever wanted back; the measured case
- * against A3 is in MIGRATION.md §12.
+ * against A3 is in the git history of MIGRATION.md §12 (removed 2026-10-16).
  */
 export function Hero({
   locale,

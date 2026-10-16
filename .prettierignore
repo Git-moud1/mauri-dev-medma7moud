@@ -9,3 +9,6 @@ src/data/blur.generated.ts
 # Prettier has no SQL parser, so `--check` errors rather than skipping these.
 supabase/*.sql
 .blobs-local
+
+# Google Search Console verification file: must stay byte-exact.
+public/google*.html

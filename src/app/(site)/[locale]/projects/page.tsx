@@ -89,7 +89,7 @@ export default async function ProjectsPage(props: {
   const follow = followLinks(settings);
 
   return (
-    <Providers locale={locale}>
+    <Providers locale={locale} dict={dictionaries[locale]}>
       {/* The whole catalogue, so this page's list is the longer one. */}
       <JsonLd
         graph={siteGraph({

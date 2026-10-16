@@ -1,5 +1,6 @@
 import { notFound } from 'next/navigation';
 import { isLocale } from '@/i18n/locale';
+import { dictionaries } from '@/i18n/dictionaries';
 import { getProjects, getSettings } from '@/lib/content';
 import { Providers } from '@/app/providers';
 import { Header } from '@/components/Header';
@@ -49,7 +50,7 @@ export default async function Home(props: { params: Promise<{ locale: string }> 
   const follow = followLinks(settings);
 
   return (
-    <Providers locale={locale}>
+    <Providers locale={locale} dict={dictionaries[locale]}>
       <JsonLd
         graph={siteGraph({
           locale,

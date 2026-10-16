@@ -28,11 +28,11 @@ export const CONTENT_STORE = `${BLOBS_NAMESPACE}site-content`;
 /** Uploaded images, keyed exactly as the `/api/media/<key>` URLs spell them. */
 export const MEDIA_STORE = `${BLOBS_NAMESPACE}site-media`;
 /** Failed-login counters for the admin rate limiter. */
-export const AUTH_ATTEMPTS_STORE = `${BLOBS_NAMESPACE}auth-attempts`;
+const AUTH_ATTEMPTS_STORE = `${BLOBS_NAMESPACE}auth-attempts`;
 /** The admin credential, the password-reset token, and (non-production only) the outbox. */
 export const ADMIN_AUTH_STORE = `${BLOBS_NAMESPACE}admin-auth`;
 /** Every contact-form message, kept even when the email about it fails. */
-export const CONTACT_STORE = `${BLOBS_NAMESPACE}contact-messages`;
+const CONTACT_STORE = `${BLOBS_NAMESPACE}contact-messages`;
 
 /**
  * Strong consistency for everything that is read in order to be written back,

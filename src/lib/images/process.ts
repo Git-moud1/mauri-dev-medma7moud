@@ -1,8 +1,7 @@
 import sharp from 'sharp';
 import { MAX_UPLOAD_BYTES, MAX_UPLOAD_LABEL } from './limits';
 
-export { MAX_UPLOAD_BYTES, MAX_UPLOAD_LABEL };
-export const MAX_DIMENSION = 4000;
+const MAX_DIMENSION = 4000;
 const WIDTHS = [400, 800, 1200, 1600] as const;
 
 export type ImageType = 'jpeg' | 'png' | 'webp' | 'avif';
@@ -22,7 +21,7 @@ export type ImageType = 'jpeg' | 'png' | 'webp' | 'avif';
  * SVG is deliberately unsupported: it is a script container, and this is the
  * same reason `dangerouslyAllowSVG` was removed from next.config in plan 1.
  */
-export function sniffImageType(buffer: Buffer): ImageType | null {
+function sniffImageType(buffer: Buffer): ImageType | null {
   if (buffer.length < 12) return null;
 
   if (buffer[0] === 0xff && buffer[1] === 0xd8 && buffer[2] === 0xff) return 'jpeg';

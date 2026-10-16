@@ -14,7 +14,7 @@ const srcRoot = join(root, 'scripts', 'mockups');
 const outRoot = join(root, 'public', 'projects');
 
 // Per-project rasterization scale (× the SVG's intrinsic width/height).
-const SCALE = { 'swift-eats': 3, ecommerce: 2, 'pulse-analytics': 2 };
+const SCALE = { ecommerce: 2, 'pulse-analytics': 2 };
 const DEFAULT_SCALE = 2;
 
 // Pre-resolve every photo token once (network).

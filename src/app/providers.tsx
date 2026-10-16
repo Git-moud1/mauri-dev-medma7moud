@@ -4,17 +4,21 @@ import { LazyMotion, domAnimation } from 'motion/react';
 import { I18nProvider } from '@/i18n/I18nProvider';
 import { ThemeProvider } from '@/theme/ThemeProvider';
 import type { Locale } from '@/i18n/config';
+import type { Dictionary } from '@/i18n/dictionaries';
 
 export function Providers({
   locale,
+  dict,
   children,
 }: {
   locale: Locale;
+  /** The current language's dictionary, from the server page. */
+  dict: Dictionary;
   children: React.ReactNode;
 }) {
   return (
     <ThemeProvider>
-      <I18nProvider locale={locale}>
+      <I18nProvider locale={locale} dict={dict}>
         {/*
           `domAnimation` carries animations, variants, exit animations and
           hover/tap/focus gestures — everything the page-level islands use —

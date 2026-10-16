@@ -1,0 +1,17 @@
+# LF everywhere, including Windows checkouts. Prettier enforces LF
+# (`endOfLine: "lf"`, its default), so a CRLF working copy fails
+# `npm run format:check` even when the committed code is formatted.
+* text=auto eol=lf
+
+# Binary assets: never touched.
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.webp binary
+*.avif binary
+*.gif binary
+*.ico binary
+*.woff binary
+*.woff2 binary
+*.ttf binary
+*.pdf binary

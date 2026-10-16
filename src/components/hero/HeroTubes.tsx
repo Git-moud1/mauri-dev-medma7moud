@@ -159,7 +159,7 @@ export function HeroTubes() {
    * The dark-palette gate itself is not decoration. The tubes are bright
    * strokes on a dark field; on the light theme `--fg` is near-black and the
    * headline would sit on top of them at roughly no contrast. That is the same
-   * defect the depth-map hero had (MIGRATION.md §12) and it is why this
+   * defect the depth-map hero had (MIGRATION.md §12, in git history) and it is why this
    * declines rather than tries to compensate.
    */
   const { theme } = useTheme();
