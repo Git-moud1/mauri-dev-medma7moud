@@ -1,10 +1,10 @@
 /**
  * The one place the canonical origin is defined. metadataBase, canonical URLs,
  * hreflang alternates, OG image URLs, sitemap.ts and robots.ts all derive from
- * this. Switching to a custom domain is a one-line env change.
+ * this. `NEXT_PUBLIC_SITE_URL` overrides it; the default is the custom domain,
+ * live since 2026-10-16 (mauri-dev.netlify.app now 301s to it, see netlify.toml).
  */
-export const SITE_URL =
-  process.env.NEXT_PUBLIC_SITE_URL ?? 'https://mauri-dev.netlify.app';
+export const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? 'https://mauri-dev.online';
 
 /** Central place for the developer's real contact details & links. */
 export const SITE = {
