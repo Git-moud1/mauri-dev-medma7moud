@@ -4,8 +4,8 @@ import { createContext, useCallback, useContext, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import { LOCALE_META, type Locale } from './config';
 import { LOCALE_COOKIE } from './locale';
-import { dictionaries, type Dictionary } from './dictionaries';
-import { getT, type TKey } from './server';
+import type { Dictionary } from './dictionaries';
+import { makeT, type TKey } from './translate';
 
 /** Dot-path keys into the dictionary, e.g. "hero.stats.years". Defined in
  * ./server so server sections and client islands share one key type. */
@@ -29,13 +29,18 @@ const I18nContext = createContext<I18nContextValue | null>(null);
  */
 export function I18nProvider({
   locale,
+  dict,
   children,
 }: {
   locale: Locale;
+  /**
+   * The current language only, passed from the server page. Importing all
+   * three here put every language in the first-load JS of every page.
+   */
+  dict: Dictionary;
   children: React.ReactNode;
 }) {
   const router = useRouter();
-  const dict = dictionaries[locale];
 
   const setLocale = useCallback(
     (next: Locale) => {
@@ -48,7 +53,7 @@ export function I18nProvider({
 
   // Same resolver the server sections use, so a string renders identically on
   // either side of the boundary.
-  const t = useMemo(() => getT(locale), [locale]);
+  const t = useMemo(() => makeT(dict), [dict]);
 
   const value = useMemo<I18nContextValue>(
     () => ({ locale, dir: LOCALE_META[locale].dir, setLocale, t, dict }),
