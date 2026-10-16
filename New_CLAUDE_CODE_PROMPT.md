@@ -1,6 +1,7 @@
 # Mauri-Dev Portfolio — Upgrade & Rebuild Brief
 
 ## Phase 1- Tab Icon
+
 The site's logo, which appears within the site and is called Mauri-Dev, was placed as the site's favicon(Website Icon)
 
 ## Phase 2 — SEO
@@ -35,10 +36,10 @@ Regardless of that decision:
 - `npx tsc --noEmit`, `npm run lint`, `npm run build` all pass clean.
 - Deployed preview on Netlify works in all three languages, both themes, on a real phone.
 - Lighthouse mobile: Performance ≥ 95, Accessibility ≥ 95, Best Practices ≥ 95, SEO 100. Before/after numbers in `MIGRATION.md`.
--Everything works on pc have to work on phone i mean the website look must be good on phone like pc because clients often has just phone so check on that.  
+  -Everything works on pc have to work on phone i mean the website look must be good on phone like pc because clients often has just phone so check on that.
 - Admin panel: log in, add a project with images in three languages, reorder it, edit the WhatsApp number, add social links, delete a project — all visible on the public site **without a redeploy**,and with perfect design for admin .
 - Hero looks like premium bespoke work and doesn't cost more than its budget.
--Delete all file that you used for test or something doesn't matter use /simplify and /verify to clean project and check all of things it's okay .
+  -Delete all file that you used for test or something doesn't matter use /simplify and /verify to clean project and check all of things it's okay .
 - README and `MIGRATION.md` updated, with the exact list of env vars to set in Netlify.
--check it pushed on GitHub main  then deployment on  netlify and website work well.
--Be sure about the SEO .
+  -check it pushed on GitHub main then deployment on netlify and website work well.
+  -Be sure about the SEO .

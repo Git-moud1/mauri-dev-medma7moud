@@ -20,7 +20,7 @@ derived, and the URL is normalised from whatever shape the owner types.
 Fixed, in this order. `group` decides where it renders.
 
 | Key         | Group   | Input accepted             | Canonical form                 |
-|-------------|---------|----------------------------|--------------------------------|
+| ----------- | ------- | -------------------------- | ------------------------------ |
 | `whatsapp`  | contact | digits incl. country code  | `https://wa.me/<digits>`       |
 | `email`     | contact | email address              | `mailto:<address>`             |
 | `linkedin`  | follow  | full profile URL           | the URL, normalised            |

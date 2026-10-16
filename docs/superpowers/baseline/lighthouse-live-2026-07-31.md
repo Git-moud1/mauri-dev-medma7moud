@@ -29,12 +29,12 @@ JSON is complete. Do not read it as a failed run.
 | Best Practices | >= 95  | 96              | **100**       | **100**       |
 | SEO            | 100    | 100             | **100**       | **100**       |
 
-| Metric | Target   | v1 live | v2 `/ar` (3 runs)   | v2 `/en` |
-| ------ | -------- | ------- | ------------------- | -------- |
-| LCP    | < 2.0 s  | 2.7 s   | 2.7 s               | 2.8 s    |
-| CLS    | < 0.05   | 0       | 0.001               | 0        |
-| TBT    | < 200 ms | 40 ms   | **3,360-3,890 ms**  | 3,990 ms |
-| FCP    | —        | 1.1 s   | 1.6-1.9 s           | —        |
+| Metric | Target   | v1 live | v2 `/ar` (3 runs)  | v2 `/en` |
+| ------ | -------- | ------- | ------------------ | -------- |
+| LCP    | < 2.0 s  | 2.7 s   | 2.7 s              | 2.8 s    |
+| CLS    | < 0.05   | 0       | 0.001              | 0        |
+| TBT    | < 200 ms | 40 ms   | **3,360-3,890 ms** | 3,990 ms |
+| FCP    | —        | 1.1 s   | 1.6-1.9 s          | —        |
 
 Raw reports: `lh-plan3-ar-run{1,2,3}.json`, `lh-plan3-en-run1.json`
 (git-ignored — regenerate with the command above).
