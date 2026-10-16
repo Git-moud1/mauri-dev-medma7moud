@@ -134,22 +134,25 @@ The site never failed on Netlify's side. Observed from the home Wi-Fi network:
 A custom domain does not fix a broken resolver. It does remove the dependence on how a given
 resolver treats `*.netlify.app`, which some networks filter.
 
-## Custom domain `mauri-dev.online`
+## Custom domain `mauri-dev.online` (live since 2026-10-16)
 
-**Status on 2026-10-13:** the `.online` registry answers NXDOMAIN, meaning the domain is not
-registered or has no nameservers. Registration is the owner's action. Once it is registered:
-
-1. **Add the domain in Netlify:** Domain management → Add a domain → `mauri-dev.online`, and
-   add `www` as an alias. Free, with automatic Let's Encrypt SSL.
-2. **At the registrar, do one of:**
-   - **Easiest:** point the nameservers to Netlify DNS. Netlify shows four `dns*.p0*.nsone.net`
-     names.
-   - **Or keep the registrar's DNS** and add:
-     - `A @ 75.2.60.5` (Netlify's load balancer — confirm the value Netlify shows)
-     - `CNAME www mauri-dev.netlify.app`
-3. Set `mauri-dev.online` as the **primary domain**. `mauri-dev.netlify.app` then redirects
-   to it with a 301.
-4. Set `NEXT_PUBLIC_SITE_URL=https://mauri-dev.online` in Netlify (production) and redeploy.
-   Canonical URLs, the sitemap, OG cards and password-reset links follow automatically.
-5. **Search Console:** add the new property, submit `https://mauri-dev.online/sitemap.xml`,
-   and set `GOOGLE_SITE_VERIFICATION`.
+- **Registrar: Spaceship.** Its nameservers are custom, pointing to Netlify DNS:
+  `dns1`–`dns4.p06.nsone.net`.
+- **DNSSEC must stay OFF at Spaceship.** A leftover DS record made the domain fail (SERVFAIL)
+  on every validating resolver until it was removed.
+- **DNS records** live in Netlify → Domains → mauri-dev.online. Netlify created them itself
+  (type `NETLIFY`, for the apex and `www`).
+- **HTTPS:** Let's Encrypt certificate covering `mauri-dev.online` and `*.mauri-dev.online`,
+  renewed automatically by Netlify.
+- **Redirects:**
+  - `www` → apex
+  - `http` → `https`
+  - `mauri-dev.netlify.app/*` → the same path on `mauri-dev.online` (301, set in
+    `netlify.toml`). Deploy previews keep their own addresses.
+- **Canonical origin:** `https://mauri-dev.online`, set in `src/lib/site.ts`. Canonical URLs,
+  hreflang, the sitemap, robots and OG cards all follow it.
+- **Reset links:** use Netlify's `URL`, which is now the custom domain.
+- **Still to do (owner):**
+  - Search Console: add the property `https://mauri-dev.online`, verify it (set
+    `GOOGLE_SITE_VERIFICATION` in Netlify), and submit `/sitemap.xml`.
+  - Optional: verify the domain in Resend to send from an `@mauri-dev.online` address.
