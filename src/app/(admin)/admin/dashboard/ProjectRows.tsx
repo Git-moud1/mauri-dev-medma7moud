@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation';
 import Image from 'next/image';
 import type { StoredProject } from '@/lib/content/types';
 import { moveProject, type Result } from '../actions';
-import { Badge, Button, EmptyState, IconButton, Skeleton } from '../ui/primitives';
+import { Badge, Button, EmptyState, IconButton } from '../ui/primitives';
 import { useToast } from '../ui/Toaster';
 import { ProjectEditor } from './ProjectEditor';
 
@@ -218,21 +218,3 @@ export function ProjectRows({
 }
 
 /** Shown while the dashboard's server component resolves. */
-export function ProjectRowsSkeleton() {
-  return (
-    <ul className="space-y-2">
-      {[0, 1, 2, 3].map((row) => (
-        <li
-          key={row}
-          className="flex items-center gap-4 rounded-2xl border border-border bg-surface px-4 py-3.5"
-        >
-          <Skeleton className="h-16 w-24" />
-          <div className="flex-1 space-y-2">
-            <Skeleton className="h-4 w-48" />
-            <Skeleton className="h-3 w-72" />
-          </div>
-        </li>
-      ))}
-    </ul>
-  );
-}

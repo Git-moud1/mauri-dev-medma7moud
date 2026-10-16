@@ -141,7 +141,7 @@ const identity = (stored: string) => stored;
 
 const EMAIL = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
 
-export const SOCIAL_PLATFORMS: readonly SocialPlatform[] = [
+const SOCIAL_PLATFORMS: readonly SocialPlatform[] = [
   {
     key: 'whatsapp',
     group: 'contact',

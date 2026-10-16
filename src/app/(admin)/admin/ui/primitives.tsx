@@ -214,22 +214,6 @@ export function Select({
   );
 }
 
-/* ------------------------------------------------------------------- Panel */
-
-export function Panel({
-  children,
-  className = '',
-}: {
-  children: ReactNode;
-  className?: string;
-}) {
-  return (
-    <section className={`rounded-2xl border border-border bg-surface ${className}`}>
-      {children}
-    </section>
-  );
-}
-
 /**
  * A titled group inside the editor: Identity / Content / Media / Link.
  *
@@ -274,18 +258,6 @@ export function Badge({
     >
       {children}
     </span>
-  );
-}
-
-/* ---------------------------------------------------------------- Skeleton */
-
-/** Skeletons rather than a spinner in the middle of content, per the register. */
-export function Skeleton({ className = '' }: { className?: string }) {
-  return (
-    <div
-      aria-hidden="true"
-      className={`animate-pulse rounded-lg bg-surface-2 motion-reduce:animate-none ${className}`}
-    />
   );
 }
 

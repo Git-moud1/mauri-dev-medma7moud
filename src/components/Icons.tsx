@@ -105,12 +105,6 @@ export const ServerIcon = (p: IconProps) => (
   </Base>
 );
 
-export const SparkleIcon = (p: IconProps) => (
-  <Base {...p}>
-    <path d="M12 3l1.9 5.1L19 10l-5.1 1.9L12 17l-1.9-5.1L5 10l5.1-1.9L12 3Z" />
-  </Base>
-);
-
 export const SendIcon = (p: IconProps) => (
   <Base {...p}>
     <path d="M22 2 11 13M22 2l-7 20-4-9-9-4 20-7Z" />

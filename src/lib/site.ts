@@ -28,11 +28,6 @@ export const SITE = {
   stacksCount: 10,
 } as const;
 
-export function whatsappLink(message?: string): string {
-  const base = SITE.whatsappUrl;
-  return message ? `${base}?text=${encodeURIComponent(message)}` : base;
-}
-
 /** Tech stack for the marquee / about badges. */
 export const TECH_STACK = [
   'React',

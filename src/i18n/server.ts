@@ -49,7 +49,3 @@ export function getT(locale: Locale): TFunction {
   const dict = dictionaries[locale];
   return (key, vars) => interpolate(resolve(dict, key), vars);
 }
-
-export function getDict(locale: Locale): Dictionary {
-  return dictionaries[locale];
-}
