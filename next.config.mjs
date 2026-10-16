@@ -126,7 +126,7 @@ function blobsNamespace(context) {
  * set), `DEPLOY_PRIME_URL` is the preview's own address.
  */
 function publicOrigin(context) {
-  if (context === 'production') return process.env.URL || 'https://mauri-dev.netlify.app';
+  if (context === 'production') return process.env.URL || 'https://mauri-dev.online';
   if (context === 'deploy-preview' || context === 'branch-deploy') {
     return process.env.DEPLOY_PRIME_URL || '';
   }
