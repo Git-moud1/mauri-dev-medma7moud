@@ -6,8 +6,21 @@ A premium, single-page, multilingual (Arabic / English / French) portfolio and m
 Built with **Next.js 16 (App Router, Turbopack) · React 19 · TypeScript · Tailwind CSS 3 · motion**,
 deployed on **Netlify**.
 
-- **Live:** https://mauri-dev.netlify.app
+- **Live:** https://mauri-dev.online (the old `mauri-dev.netlify.app` redirects there)
 - **Contact:** baymed000@gmail.com · WhatsApp [+222 31 31 75 01](https://wa.me/22231317501)
+
+**Features**
+
+- Three languages (Arabic RTL, English, French), each its own server-rendered route.
+- Project gallery with category filters and a swipeable, keyboard-accessible lightbox.
+- Password-protected **admin panel** (`/admin`):
+  - add, edit, reorder and delete projects, and upload images (re-encoded to WebP);
+  - edit contact details, social links, hero stats and availability;
+  - change the password, or recover it by email.
+- **Contact form** delivered to the owner's inbox through Resend, with Reply-To set to the
+  visitor, and archived.
+- Light/dark theme, SEO metadata per locale, sitemap, share cards, JSON-LD.
+- No database and no paid service: content and images live in **Netlify Blobs**.
 
 ---
 
@@ -34,8 +47,8 @@ deployed on **Netlify**.
 
 ## 1. What this project is
 
-A portfolio site with **one localized route per language** — `/ar`, `/en`, `/fr` — each statically
-prerendered. `/` 307-redirects to the visitor's best match (cookie, then `Accept-Language`, then
+A portfolio site with **one localized route per language** — `/ar`, `/en`, `/fr` — each static:
+rendered on its first request after a deploy, then served from cache until the next admin edit. `/` 307-redirects to the visitor's best match (cookie, then `Accept-Language`, then
 Arabic). Within a route, navigation is still anchors, and switching language is still instant.
 Its purpose is to convert visitors into clients: show credibility, show real work, and give one-tap
 access to WhatsApp / contact form.
@@ -70,10 +83,22 @@ no-flash script, which no longer touches `lang`/`dir` — those are server-rende
 
 ## 2. Quick start
 
+**Requirements:**
+
+- Node **20.9+** (Netlify builds on 22.11.0) and npm.
+- To run against real content: a local copy of the Blob stores, from `npm run backup:blobs`
+  (needs the Netlify CLI, logged in and linked to the site).
+
 ```bash
 npm install
-npm run dev          # http://localhost:3000
+cp .env.example .env.local                 # names only; fill in locally
+node scripts/gen-admin-secrets.mjs         # writes .env.admin.local — copy both lines into .env.local
+npm run blobs:local -- --seed <backup dir> # terminal 1: local Blob store, prints NETLIFY_BLOBS_CONTEXT
+NETLIFY_BLOBS_CONTEXT=… npm run dev        # terminal 2: http://localhost:3000
 ```
+
+Without `NETLIFY_BLOBS_CONTEXT` the app has **no content store**, so content pages and the
+admin answer with an error. That is deliberate: there is no fallback content (§11).
 
 | Script                                | What it does                                                                        |
 | ------------------------------------- | ----------------------------------------------------------------------------------- |
@@ -83,6 +108,9 @@ npm run dev          # http://localhost:3000
 | `npm run lint`                        | `eslint .` — ESLint 9 flat config, `typescript-eslint` strictTypeChecked + jsx-a11y |
 | `npm run format` / `format:check`     | Prettier over the repo                                                              |
 | `npm run gen:blur`                    | Regenerates LQIP blur placeholders → `src/data/blur.generated.ts`                   |
+| `npm run blobs:local`                 | Local Netlify Blobs server (`--seed <backup dir>` to load a copy) — §11             |
+| `npm run backup:blobs`                | Read-only backup of every Blob store, with SHA256SUMS — docs/OPERATIONS.md          |
+| `npm run seed:staging`                | Copies a backup into the `staging-*` stores used by deploy previews                 |
 | `node scripts/gen-admin-secrets.mjs`  | Generates `ADMIN_PASSWORD_HASH` + `AUTH_SECRET`, printing nothing — see §11         |
 | `node scripts/gen-mockups.mjs`        | Rebuilds the synthetic mockup screens (network required — see §9)                   |
 | `node scripts/measure-bundle.mjs URL` | First-load JS and fonts, gzipped. Owns its own server — see §13                     |
@@ -95,8 +123,9 @@ npm run dev          # http://localhost:3000
 on the `NODE_VERSION = "22.11.0"` pinned in `netlify.toml`; match it locally if a build
 behaves differently on the two.
 
-Writes from the admin panel need a Netlify runtime. `npm run dev` reads fine and cannot
-save — see §11.
+Operations — backups, restore, rollback, the free-tier credit budget, DNS — are in
+**`docs/OPERATIONS.md`**. The October 2026 outage and recovery are recorded in
+`docs/RESTORATION-LOG.md`, and every change is listed in `CHANGELOG.md`.
 
 ---
 
@@ -106,11 +135,11 @@ save — see §11.
 
 | Package               | Version  | Used for                                                                     |
 | --------------------- | -------- | ---------------------------------------------------------------------------- |
-| `next`                | 16.2.12  | App Router (Turbopack), `next/image`, `next/font`, `proxy.ts`                |
+| `next`                | 16.4.2   | App Router (Turbopack), `next/image`, `next/font`, `proxy.ts`                |
 | `react` / `react-dom` | 19.2.8   | UI                                                                           |
 | `motion`              | ^12.42.2 | Lightbox slides/drag, island animations (scroll reveals are CSS)             |
-| `sharp`               | ^0.35.3  | Build-time blur LQIP, mockup rasterization, **and admin upload re-encoding** |
-| `@netlify/blobs`      | ^10.7.10 | The content store and the login rate limiter                                 |
+| `sharp`               | ^0.35.5  | Build-time blur LQIP, mockup rasterization, **and admin upload re-encoding** |
+| `@netlify/blobs`      | ^10.7.10 | Content, uploaded media, admin credential, rate limits, contact archive      |
 | `zod`                 | ^4.4.3   | Schemas for stored projects, settings and every server action's input        |
 | `jose`                | ^6.2.4   | Signs and verifies the admin session JWT                                     |
 | `@node-rs/argon2`     | ^2.0.2   | argon2id password verification                                               |
@@ -119,6 +148,9 @@ save — see §11.
 PostCSS + Autoprefixer, ESLint 9 flat config (`typescript-eslint` strictTypeChecked +
 `eslint-plugin-jsx-a11y` + `eslint-config-next`), Prettier, and `@playwright/test` — kept
 only as the headless-Chromium driver for the measurement scripts in §13.
+
+**External service, no package:** Resend (email), called over its HTTP API from
+`src/lib/email.ts`.
 
 **Notably absent by design:** no i18n library, no state manager, no UI kit, no icon package
 (icons are hand-written inline SVGs in `src/components/Icons.tsx`), no CMS. Everything is local
@@ -139,6 +171,9 @@ Path alias: `@/*` → `./src/*` (see `tsconfig.json`).
 ├── tsconfig.json              # strict TS + noUncheckedIndexedAccess, "@/*" alias
 ├── eslint.config.mjs          # ESLint 9 flat, typescript-eslint strictTypeChecked
 ├── .env.example               # variable NAMES only — the repo is public
+├── .gitattributes             # LF line endings everywhere (Prettier expects LF)
+├── CHANGELOG.md / OPTIMIZATION_REPORT.md
+├── docs/                      # OPERATIONS.md (runbook), RESTORATION-LOG.md, older plans
 │
 ├── public/
 │   ├── mauri-dev.jpeg         # brand/profile image
@@ -146,6 +181,9 @@ Path alias: `@/*` → `./src/*` (see `tsconfig.json`).
 │   └── projects/<id>/…        # real project screenshots (jpg / jpeg / png / webp)
 │
 ├── scripts/
+│   ├── local-blobs.mjs        # local Netlify Blobs server for dev and tests (npm run blobs:local)
+│   ├── backup-blobs.mjs       # read-only backup of every store (npm run backup:blobs)
+│   ├── seed-staging-blobs.mjs # backup → staging-* stores (npm run seed:staging)
 │   ├── measure-bundle.mjs     # first-load JS + fonts, gzipped — owns its own server
 │   ├── measure-cls.mjs        # CLS on a scripted scroll — owns its own server
 │   ├── port.mjs               # frees a port and refuses to continue if it cannot
@@ -161,14 +199,17 @@ Path alias: `@/*` → `./src/*` (see `tsconfig.json`).
     │   ├── (site)/[locale]/
     │   │   ├── layout.tsx     # <html lang dir>, per-locale fonts, generateMetadata
     │   │   ├── page.tsx       # reads the content store, composes all sections
+    │   │   ├── contact-actions.ts # contact form server action (store + Resend)
     │   │   └── fonts.ts       # fontClassFor(locale) — only the active locale's faces
     │   ├── (admin)/admin/     # SECOND ROOT LAYOUT — own <html>, English/LTR, noindex
     │   │   ├── layout.tsx     # shares no provider with the public tree — §11
     │   │   ├── page.tsx       # login form
     │   │   ├── actions.ts     # login/logout + project CRUD + settings server actions
     │   │   ├── upload/actions.ts
+    │   │   ├── account/actions.ts # change / forgot / reset password
+    │   │   ├── forgot/ reset/ # signed-out password recovery pages
     │   │   ├── dashboard/     # DashboardShell, ProjectRows, ProjectEditor,
-    │   │   │                  # MediaGrid, SettingsForm
+    │   │   │                  # MediaGrid, SettingsForm, PasswordForm
     │   │   └── ui/            # primitives.tsx, Toaster.tsx — the admin's vocabulary
     │   ├── api/media/[...key]/route.ts  # serves uploaded binaries, immutable cache
     │   ├── robots.ts          # allows the site, disallows /admin and /api/
@@ -187,14 +228,18 @@ Path alias: `@/*` → `./src/*` (see `tsconfig.json`).
     ├── i18n/
     │   ├── config.ts          # locales, dir, storage keys
     │   ├── locale.ts          # isLocale / negotiateLocale / dirFor / LOCALE_COOKIE
-    │   ├── server.ts          # getT(locale) — the server-side counterpart to useI18n().t
-    │   ├── I18nProvider.tsx   # context, t(), dot-path key typing
+    │   ├── translate.ts       # key types + makeT(dict); no dictionary import (client-safe)
+    │   ├── server.ts          # getT(locale) for server components
+    │   ├── I18nProvider.tsx   # context + t(); receives only the current dictionary
     │   └── dictionaries/{ar,en,fr}.ts
     │
     ├── lib/
     │   ├── site.ts            # contact details, WhatsApp, tech stack, skills, stats
+    │   ├── blobs.ts           # store names (per deploy context) + write verification
     │   ├── content/           # types.ts (zod schemas), blobs.ts, index.ts (cached reads)
-    │   ├── auth/              # password.ts, session.ts, rate-limit.ts
+    │   ├── auth/              # password, session, credential, reset, request, rate-limit
+    │   ├── email.ts           # Resend mailer (outbox on non-production builds)
+    │   ├── contact.ts         # contact message validation, archive and email
     │   └── images/            # process.ts (sniff + re-encode + LQIP), store.ts
     └── theme/ThemeProvider.tsx
 ```
@@ -203,8 +248,9 @@ Path alias: `@/*` → `./src/*` (see `tsconfig.json`).
 
 ## 5. Architecture & key decisions
 
-**Localized routes, server-rendered i18n.** `/ar`, `/en` and `/fr` are three statically prerendered
-paths under `(site)/[locale]`. `proxy.ts` redirects `/` to the best match. This is the keystone
+**Localized routes, server-rendered i18n.** `/ar`, `/en` and `/fr` are three static paths under
+`(site)/[locale]`, rendered on first request rather than at build time (the build has no content
+store). `proxy.ts` redirects `/` to the best match. This is the keystone
 decision: it gives crawlers per-language URLs and `hreflang`, lets the page render as server
 components, and lets the server load one font family instead of three.
 
@@ -256,7 +302,12 @@ be tracked by whoever controls the mounting, or the exit animation never runs.
 - `src/i18n/dictionaries/en.ts` — **the source of truth for the shape.**
   `export type Dictionary = typeof en`, so `ar.ts` and `fr.ts` must structurally match it or
   TypeScript fails the build.
-- `src/i18n/I18nProvider.tsx` — the context.
+- `src/i18n/translate.ts` — the key types and `makeT(dict)`. No runtime import of the
+  dictionaries, so client code can use it without shipping all three languages.
+- `src/i18n/server.ts` — `getT(locale)` for server components.
+- `src/i18n/I18nProvider.tsx` — the context. It receives **only the current dictionary** as a
+  prop from the page (`<Providers locale dict>`); importing all three here once put every
+  language into every page's first-load JS.
 
 **Usage**
 
@@ -346,12 +397,12 @@ The store validates every project against this shape with zod in `src/lib/conten
 
 ```ts
 interface Project {
-  id: string; // must match the folder name in public/projects/
+  id: string; // lowercase slug; also names the folder its uploads go into
   title: Record<Locale, string>; // ar + en + fr, all required
   description: Record<Locale, string>;
   category: 'web' | 'app'; // drives the filter pills AND the lightbox layout
   frame?: 'phone' | 'browser'; // drives the CARD presentation (default: browser)
-  cover: string; // "/projects/<id>/cover.jpg"
+  cover: string; // "/projects/<id>/…" (in public/) or "/api/media/…" (uploaded)
   images: string[]; // gallery images, in order
   link?: string; // live URL; omit or "" to hide the button
 }
@@ -367,19 +418,8 @@ interface Project {
 They can legitimately disagree — e.g. `pharmanet` and `skin-beauty` are `category: 'web'` with
 `frame: 'phone'` (responsive web apps shot on a phone).
 
-**The bundled catalogue** in `src/data/projects.ts` — historical, and **not** what the site
-shows. The live catalogue is `site-content/projects.json` (9 projects as of 2026-10-12,
-including two this list never had). Do not treat this table as a backup of it:
-
-| id                | Title                                    | Category / frame | Live                                        |
-| ----------------- | ---------------------------------------- | ---------------- | ------------------------------------------- |
-| `skin-beauty`     | Skin Beauty — Korean Skincare Store      | web / phone      | [link](https://skin-beauty-nine.vercel.app) |
-| `ml-scores`       | ML Scores — Live Football App            | app / phone      | —                                           |
-| `ecommerce`       | AURA — E-Commerce Platform               | web / browser    | —                                           |
-| `swift-eats`      | Swift Eats — Food Delivery App           | app / phone      | —                                           |
-| `pharmanet`       | PharmaNet — Pharmacy Management Platform | web / phone      | [link](https://phamanet.site.je)            |
-| `presencia`       | PrésencIA — AI Attendance System         | web / browser    | —                                           |
-| `pulse-analytics` | Pulse Analytics — SaaS Dashboard         | web / browser    | —                                           |
+**The catalogue itself** lives only in `site-content/projects.json` and is managed from the
+admin. There is no copy in the repository; `npm run backup:blobs` is how to keep one.
 
 ### The lightbox (`ProjectGallery.tsx`)
 
@@ -654,19 +694,18 @@ never pretends to send — while previews and local runs write the message to
   map (`ar` / `en` / `fr` / `x-default`) from the route's own dictionary. The client-side
   `DocumentMeta` rewriter is gone.
 - **Origin lives in one place:** `SITE_URL` in `src/lib/site.ts`, read from
-  `NEXT_PUBLIC_SITE_URL` and defaulting to `https://mauri-dev.netlify.app`. Nothing else
+  `NEXT_PUBLIC_SITE_URL` and defaulting to `https://mauri-dev.online`. Nothing else
   hardcodes an origin.
 - **Viewport:** `themeColor` responds to `prefers-color-scheme` (`#f8f9fc` light / `#08080c` dark).
+- **`src/app/robots.ts`:** allows the site, disallows `/admin` and `/api/`, and points at
+  `${SITE_URL}/sitemap.xml`. **`src/app/sitemap.ts`** lists every locale's pages with
+  hreflang alternates.
+- **Share cards:** per-locale `opengraph-image.tsx` / `twitter-image.tsx` (also under
+  `projects/`). JSON-LD `@graph` from `src/lib/jsonld.ts`. Optional Search Console tag via
+  `GOOGLE_SITE_VERIFICATION`.
 
-- **`src/app/robots.ts`** exists: allows the site, disallows `/admin` and `/api/`, and points at
-  `${SITE_URL}/sitemap.xml`.
-
-**Still missing** (plan 3, the remaining half of B13): Open Graph images per locale, JSON-LD, and
-`sitemap.ts` — `robots.txt` already references a sitemap that is not generated yet.
-
-**The SEO category is still unverified.** Netlify puts `X-Robots-Tag: noindex` on every deploy
-preview, which is why Lighthouse scored SEO 66 there against the live site's 100. It has to be
-re-measured on production after merge; nothing in the preview numbers can settle it.
+Lighthouse SEO is **100** on production. Deploy previews score lower only because Netlify adds
+`X-Robots-Tag: noindex` to every preview.
 
 ---
 
@@ -768,8 +807,8 @@ policy is strict. See `PROGRESS.md` for the three ways out and the current recom
 
 The CSP is environment-aware: development adds `'unsafe-eval'` (React's dev build and Turbopack's
 HMR client both need it) and `ws:` (the HMR socket). Both are gated on `NODE_ENV` and neither can
-reach a deployed response — Netlify builds with `NODE_ENV=production`, and the header suite
-asserts `unsafe-eval` is absent from the delivered header.
+reach a deployed response — Netlify builds with `NODE_ENV=production`. Check a delivered header
+by hand (the `curl -sI` above) after changing the policy; no automated suite asserts it any more.
 
 The official Next.js runtime plugin handles `next/image` optimization, SSR, and routing.
 
@@ -779,12 +818,18 @@ The official Next.js runtime plugin handles `next/image` optimization, SSR, and 
 
 ### Environment variables
 
-| Variable               | Required            | Notes                                                                       |
-| ---------------------- | ------------------- | --------------------------------------------------------------------------- |
-| `ADMIN_PASSWORD_HASH`  | For `/admin`        | Base64 of an argon2id hash. Netlify dashboard only — never a committed file |
-| `AUTH_SECRET`          | For `/admin`        | 32 random bytes, base64. Signs the session JWT                              |
-| `NEXT_PUBLIC_SITE_URL` | No                  | Defaults to `https://mauri-dev.netlify.app`. Set it when a domain lands     |
-| `NODE_VERSION`         | Set in netlify.toml | `22.11.0`                                                                   |
+| Variable                   | Required            | Notes                                                                        |
+| -------------------------- | ------------------- | ---------------------------------------------------------------------------- |
+| `ADMIN_PASSWORD_HASH`      | For `/admin`        | Base64 of an argon2id hash — the bootstrap password until the first change   |
+| `AUTH_SECRET`              | For `/admin`        | 32 random bytes, base64. Signs the session JWT                               |
+| `RESEND_API_KEY`           | For email           | Secret. Contact-form delivery and password reset (§10, §11)                  |
+| `RESEND_FROM`              | No                  | Default `Mauri-Dev <onboarding@resend.dev>`                                  |
+| `ADMIN_RECOVERY_EMAIL`     | No                  | Where reset links go. Default `baymed000@gmail.com`                          |
+| `CONTACT_INBOX`            | No                  | Where contact messages go. Default: the recovery address                     |
+| `NEXT_PUBLIC_SITE_URL`     | No                  | Defaults to `https://mauri-dev.online`                                       |
+| `GOOGLE_SITE_VERIFICATION` | No                  | Search Console HTML-tag token (the `content` value only)                     |
+| `NETLIFY_BLOBS_CONTEXT`    | Local only          | Printed by `npm run blobs:local`. Never set in Netlify — the runtime has one |
+| `NODE_VERSION`             | Set in netlify.toml | `22.11.0`                                                                    |
 
 Generate the two admin values with `node scripts/gen-admin-secrets.mjs` — see §11 for why the
 hash is stored base64-encoded. **The repository is public; neither value may appear in a commit,
@@ -797,10 +842,9 @@ for the Netlify build to succeed.
 
 ## 15. Common tasks / cookbook
 
-Content has **two paths** since the admin panel landed (§11). Pick by intent: the admin for
-real content, the bundled files for the typed default that ships in the build.
+All content goes through the admin panel (§11); the build carries no content of its own.
 
-**Add a project — the normal way**
+**Add a project**
 
 1. Sign in at `/admin`, open the dashboard, **Add project**.
 2. Fill the id, the three locales, category and frame, and drag the images into the Media
@@ -845,9 +889,14 @@ cards visible with JavaScript disabled, CLS under a throttled font swap, securit
 asserted on a delivered response (not on config), and no admin code in any script the public
 page loads. `git log -- tests/` recovers the deleted specs if you want them back.
 
-**Change the admin password** — rerun `node scripts/gen-admin-secrets.mjs`, then replace
-`ADMIN_PASSWORD_HASH` in Netlify. Rotating `AUTH_SECRET` at the same time invalidates every
-existing session, which is what you want if the old password may have leaked.
+**Change the admin password** — Dashboard → Settings → Password, or "Forgot password?" on the
+sign-in page (§11). Either one signs out every other session. Changing `ADMIN_PASSWORD_HASH`
+in Netlify does **nothing** once a password has been set from the site; it is only the
+bootstrap. Rotating `AUTH_SECRET` invalidates every session too.
+
+**Run the checks** — `npx tsc --noEmit && npm run lint && npm run format:check && npm run build`.
+There is no automated test suite in the repository (see below), so a change to the admin, the
+store or the public pages also needs a manual pass — or a local run against `npm run blobs:local`.
 
 ---
 
