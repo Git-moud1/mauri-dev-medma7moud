@@ -74,6 +74,9 @@ const url = `http://127.0.0.1:${actualPort}`;
 const context = { edgeURL: url, uncachedEdgeURL: url, siteID: SITE_ID, token };
 const encoded = Buffer.from(JSON.stringify(context)).toString('base64');
 
+/** Reverses `toFileName` in backup-blobs.mjs. */
+const fromFileName = (name) => decodeURIComponent(name.replace(/~/g, '%'));
+
 async function walk(dir) {
   const out = [];
   for (const entry of await readdir(dir, { withFileTypes: true })) {
@@ -104,7 +107,8 @@ if (seedDir) {
     let written = 0;
     let kept = 0;
     for (const file of await walk(storeDir)) {
-      const key = relative(storeDir, file).split(sep).join('/');
+      // Backups escape each key segment (see toFileName in backup-blobs.mjs).
+      const key = relative(storeDir, file).split(sep).map(fromFileName).join('/');
       const bytes = await readFile(file);
       const body = new ArrayBuffer(bytes.byteLength);
       new Uint8Array(body).set(bytes);

@@ -48,8 +48,9 @@ if (existsSync(out)) {
 // The CLI is a .cmd shim on Windows, so it has to go through a shell. Every
 // argument is checked against a strict character set first: store names and
 // keys come from this script or from a listing, never from free text.
-// Letters, digits, . _ : / \ - and space (Windows paths), optionally quoted.
-const SAFE = /^"?[A-Za-z0-9._:/\\ -]+"?$/;
+// Letters, digits, . _ : / \ ~ - and space (Windows paths, escaped file names),
+// optionally quoted.
+const SAFE = /^"?[A-Za-z0-9._:/\\ ~-]+"?$/;
 function netlify(args) {
   for (const value of args) {
     if (!SAFE.test(value)) throw new Error(`refusing unsafe CLI argument: ${value}`);
@@ -60,6 +61,14 @@ function netlify(args) {
     stdio: ['ignore', 'pipe', 'pipe'],
   });
 }
+
+/**
+ * Key segment → file name. Windows forbids `:` and friends in file names, so a
+ * segment is percent-encoded with `~` in place of `%` (`%` would be expanded by
+ * cmd.exe, and app keys never contain `~`). Plain keys come out unchanged.
+ * Reversed by `fromFileName` in local-blobs.mjs and seed-staging-blobs.mjs.
+ */
+const toFileName = (segment) => encodeURIComponent(segment).replace(/%/g, '~');
 
 const STORES = [
   'site-content',
@@ -74,7 +83,9 @@ for (const base of STORES) {
   const listed = JSON.parse(netlify(['blobs:list', store, '--json']));
   const keys = (listed.blobs ?? listed).map((blob) => blob.key);
   for (const key of keys) {
-    const target = join(out, base, ...key.split('/'));
+    // Each segment escaped on disk (toFileName): keys such as `quota:contact-ip:1.2.3.4`
+    // contain characters Windows forbids in file names. Plain keys are unchanged.
+    const target = join(out, base, ...key.split('/').map(toFileName));
     mkdirSync(dirname(target), { recursive: true });
     netlify(['blobs:get', store, `"${key}"`, '--output', `"${target}"`]);
     total++;

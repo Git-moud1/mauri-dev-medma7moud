@@ -36,8 +36,12 @@ if (!from || !existsSync(join(from, 'SHA256SUMS.txt'))) {
 // The CLI is a .cmd shim on Windows, so it has to go through a shell. Every
 // argument is checked against a strict character set first: store names and
 // keys come from this script or from a listing, never from free text.
-// Letters, digits, . _ : / \ - and space (Windows paths), optionally quoted.
-const SAFE = /^"?[A-Za-z0-9._:/\\ -]+"?$/;
+// Letters, digits, . _ : / \ ~ - and space (Windows paths, escaped file names),
+// optionally quoted.
+const SAFE = /^"?[A-Za-z0-9._:/\\ ~-]+"?$/;
+
+/** Reverses `toFileName` in backup-blobs.mjs. */
+const fromFileName = (name) => decodeURIComponent(name.replace(/~/g, '%'));
 function netlify(args) {
   for (const value of args) {
     if (!SAFE.test(value)) throw new Error(`refusing unsafe CLI argument: ${value}`);
@@ -90,7 +94,7 @@ for (const { path } of entries) {
   netlify([
     'blobs:set',
     store,
-    `"${keyParts.join('/')}"`,
+    `"${keyParts.map(fromFileName).join('/')}"`,
     '--input',
     `"${join(from, ...path.split('/'))}"`,
     '--force',
