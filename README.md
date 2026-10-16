@@ -745,9 +745,11 @@ Lighthouse SEO is **100** on production. Deploy previews score lower only becaus
   browser rather than scanning the HTML — the Arabic faces are discovered through CSS, so a
   scan reported 0.0 KB while the page transferred 55.7 KB.
 
-Current first-load JS is **237.3 KB gzipped** on every route, against a 150 KB target that has not
-been met. 1.2 KB of that is the compression cost of the extra chunk boundary the admin's client
-entrypoint introduces — no admin code reaches the public page. Full accounting in `docs/superpowers/baseline/2026-07-27-after-plan-1.md` and `PROGRESS.md`.
+First-load JS is **~223 KB gzipped** (`/ar` 223.2 KB, `/en/projects` 221.1 KB; measured
+2026-10-16), down from ~241 KB. The 150 KB target is still not met: React DOM and the Next.js
+runtime alone are ~110 KB, and the rest is the interactive islands and `motion`. No admin code
+reaches the public page. History in `OPTIMIZATION_REPORT.md`, `PROGRESS.md` and
+`docs/superpowers/baseline/`.
 
 ---
 
