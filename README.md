@@ -457,7 +457,7 @@ replacing any image**, otherwise the new image loads with no placeholder.
 
 ### `scripts/gen-mockups.mjs` + `scripts/photos.mjs` — synthetic demo screens
 
-Some portfolio pieces (`swift-eats`, `ecommerce`, `pulse-analytics`) are **design showcases**, so
+Some portfolio pieces (`ecommerce`, `pulse-analytics`) are **design showcases**, so
 their screens are generated rather than screenshotted:
 
 1. `scripts/mockups/<project>/*.svg` are hand-built UI templates containing
@@ -466,7 +466,7 @@ their screens are generated rather than screenshotted:
    (free license), DummyJSON (product catalog shots) — and processes it with sharp
    (`cover` + attention crop, or `contain` on white for product shots).
 3. `gen-mockups.mjs` substitutes the data-URIs into the SVG and rasterizes to WebP q80 at a
-   per-project scale (`swift-eats` ×3, others ×2) into `public/projects/<project>/`.
+   per-project scale (×2) into `public/projects/<project>/`.
 
 ```bash
 node scripts/gen-mockups.mjs   # requires network access
@@ -748,8 +748,8 @@ Lighthouse SEO is **100** on production. Deploy previews score lower only becaus
 First-load JS is **~223 KB gzipped** (`/ar` 223.2 KB, `/en/projects` 221.1 KB; measured
 2026-10-16), down from ~241 KB. The 150 KB target is still not met: React DOM and the Next.js
 runtime alone are ~110 KB, and the rest is the interactive islands and `motion`. No admin code
-reaches the public page. History in `OPTIMIZATION_REPORT.md`, `PROGRESS.md` and
-`docs/superpowers/baseline/`.
+reaches the public page. History in `OPTIMIZATION_REPORT.md`; older measurements are in the git history of
+`PROGRESS.md` and `docs/superpowers/baseline/` (removed 2026-10-16).
 
 ---
 
@@ -805,7 +805,7 @@ emits 22 inline scripts, 21 of them Next's own RSC flight payload, and a browser
 `'unsafe-inline'` the moment any hash or nonce is present — so hashing the no-flash script alone
 blocks the other 21 and the page never hydrates. A nonce must be minted per request, which
 forfeits the static prerendering the architecture exists to produce. Everything else in the
-policy is strict. See `PROGRESS.md` for the three ways out and the current recommendation.
+policy is strict. The options are recorded in the git history of `PROGRESS.md` (removed 2026-10-16).
 
 The CSP is environment-aware: development adds `'unsafe-eval'` (React's dev build and Turbopack's
 HMR client both need it) and `ws:` (the HMR socket). Both are gated on `NODE_ENV` and neither can

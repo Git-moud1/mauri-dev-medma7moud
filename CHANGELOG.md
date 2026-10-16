@@ -68,6 +68,12 @@ Branch `cleanup/optimization-2026-10-16`. Measurements and reasoning are in
 
 ### Removed
 
+- Unused files, all still in git history:
+  - `public/projects/swift-eats/1–4.webp` (477 KB, no longer referenced) and
+    `scripts/mockups/swift-eats/`;
+  - `PROGRESS.md`, `MIGRATION.md`, `New_CLAUDE_CODE_PROMPT.md`, `docs/plan-3-brief.md`,
+    `docs/superpowers/`;
+  - `supabase/schema.sql`.
 - Dead exports and components listed under Cleanup.
 - The bundled catalogue data in `src/data/projects.ts`.
 

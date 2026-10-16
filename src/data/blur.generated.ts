@@ -35,11 +35,7 @@ export const blurMap: Record<string, string> = {
   "/projects/skin-beauty/4.jpg": "data:image/webp;base64,UklGRowAAABXRUJQVlA4IIAAAACwAwCdASoMABQAPu1iqU2ppaQiMAgBMB2JagCpAXAAK4w5Ta84hAD9qKYRO/7PAl4XeNBRc8f5WcLokG3kxTGkacIEZ9vcfvG/JG1WRHqxSB8PQkKk3rN2yhIjODj0VIFGrT80zBxen/HOF8xlo9WtOKq+lTb+p0y8ev4cwAAAAA==",
   "/projects/skin-beauty/5.jpg": "data:image/webp;base64,UklGRn4AAABXRUJQVlA4IHIAAAAwBACdASoKABQAPu1iqU2ppaQiMAgBMB2JYgCdACLs7XpBGGtwWmDrNnAA3MMrdm/OXsr8MdODvGKQxrHx6mA8J1KE8GPrE7cel7ITUdu0qAIWrOx4AUX7tVjw8q9L7d9INE7BZnadB+unfhT4urQAAAA=",
   "/projects/skin-beauty/6.jpg": "data:image/webp;base64,UklGRoAAAABXRUJQVlA4IHQAAADQAwCdASoMABQAPu1krU6ppaSiMAgBMB2JZgC/OCHpSquS0vz0T8AA+6WyUiWSuwb49+Q7ubUI40nJbYfng2NIntd+SF6r+Ady6IC0uZt81P+9NJlaOG7dNy/73Mu2vqkgmarJif9a6WcnTQU3VES6O7HgAA==",
-  "/projects/skin-beauty/cover.jpg": "data:image/webp;base64,UklGRogAAABXRUJQVlA4IHwAAACQAwCdASoJABQAPu1kqU2ppaQiMAgBMB2JQAALfcijURLjtCd4AP7x3BIaolu74b+X3GYAeCs7I74O1f6KidOdLOVXoyT7bBFHuay0FJmUx4p3Bf7rxVhy6FmdR8Qq5zIay1cnjO+MJzOvcmfwX/K4hcP0j2LWf8myAAAA",
-  "/projects/swift-eats/1.webp": "data:image/webp;base64,UklGRmoAAABXRUJQVlA4IF4AAACwAwCdASoJABQAPu1iqU2ppaOiMAgBMB2JQBfnBDsw771JYEGogAD+78WclegrAHwZFWWrgRcHUSrVJBuaWhx8UTwV0+IM96DlMdSDrXpDfxi3GLUSDqR0cKAwxoAA",
-  "/projects/swift-eats/2.webp": "data:image/webp;base64,UklGRoAAAABXRUJQVlA4IHQAAAAQBACdASoJABQAPu1krU6ppaSiMAgBMB2JaACdOUAA8YNGysJyQwiOAADMg3ucG0gFKlqmHTF3jp62p6WkhZHyaYM+SbHmpXC+gPZWqlbZ8SpK5KKIRsx40OrYRLCaKW98V573b3/sR0dO6ha2/7qGSpAAAA==",
-  "/projects/swift-eats/3.webp": "data:image/webp;base64,UklGRnYAAABXRUJQVlA4IGoAAAAQBACdASoJABQAPu1iqU2ppaOiMAgBMB2JYgB3AA0a6kPRf/n3NtkQQAD+/TVemRPDTWzzFW3Uqkj+2LLiRVrfV4Dm7d54/PclTkmpIatAHbH6DICLfG8UwEV/U3MhRBpFTwIMllGeJAAA",
-  "/projects/swift-eats/4.webp": "data:image/webp;base64,UklGRoYAAABXRUJQVlA4WAoAAAAQAAAACAAAEwAAQUxQSBIAAAABD/D0/4iIIBBIzt98goj+ZxNWUDggTgAAADADAJ0BKgkAFAA+7WKpTamlo6IwCAEwHYlnAACDnSrmOwAA/u/zP84zfeTwad3Ii14gXwN9rew6q6ejlSmok5er1F44BBZRQycE7BxAAA=="
+  "/projects/skin-beauty/cover.jpg": "data:image/webp;base64,UklGRogAAABXRUJQVlA4IHwAAACQAwCdASoJABQAPu1kqU2ppaQiMAgBMB2JQAALfcijURLjtCd4AP7x3BIaolu74b+X3GYAeCs7I74O1f6KidOdLOVXoyT7bBFHuay0FJmUx4p3Bf7rxVhy6FmdR8Qq5zIay1cnjO+MJzOvcmfwX/K4hcP0j2LWf8myAAAA"
 };
 
 /** Returns a blurDataURL for a public image path, or undefined if none exists. */

@@ -74,19 +74,17 @@ cache.
 
 ## Deliberately not changed
 
-| Item                                                                                                                     | Why not                                                                                                                                                                                                                               |
-| ------------------------------------------------------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Remaining 9 audit findings                                                                                               | Build-time only (ESLint plugin; Tailwind 3's file-watching/globbing deps); never shipped or run on the server. Fixing needs **Tailwind 4** (config + styling migration) or a nonsensical ESLint-config "downgrade" the tool suggests. |
-| `@netlify/blobs` 10 → 11                                                                                                 | Major version. The store code works around two measured 10.7.10 behaviours (`setJSON` ignoring conditions; SharedArrayBuffer bodies); 11 needs its own verification pass.                                                             |
-| `motion` → lighter animation code                                                                                        | It is already behind `LazyMotion strict`, with drag/layout features in the lightbox's lazy chunk; a measured July decision. Removing it means rewriting animations, i.e. a redesign.                                                  |
-| Async-loading motion features                                                                                            | Elements with an initial hidden state would stay hidden until the features download — a visible-content risk for a few KB.                                                                                                            |
-| JS budget of 150 KB                                                                                                      | Not reachable without removing React/Next weight: React DOM + the Next.js runtime are ~110 KB of the 223 KB.                                                                                                                          |
-| `public/projects/swift-eats/1–4.webp` (477 KB, unreferenced)                                                             | Deleting files needs the owner's OK (asked in the PR).                                                                                                                                                                                |
-| `skin-beauty/cover.jpg` = `skin-beauty/2.jpg` (identical)                                                                | Both are referenced by the live project record; deduplicating means editing content.                                                                                                                                                  |
-| `server-only` not in `package.json`                                                                                      | Next resolves it internally; the build enforces it. Adding the package is optional.                                                                                                                                                   |
-| knip's "unused files" in `scripts/`                                                                                      | Standalone CLI tools run by hand (backup, icons, mockups, measurement), not dead.                                                                                                                                                     |
-| Exported-but-unused **types**                                                                                            | Harmless API surface. Removing them buys nothing at runtime.                                                                                                                                                                          |
-| Historical docs (`PROGRESS.md`, `MIGRATION.md`, `docs/superpowers/`, `New_CLAUDE_CODE_PROMPT.md`, `supabase/schema.sql`) | Deleting files needs the owner's OK. They are history the README still links to.                                                                                                                                                      |
+| Item                                                      | Why not                                                                                                                                                                                                                               |
+| --------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Remaining 9 audit findings                                | Build-time only (ESLint plugin; Tailwind 3's file-watching/globbing deps); never shipped or run on the server. Fixing needs **Tailwind 4** (config + styling migration) or a nonsensical ESLint-config "downgrade" the tool suggests. |
+| `@netlify/blobs` 10 → 11                                  | Major version. The store code works around two measured 10.7.10 behaviours (`setJSON` ignoring conditions; SharedArrayBuffer bodies); 11 needs its own verification pass.                                                             |
+| `motion` → lighter animation code                         | It is already behind `LazyMotion strict`, with drag/layout features in the lightbox's lazy chunk; a measured July decision. Removing it means rewriting animations, i.e. a redesign.                                                  |
+| Async-loading motion features                             | Elements with an initial hidden state would stay hidden until the features download — a visible-content risk for a few KB.                                                                                                            |
+| JS budget of 150 KB                                       | Not reachable without removing React/Next weight: React DOM + the Next.js runtime are ~110 KB of the 223 KB.                                                                                                                          |
+| `skin-beauty/cover.jpg` = `skin-beauty/2.jpg` (identical) | Both are referenced by the live project record; deduplicating means editing content.                                                                                                                                                  |
+| `server-only` not in `package.json`                       | Next resolves it internally; the build enforces it. Adding the package is optional.                                                                                                                                                   |
+| knip's "unused files" in `scripts/`                       | Standalone CLI tools run by hand (backup, icons, mockups, measurement), not dead.                                                                                                                                                     |
+| Exported-but-unused **types**                             | Harmless API surface. Removing them buys nothing at runtime.                                                                                                                                                                          |
 
 ## About the one "failing" preview check
 
@@ -96,6 +94,15 @@ to prove staging tests never write to production. The owner has since edited the
 design. Comparing production with **today's** verified backup instead shows it is
 byte-identical (`projects.json`, `settings.json`, 58/58 images). Staging tests did not touch
 production.
+
+## Removed after review (owner's request)
+
+Everything the site does not use, all still in git history:
+
+- `public/projects/swift-eats/1–4.webp` (477 KB) and their templates in `scripts/mockups/swift-eats/`. The live Swift Eats project uses uploaded images.
+- The planning and history documents: `PROGRESS.md`, `MIGRATION.md`, `New_CLAUDE_CODE_PROMPT.md`, `docs/plan-3-brief.md`, `docs/superpowers/`.
+- `supabase/schema.sql`. Supabase is no longer used.
+- An untracked screenshot in the project root (never committed).
 
 ## Recommended next steps
 
@@ -108,5 +115,4 @@ production.
 5. **Restore an automated test suite in the repo.** The local runtime suites used for this work
    (content/admin, password change, reset) could be committed as a `test:local` script against
    `npm run blobs:local`.
-6. Decide on the unreferenced Swift Eats images, the untracked root screenshot, and a
-   `LICENSE` (there is none, so all rights are reserved by default).
+6. Decide on a `LICENSE` (there is none, so all rights are reserved by default).

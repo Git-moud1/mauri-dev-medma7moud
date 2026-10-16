@@ -83,7 +83,7 @@ archives databases after 10 days idle; Firebase Storage needs the paid Blaze pla
 - Checkpoint: tag `pre-restore-2026-10-13` (old `main`), old published deploy `6a77c2ca`.
   Verified backup `MYW1-backups/production-2026-10-13T10-17-23-729Z` taken immediately before.
 - PR #3 merged as `bb482aa`. Production deploy `6ace068b` is live at
-  https://mauri-dev.netlify.app.
+  https://mauri-dev.netlify.app (now https://mauri-dev.online, which it redirects to).
 - Read-only smoke test: **19/19**. That covers:
   - 9 projects in order in all 3 languages
   - content identical to the pre-outage page
