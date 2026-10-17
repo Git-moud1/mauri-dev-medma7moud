@@ -40,8 +40,8 @@
   </g>
   <!-- account -->
   <rect x="20" y="920" width="220" height="56" rx="14" fill="#1E1E28"/>
-  <circle cx="48" cy="948" r="18" fill="#B0894B"/><text x="48" y="954" font-size="14" font-weight="800" fill="#14141B" text-anchor="middle">B</text>
-  <text x="76" y="943" font-size="14" font-weight="700" fill="#fff">Bay Cheikh</text>
+  <circle cx="48" cy="948" r="18" fill="#B0894B"/><text x="48" y="954" font-size="14" font-weight="800" fill="#14141B" text-anchor="middle">M</text>
+  <text x="76" y="943" font-size="14" font-weight="700" fill="#fff">Mauri-Dev</text>
   <text x="76" y="962" font-size="12" fill="#7A7A8A">Store owner</text>
 
   <!-- ===== topbar ===== -->
@@ -53,7 +53,7 @@
   <rect x="1404" y="36" width="44" height="44" rx="12" fill="#fff" stroke="#E6E6EA"/>
   <g transform="translate(1416,48)" fill="none" stroke="#3A3A42" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 2a6 6 0 0 1 6 6c0 4 1.5 5 2 6H2c.5-1 2-2 2-6a6 6 0 0 1 6-6z"/><path d="M8 20a2 2 0 0 0 4 0"/></g>
   <circle cx="1438" cy="46" r="5" fill="#E5484D" stroke="#F5F5F7" stroke-width="2"/>
-  <circle cx="1490" cy="58" r="22" fill="#17171C"/><text x="1490" y="65" font-size="16" font-weight="800" fill="#fff" text-anchor="middle">B</text>
+  <circle cx="1490" cy="58" r="22" fill="#17171C"/><text x="1490" y="65" font-size="16" font-weight="800" fill="#fff" text-anchor="middle">M</text>
 
   <!-- ===== KPI cards ===== -->
   <g filter="url(#e4-card)"><rect x="292" y="112" width="301" height="132" rx="18" fill="#fff"/></g>

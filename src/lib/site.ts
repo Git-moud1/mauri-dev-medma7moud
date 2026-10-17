@@ -6,13 +6,10 @@
  */
 export const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? 'https://mauri-dev.online';
 
-/** Central place for the developer's real contact details & links. */
+/** Central place for the brand's contact details & links. */
 export const SITE = {
   name: 'Mauri-Dev',
-  // The person behind the brand (used in the About section copy).
-  altName: 'Bay Cheikh',
   tagline: 'Develop Solutions',
-  roleKey: 'Full Stack & Mobile App Developer',
   email: 'baymed000@gmail.com',
   // WhatsApp: Mauritania (+222) + 31317501
   whatsappNumber: '22231317501',

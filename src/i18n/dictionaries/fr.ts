@@ -22,11 +22,11 @@ const fr: Dictionary = {
   },
   hero: {
     badge: 'Disponible pour de nouveaux projets',
-    titleLine1: 'Je crée des',
+    titleLine1: 'Nous créons des',
     titleHighlight: 'applications web & mobiles',
     titleLine2: 'qui font grandir les entreprises',
     subtitle:
-      'Développeur Full Stack & Mobile, je conçois des produits rapides et élégants — des interfaces soignées aux back-ends prêts pour la production et aux applications mobiles natives.',
+      'Équipe d’ingénieurs logiciels, nous concevons des produits rapides et élégants — des interfaces soignées aux back-ends prêts pour la production et aux applications mobiles natives.',
     ctaWork: 'Voir les projets',
     ctaWhatsapp: 'Discuter sur WhatsApp',
     stats: {
@@ -39,11 +39,11 @@ const fr: Dictionary = {
     label: 'Technologies utilisées',
   },
   about: {
-    label: 'Qui suis-je',
-    title: 'Développeur Full Stack',
-    titleStrong: '& Mobile',
-    p1: 'Bonjour, je suis Bay Cheikh (Med Moud) — développeur avec plus de 5 ans d’expérience dans la création de solutions web et mobiles complètes, du front au back.',
-    p2: 'Je maîtrise toute la chaîne : interfaces soignées, logique serveur robuste, applications mobiles au rendu natif et déploiements prêts pour la production.',
+    label: 'Qui sommes-nous',
+    title: 'Équipe d’ingénierie',
+    titleStrong: 'logicielle',
+    p1: 'Nous sommes Mauri-Dev — une équipe d’ingénieurs logiciels.',
+    p2: 'Nous concevons et réalisons des solutions web et mobiles de bout en bout : interfaces soignées, logique serveur robuste, applications mobiles au rendu natif et déploiements prêts pour la production.',
     languagesTitle: 'Langages',
     frameworksTitle: 'Frameworks & Outils',
     mobileTitle: 'Mobile',
@@ -94,7 +94,7 @@ const fr: Dictionary = {
     retry: 'Réessayer',
   },
   process: {
-    label: 'Ma méthode',
+    label: 'Notre méthode',
     title: 'Un parcours clair de',
     titleStrong: 'l’idée au lancement',
     steps: {
@@ -121,7 +121,7 @@ const fr: Dictionary = {
     title: 'Créons ensemble quelque chose',
     titleStrong: 'd’exceptionnel',
     subtitle:
-      'Un projet web ou mobile en tête ? Envoyez un message ou contactez-moi directement.',
+      'Un projet web ou mobile en tête ? Envoyez un message ou contactez-nous directement.',
     whatsapp: 'Message sur WhatsApp',
     emailLabel: 'E-mail',
     form: {
@@ -131,15 +131,15 @@ const fr: Dictionary = {
       message: 'Votre message',
       send: 'Envoyer le message',
       sending: 'Envoi…',
-      success: 'Merci ! Votre message a été envoyé. Je vous répondrai bientôt.',
-      error: 'Une erreur est survenue. Réessayez ou contactez-moi sur WhatsApp.',
+      success: 'Merci ! Votre message a été envoyé. Nous vous répondrons bientôt.',
+      error: 'Une erreur est survenue. Réessayez ou contactez-nous sur WhatsApp.',
       required: 'Ce champ est requis',
       invalidEmail: 'Veuillez saisir une adresse e-mail valide',
     },
   },
   footer: {
     tagline:
-      'Développeur Full Stack & Mobile créant des produits web et mobiles premium.',
+      'Une équipe d’ingénieurs logiciels créant des produits web et mobiles premium.',
     nav: 'Navigation',
     connect: 'Réseaux',
     rights: 'Tous droits réservés.',

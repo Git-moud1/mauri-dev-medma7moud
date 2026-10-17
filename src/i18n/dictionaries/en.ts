@@ -20,11 +20,11 @@ const en = {
   },
   hero: {
     badge: 'Available for new projects',
-    titleLine1: 'I build',
+    titleLine1: 'We build',
     titleHighlight: 'web & mobile apps',
     titleLine2: 'that grow businesses',
     subtitle:
-      'Full Stack & Mobile App Developer crafting fast, elegant products — from pixel-perfect interfaces to production-ready back-ends and native mobile apps.',
+      'A software engineering team crafting fast, elegant products — from pixel-perfect interfaces to production-ready back-ends and native mobile apps.',
     ctaWork: 'View Work',
     ctaWhatsapp: 'Chat on WhatsApp',
     stats: {
@@ -34,14 +34,14 @@ const en = {
     },
   },
   marquee: {
-    label: 'Tech I work with',
+    label: 'Tech we work with',
   },
   about: {
-    label: 'Who I Am',
-    title: 'Full Stack &',
-    titleStrong: 'Mobile Developer',
-    p1: 'Hello, I’m Bay Cheikh (Med Moud) — a developer with 5+ years building complete web and mobile solutions from front to back.',
-    p2: 'I work across the entire stack: pixel-perfect interfaces, robust server-side logic, native-feeling mobile apps, and production-ready deployments.',
+    label: 'Who We Are',
+    title: 'Software',
+    titleStrong: 'Engineering Team',
+    p1: 'We are Mauri-Dev — a team of software engineers.',
+    p2: 'We design and build web and mobile solutions end to end: pixel-perfect interfaces, robust server-side logic, native-feeling mobile apps, and production-ready deployments.',
     languagesTitle: 'Languages',
     frameworksTitle: 'Frameworks & Tools',
     mobileTitle: 'Mobile',
@@ -95,7 +95,7 @@ const en = {
     retry: 'Retry',
   },
   process: {
-    label: 'How I Work',
+    label: 'How We Work',
     title: 'A clear path from',
     titleStrong: 'idea to launch',
     steps: {
@@ -122,7 +122,7 @@ const en = {
     title: 'Let’s build something',
     titleStrong: 'exceptional',
     subtitle:
-      'Have a web or mobile project in mind? Send a message or reach me directly.',
+      'Have a web or mobile project in mind? Send a message or reach us directly.',
     whatsapp: 'Message on WhatsApp',
     emailLabel: 'Email',
     form: {
@@ -132,15 +132,14 @@ const en = {
       message: 'Your message',
       send: 'Send message',
       sending: 'Sending…',
-      success: 'Thanks! Your message has been sent. I’ll get back to you soon.',
-      error: 'Something went wrong. Please try again or reach me on WhatsApp.',
+      success: 'Thanks! Your message has been sent. We’ll get back to you soon.',
+      error: 'Something went wrong. Please try again or reach us on WhatsApp.',
       required: 'This field is required',
       invalidEmail: 'Please enter a valid email address',
     },
   },
   footer: {
-    tagline:
-      'Full Stack & Mobile App Developer building premium web and mobile products.',
+    tagline: 'A software engineering team building premium web and mobile products.',
     nav: 'Navigate',
     connect: 'Connect',
     rights: 'All rights reserved.',

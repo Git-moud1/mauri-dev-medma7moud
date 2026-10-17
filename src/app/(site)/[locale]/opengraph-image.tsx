@@ -265,7 +265,7 @@ export default async function Image(props: { params: Promise<{ locale: string }>
           />
           {/*
               The role, from the About section's own heading rather than from
-              `SITE.roleKey` — that one is english-only, and this card is not.
+              a single English constant — the card is localized.
             */}
           <Line
             text={`${dict.about.title} ${dict.about.titleStrong}`}

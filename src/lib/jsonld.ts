@@ -3,15 +3,16 @@ import { LOCALES } from '@/i18n/config';
 import { dictionaries } from '@/i18n/dictionaries';
 import type { SiteSettings, StoredProject } from '@/lib/content/types';
 import { FOLLOW_KEYS } from '@/lib/social';
-import { SITE, SITE_URL, TECH_STACK } from '@/lib/site';
+import { SITE, SITE_URL } from '@/lib/site';
 
 /**
  * The structured data the site publishes, as one `@graph`.
  *
- * A single graph rather than four separate `<script>` tags: the nodes reference
- * each other by `@id` — the site is published by the person, the business was
- * founded by the same person, each project is a work they created — and a
- * parser only resolves those references when the nodes arrive together.
+ * A single graph rather than separate `<script>` tags: the nodes reference each
+ * other by `@id` — the site is published by the Mauri-Dev team (the business
+ * node), and each project is a work it created — and a parser only resolves
+ * those references when the nodes arrive together. There is deliberately no
+ * Person node: the site presents the team, not an individual.
  *
  * Everything here is already on the page in human-readable form. This describes
  * it; it never states anything the visitor cannot also read, which is both the
@@ -20,7 +21,6 @@ import { SITE, SITE_URL, TECH_STACK } from '@/lib/site';
  */
 
 /** `@id`s, so a node can be pointed at instead of repeated. */
-const PERSON_ID = `${SITE_URL}/#person`;
 const WEBSITE_ID = `${SITE_URL}/#website`;
 const BUSINESS_ID = `${SITE_URL}/#business`;
 
@@ -50,24 +50,6 @@ function sameAs(settings: SiteSettings): { sameAs?: string[] } {
   return profiles.length > 0 ? { sameAs: profiles } : {};
 }
 
-function person(settings: SiteSettings) {
-  return {
-    '@type': 'Person',
-    '@id': PERSON_ID,
-    name: SITE.altName,
-    jobTitle: SITE.roleKey,
-    url: SITE_URL,
-    ...(settings.email ? { email: settings.email } : {}),
-    // The tab icon, which is the brand mark on a solid ground — the one image
-    // on the site that is a portrait of the entity rather than of the work.
-    image: absolute('/icon.png'),
-    worksFor: { '@id': BUSINESS_ID },
-    knowsAbout: [...TECH_STACK],
-    knowsLanguage: [...LOCALES],
-    ...sameAs(settings),
-  };
-}
-
 function website(locale: Locale) {
   return {
     '@type': 'WebSite',
@@ -77,7 +59,7 @@ function website(locale: Locale) {
     alternateName: `${SITE.name} — ${SITE.tagline}`,
     description: dictionaries[locale].meta.description,
     inLanguage: [...LOCALES],
-    publisher: { '@id': PERSON_ID },
+    publisher: { '@id': BUSINESS_ID },
   };
 }
 
@@ -92,7 +74,6 @@ function business(locale: Locale, settings: SiteSettings) {
     description: dict.meta.description,
     url: SITE_URL,
     image: absolute('/icon.png'),
-    founder: { '@id': PERSON_ID },
     /**
      * Mauritania is where the work is done and where a local search should find
      * it; everything else is served remotely, which the second entry says once
@@ -152,7 +133,7 @@ function portfolio(locale: Locale, projects: StoredProject[], path: string) {
         description: project.description[locale],
         image: absolute(project.cover),
         inLanguage: locale,
-        creator: { '@id': PERSON_ID },
+        creator: { '@id': BUSINESS_ID },
         // A live product the client can open, when there is one. Projects under
         // NDA or since taken down carry no link, and an invented one would be a
         // dead URL in the graph.
@@ -175,7 +156,6 @@ export function siteGraph(options: {
   return {
     '@context': 'https://schema.org',
     '@graph': [
-      person(settings),
       website(locale),
       business(locale, settings),
       portfolio(locale, projects, path),

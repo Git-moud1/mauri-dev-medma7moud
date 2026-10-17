@@ -32,8 +32,8 @@
     <text x="76" y="411">Integrations</text>
   </g>
   <rect x="16" y="900" width="208" height="60" rx="14" fill="#1A1A24"/>
-  <circle cx="46" cy="930" r="18" fill="url(#p2-logo)"/><text x="46" y="936" font-size="14" font-weight="800" fill="#0B0B12" text-anchor="middle">B</text>
-  <text x="74" y="925" font-size="14" font-weight="700" fill="#ECECF4">Bay Cheikh</text>
+  <circle cx="46" cy="930" r="18" fill="url(#p2-logo)"/><text x="46" y="936" font-size="14" font-weight="800" fill="#0B0B12" text-anchor="middle">M</text>
+  <text x="74" y="925" font-size="14" font-weight="700" fill="#ECECF4">Mauri-Dev</text>
   <text x="74" y="944" font-size="12" fill="#7A7A8C">Pro workspace</text>
 
   <!-- ===== topbar ===== -->

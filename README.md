@@ -1,7 +1,7 @@
 # Mauri-Dev — Portfolio Website
 
 A premium, single-page, multilingual (Arabic / English / French) portfolio and marketing site for
-**Mauri-Dev** — the brand of **Bay Cheikh (Med Moud)**, Full Stack & Mobile App Developer.
+**Mauri-Dev**, a software engineering team building web and mobile products.
 
 Built with **Next.js 16 (App Router, Turbopack) · React 19 · TypeScript · Tailwind CSS 3 · motion**,
 deployed on **Netlify**.

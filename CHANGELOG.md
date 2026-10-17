@@ -2,6 +2,17 @@
 
 All notable changes to this project. Dates are when the change reached `main`.
 
+## 2026-10-17 — The site speaks as the Mauri-Dev team
+
+- The About section is now "Who We Are / من نحن / Qui sommes-nous": Mauri-Dev, a team of
+  software engineers. No personal name remains.
+- The hero, section labels, contact text and footer use "we" instead of "I" in all three
+  languages.
+- The structured data (JSON-LD) no longer has a Person node: the Mauri-Dev business is the
+  publisher and creator. `SITE.altName` and `SITE.roleKey` are removed.
+- The AURA and Pulse Analytics mockups show "Mauri-Dev" instead of a personal name
+  (templates and the 4 affected WebP images regenerated).
+
 ## 2026-10-16 — Cleanup and optimization pass
 
 Branch `cleanup/optimization-2026-10-16`. Measurements and reasoning are in
